@@ -154,7 +154,7 @@
     
 	$message = mb_convert_encoding($message, 'ISO-8859-1', 'UTF-8');
 
-	$from = "afpedrolarrea@gmail.com";
+	$from = "info@clubjorgeguzman.com.ec";
 	$headers = "From: " . $from;
 
 	// Ruta del archivo adjunto
