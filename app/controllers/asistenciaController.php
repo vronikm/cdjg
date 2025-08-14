@@ -1371,9 +1371,10 @@
 			return $tabla;			
 		}
 		public function BuscarHorarioSede($horario_id){
-			$consulta_datos="SELECT S.sede_nombre, H.* 
+			$consulta_datos="SELECT S.sede_nombre, escuela_nombre, H.* 
 								FROM asistencia_horario H
         							INNER JOIN general_sede S ON S.sede_id = H.horario_sedeid
+									INNER JOIN general_escuela C ON S.sede_escuelaid = escuela_id
 							WHERE H.horario_estado = 'A' AND H.horario_id = ".$horario_id;	
 
 			$datos = $this->ejecutarConsulta($consulta_datos);		
