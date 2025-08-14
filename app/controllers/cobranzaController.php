@@ -79,29 +79,19 @@
 			}
 
 			foreach ($datos as $rows) {
-				$numeroOriginal = $rows['repre_celular'];
-				$soloNumeros = preg_replace('/[^0-9]/', '', $numeroOriginal);
-				if (substr($soloNumeros, 0, 1) === "0") {
-					$soloNumeros = substr($soloNumeros, 1);
-				}
-				$celular = $soloNumeros;
-			
-				$mensaje = "Estimado representante, el Club Deportivo Jorge Guzmán le recuerda que a la presente fecha usted mantiene un saldo pendiente de pensiones, por el valor de USD $" . $rows["TOTAL_MORA"] . ", agradecemos su gentileza en realizar el pago correspondiente.";
-				$mensajeCodificado = urlencode($mensaje);
-				$linkWhatsapp = "https://api.whatsapp.com/send?phone=593$celular&text=$mensajeCodificado";
-				
-				$tabla .= '
+				$celular = substr($rows['repre_celular'], 1);				
+				$tabla.='				
 					<tr>
-						<td>' . $rows['sede_nombre'] . '</td>
-						<td>' . $rows['repre_identificacion'] . '</td>
-						<td>' . $rows['REPRE'] . '</td>
-						<td>' . $rows['ALUMNO'] . '</td>
-						<td>' . $rows['TOTAL_MORA'] . '</td>
-						<td>
-							<a href="' . $linkWhatsapp . '" target="_blank" class="btn float-right btn-actualizar btn-xs" style="margin-right: 5px;">Notificar</a>
-							<a href="' . APP_URL . 'cobranzaDetallePension/' . $rows['repre_id'] . '/" class="btn float-right btn-ver btn-xs" style="margin-right: 5px;">Detalle</a>
+                        <td>'.$rows['sede_nombre'].'</td>
+						<td>'.$rows['repre_identificacion'].'</td>
+						<td>'.$rows['REPRE'].'</td>
+						<td>'.$rows['ALUMNO'].'</td>
+						<td>'.$rows['TOTAL_MORA'].'</td>
+						<td>                            
+							<a href="https://wa.me/593'.$celular.'?text=Estimado representante, Club Deportivo Jorge Guzmán le recuerda que a la presente fecha usted mantiene un saldo pendiente de pensiones, por el valor de USD $'.$rows["TOTAL_MORA"].', agradecemos su gentileza en realizar el pago correspondiente." target="_blank" class="btn float-right btn-actualizar btn-xs" style="margin-right: 5px;">Notificar</a>										
+                            <a href="'.APP_URL.'cobranzaDetallePension/'.$rows['repre_id'].'/" class="btn float-right btn-ver btn-xs" style="margin-right: 5px;">Detalle</a>
 						</td>
-					</tr>';
+					</tr>';	
 			}
 			return $tabla;			
 		}
@@ -244,8 +234,6 @@
 			}
 
 			foreach($datos as $rows){
-				$mensaje = "Estimado representante, Club Deportivo Jorge Guzmán le recuerda que a la presente fecha usted mantiene un saldo pendiente de uniformes, por el valor de USD $" . $rows["TOTAL_MORA"] . ", agradecemos su gentileza en realizar el pago correspondiente.";
-				$mensajeCodificado = urlencode($mensaje);
                 $celular = substr($rows['repre_celular'], 1);				
 				$tabla.='				
 					<tr>
@@ -255,12 +243,7 @@
 						<td>'.$rows['ALUMNO'].'</td>
 						<td>'.$rows['TOTAL_MORA'].'</td>
 						<td>                            
-							<a href="https://wa.me/593<?php echo $celular; ?>?text=<?php echo $mensajeCodificado; ?>" 
-								target="_blank" 
-								class="btn float-right btn-actualizar btn-xs" 
-								style="margin-right: 5px;">
-								Notificar
-							</a>
+							<a href="https://wa.me/593'.$celular.'?text=Estimado representante, Club Deportivo Jorge Guzmán le recuerda que a la presente fecha usted mantiene un saldo pendiente de uniformes, por el valor de USD $'.$rows["TOTAL_MORA"].', agradecemos su gentileza en realizar el pago correspondiente." target="_blank" class="btn float-right btn-actualizar btn-xs" style="margin-right: 5px;">Notificar</a>
                             <a href="'.APP_URL.'cobranzaDetalleUniforme/'.$rows['repre_id'].'/" class="btn float-right btn-ver btn-xs" style="margin-right: 5px;">Detalle</a>
 						</td>
 					</tr>';	
