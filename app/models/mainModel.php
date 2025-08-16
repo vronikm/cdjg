@@ -159,4 +159,52 @@ class mainModel
         return true;
     }
 
+     /* funcion para validar el numero de cedula*/	
+    public function validarCedula($cedula) {
+        // Eliminar caracteres no numéricos
+        $cedula = preg_replace('/[^0-9]/', '', $cedula);
+
+        // Validar longitud (solo cédula 10 dígitos)
+        if (strlen($cedula) != 10) {
+            return false;
+        }
+
+        // Validar que no sea una secuencia repetida (ej. 0000000000, 1111111111, etc.)
+        if (preg_match('/^(.)\1{9}$/', $cedula)) {
+            return false;
+        }
+
+        // Validar provincia
+        $provincia = intval(substr($cedula, 0, 2));
+        if ($provincia < 1 || $provincia > 24) {
+            return false;
+        }
+
+        // Validar tercer dígito (naturales: 0–5)
+        $tercerDigito = intval(substr($cedula, 2, 1));
+        if ($tercerDigito > 5) {
+            return false;
+        }
+
+        // Algoritmo de validación
+        $suma = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $digito = intval($cedula[$i]);
+            if ($i % 2 == 0) { // posiciones impares (0,2,4...)
+                $digito *= 2;
+                if ($digito > 9) {
+                    $digito -= 9;
+                }
+            }
+            $suma += $digito;
+        }
+
+        $digitoVerificador = 10 - ($suma % 10);
+        if ($digitoVerificador == 10) {
+            $digitoVerificador = 0;
+        }
+
+        return $digitoVerificador == intval($cedula[9]);
+    }
+
 }
