@@ -36,6 +36,20 @@
 		if($_POST['modulo_sede']=="eliminar"){
 			echo $insSede->eliminarSedeControlador();
 		}
+	}
+	elseif(isset($_POST['modulo_institucion'])){
+		$insInstitucion = new escuelaController();
+
+		if($_POST['modulo_institucion']=="registrar"){
+			echo $insInstitucion->registrarInstitucion();
+		}
+
+		if($_POST['modulo_institucion']=="actualizar"){
+			echo $insInstitucion->actualizarInstitucion();
+		}
+		if($_POST['modulo_institucion']=="eliminar"){
+			echo $insInstitucion->eliminarSedeControlador();
+		}
 	}	
 	else{
 		session_destroy();

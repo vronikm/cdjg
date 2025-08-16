@@ -264,7 +264,7 @@
 								<!-- this row will not appear when printing -->
 								<div class="row no-print">
 									<div class="col-12">
-                                        <a href="<?php echo APP_URL.'pagospendienteReciboEnvio/'.$pagoid.'/'; ?> " class="btn btn-success btn-sm float-right" style="margin-right: 135px;" id="btn_correo"> <i class="fas fa-credit-card"></i> Enviar recibo</a>                                        
+                                        <a href="<?php echo APP_URL.'pagospendienteReciboEnvio/'.$pagoid.'/'; ?> " class="btn btn-success btn-sm float-right" style="margin-right: 240px;" id="btn_correo"> <i class="fas fa-credit-card"></i> Enviar recibo</a>                                        
 										<a href="<?php echo APP_URL.'pagospendienteReciboPDF/'.$pagoid.'/'; ?> " class="btn btn-dark float-right btn-sm" style="margin-right: 5px;" target="_blank"> <i class="fas fa-print"></i> Ver recibo</a>
 										<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>
 									</div>

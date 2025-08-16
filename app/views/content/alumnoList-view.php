@@ -189,10 +189,10 @@
 							<thead>
 								<tr>
 									<th>Identificación</th>
-									<th data-orderable="true"># de camiseta</th>
+									<th data-orderable="true">N° Carnet</th>
 									<th>Nombres</th>
 									<th>Apellidos</th>
-									<th>Año</th>									
+									<th>Año Nacimiento - Edad</th>									
 									<th style="width: 220px;">Opciones</<th>
 								</tr>
 							</thead>

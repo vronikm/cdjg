@@ -15,7 +15,7 @@
 		if ($datos['alumno_imagen']!=""){
 			$foto = APP_URL.'app/views/imagenes/fotos/alumno/'.$datos['alumno_imagen'];
 		}else{
-			$foto = APP_URL.'app/views/dist/img/foto.jpg';
+			$foto = APP_URL.'app/views/imagenes/fotos/alumno/foto.jpg';
 		}
 		
 		if ($datos['alumno_genero']=='M'){
@@ -269,23 +269,23 @@
 												<div class="col-md-4">
 													<div class="form-group">
 														<label for="alumno_identificacion">Identificación</label>                        
-														<input type="text" class="form-control" id="alumno_identificacion" name="alumno_identificacion" value="<?php echo $datos['alumno_identificacion']; ?>" disabled="">
+														<input type="text" class="form-control" id="alumno_identificacion" name="alumno_identificacion" value="<?php echo $datos['alumno_identificacion']; ?>" disabled>
 													</div>
 												</div>											
 												<div class="col-md-4">                        
 													<div class="form-group">
 														<label for="alumno_apellido1">Apellido paterno</label>
-														<input type="text" class="form-control" id="alumno_apellido1" name="alumno_apellido1" value="<?php echo $datos['alumno_apellidopaterno']; ?>" disabled="">
+														<input type="text" class="form-control" id="alumno_apellido1" name="alumno_apellido1" value="<?php echo $datos['alumno_apellidopaterno']; ?>" disabled>
 													</div>
 												</div>
 												<div class="col-md-4">
 													<label for="alumno_apellido2">Apellido materno</label>
-													<input type="text" class="form-control" id="alumno_apellido2" name="alumno_apellido2" value="<?php echo $datos['alumno_apellidomaterno']; ?>" disabled="">
+													<input type="text" class="form-control" id="alumno_apellido2" name="alumno_apellido2" value="<?php echo $datos['alumno_apellidomaterno']; ?>" disabled>
 												</div>
 												<div class="col-sm-4">
 													<div class="form-group">
 														<label for="alumno_tipoidentificacion">Tipo identificación</label>
-														<select id="alumno_tipoidentificacion" class="form-control select2" name="alumno_tipoidentificacion" disabled="">																					
+														<select id="alumno_tipoidentificacion" class="form-control select2" name="alumno_tipoidentificacion" disabled>																					
 															<?php echo $insAlumno->listarOptionTipoIdentificacion($datos['alumno_tipoidentificacion']); ?>
 														</select>
 													</div>          
@@ -293,32 +293,67 @@
 												<div class="col-md-4">                        
 													<div class="form-group">
 														<label for="alumno_nombre1">Primer nombre</label>
-														<input type="text" class="form-control" id="alumno_nombre1" name="alumno_nombre1" value="<?php echo $datos['alumno_primernombre']; ?>" disabled="">
+														<input type="text" class="form-control" id="alumno_nombre1" name="alumno_nombre1" value="<?php echo $datos['alumno_primernombre']; ?>" disabled>
 													</div>
 												</div>
 												<div class="col-md-4">
 													<label for="alumno_nombre2">Segundo nombre</label>
-													<input type="text" class="form-control" id="alumno_nombre2" name="alumno_nombre2" value="<?php echo $datos['alumno_segundonombre']; ?>" disabled="">
+													<input type="text" class="form-control" id="alumno_nombre2" name="alumno_nombre2" value="<?php echo $datos['alumno_segundonombre']; ?>" disabled>
 												</div>    
 												<div class="col-md-4">
 													<div class="form-group">
 														<label for="alumno_nacionalidadid">Nacionalidad</label>
-														<select class="form-control select2" style="width: 100%;" id="alumno_nacionalidadid" name="alumno_nacionalidadid" disabled="">
+														<select class="form-control select2" style="width: 100%;" id="alumno_nacionalidadid" name="alumno_nacionalidadid" disabled>
 															<?php echo $insAlumno->listarOptionNacionalidad($datos['alumno_nacionalidadid']); ?>
 														</select>
 													</div> 
 												</div>
 												<div class="col-md-4">									
 													<label for="alumno_fechanacimiento">Fecha nacimiento</label>
-													<input type="text" class="form-control" name="alumno_fechanacimiento" value="<?php echo $datos['alumno_fechanacimiento']; ?>" disabled="">											
+													<div class="input-group">
+														<input type="text" class="form-control" id="alumno_fechanacimiento" name="alumno_fechanacimiento" value="<?php echo $datos['alumno_fechanacimiento']; ?>" disabled>
+														<div class="input-group-append">
+															<span id="edad_texto" class="input-group-text" style="font-weight:bold; color:#007bff;">--</span>
+														</div>
+													</div>
 												</div>
 												<div class="col-md-4">
 													<div class="form-group">
-														<label for="alumno_fechaingreso">Fecha ingreso</label>
-														<input type="text" class="form-control" name="alumno_fechaingreso" value="<?php echo $datos['alumno_fechaingreso']; ?>" disabled="">
-													<!-- /.input group -->
-													</div>								
+														<label for="alumno_genero">Género</label>
+														<div class="form-check">
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoM" name="alumno_genero" value="M" <?php echo $alumno_generoM; ?> disabled>
+															<label class="col-sm-5 form-check-label" for="alumno_generoM">Masculino</label>
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoF" name="alumno_genero" value="F" <?php echo $alumno_generoF; ?> disabled>
+															<label class="col-sm-4 form-check-label" for="alumno_generoF">Femenino</label>
+														</div> 
+													</div>
 												</div>
+												<div class="col-md-4">
+													<div class="form-group">
+														<label for="alumno_direccion">Dirección</label>
+														<input type="text" class="form-control" id="alumno_direccion" name="alumno_direccion" value="<?php echo $datos['alumno_direccion']; ?>" disabled>
+													</div>	
+												</div> 
+												<div class="col-md-4">
+													<div class="form-group">
+														<label for="alumno_unidadid">Unidad Educativa</label>
+														<select class="form-control select2" style="width: 100%;" id="alumno_unidadid" name="alumno_unidadid"  disabled>
+															<?php echo $insAlumno->listarUnidadEducativa($datos['alumno_unidadid']); ?>
+														</select>
+													</div> 
+												</div>
+												<div class="col-md-2">
+													<div class="form-group">
+														<label for="alumno_hermanos">Tiene hermanos?</label>
+														<!-- radio -->
+														<div class="form-check">
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosSi" name="alumno_hermanos" value="S" <?php echo $alumno_hermanosSi; ?> disabled>
+															<label class="col-sm-6 form-check-label" for="alumno_hermanosSi">Si</label>
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosNo" name="alumno_hermanos" value="N" <?php echo $alumno_hermanosNo; ?> disabled>
+															<label class="col-sm-4 form-check-label" for="alumno_hermanosNo">No</label>
+														</div>
+													</div>
+												</div>	
 											</div>
 											<!-- Fin primera sección foto-->
 										</div>
@@ -326,55 +361,44 @@
 
 									<!-- Segunda sección foto-->
 									<div class="row">
-										<div class="col-md-2">
+										<div class="col-md-3">
 											<div class="form-group">
-												<label for="Numcamiseta">Número de camiseta</label>
-												<input type="text" class="form-control" id="alumno_numcamiseta" name="alumno_numcamiseta" value="<?php echo $datos['alumno_numcamiseta']; ?>" disabled=""> 
-											</div>
-										</div>   
+												<label for="alumno_fechaingreso">Fecha ingreso</label>
+												<div class="input-group">
+													<input type="text" class="form-control" id="alumno_fechaingreso" name="alumno_fechaingreso" value="<?php echo $datos['alumno_fechaingreso']; ?>" disabled>
+													<div class="input-group-append">
+														<span id="ingreso_texto" class="input-group-text" style="font-weight:bold; color:#007bff;">--</span>
+													</div>
+												</div>
+											</div>								
+										</div>
 										<div class="col-md-2">
 											<div class="form-group">
 												<label for="alumno_sedeid">Sede</label>
-												<select class="form-control select2" id="alumno_sedeid" name="alumno_sedeid" disabled="">									
+												<select class="form-control select2" id="alumno_sedeid" name="alumno_sedeid" disabled>									
 													<?php echo $insAlumno->listarSedeAlumno($datos['alumno_sedeid']); ?>
 												</select>	
 											</div>
 										</div>
-										<div class="col-md-4">
-											<div class="form-group">
-												<label for="alumno_direccion">Dirección</label>
-												<input type="text" class="form-control" id="alumno_direccion" name="alumno_direccion" value="<?php echo $datos['alumno_direccion']; ?>" disabled="">
-											</div>	
-										</div>
-										<div class="col-md-4">
-											<div class="form-group">
-												<label for="alumno_observacion">Observación</label>
-												<input type="text" class="form-control" id="alumno_observacion" name="alumno_observacion" value="<?php echo $datos['alumno_observacion']; ?>" disabled="">
-											</div>	
-										</div> 
 										<div class="col-md-2">
 											<div class="form-group">
-												<label for="alumno_hermanos">Tiene hermanos?</label>
-												<!-- radio -->
-												<div class="form-check">
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosSi" name="alumno_hermanos" value="S" <?php echo $alumno_hermanosSi; ?> disabled="">
-													<label class="col-sm-6 form-check-label" for="alumno_hermanosSi">Si</label>
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosNo" name="alumno_hermanos" value="N" <?php echo $alumno_hermanosNo; ?> disabled="">
-													<label class="col-sm-4 form-check-label" for="alumno_hermanosNo">No</label>
-												</div>
+												<label for="Numcarnet">Número de carnet</label>
+												<input type="text" class="form-control" id="alumno_carnet" name="alumno_carnet" value="<?php echo $datos['alumno_carnet']; ?>" disabled> 
 											</div>
-										</div>	
+										</div>
+										<div class="col-md-2">
+											<div class="form-group">
+												<label for="Numcamiseta">Número de camiseta</label>
+												<input type="text" class="form-control" id="alumno_numcamiseta" name="alumno_numcamiseta" value="<?php echo $datos['alumno_numcamiseta']; ?>" disabled> 
+											</div>
+										</div>   
 										<div class="col-md-3">
 											<div class="form-group">
-												<label for="alumno_genero">Género</label>
-												<div class="form-check">
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoM" name="alumno_genero" value="M" <?php echo $alumno_generoM; ?> disabled="">
-													<label class="col-sm-5 form-check-label" for="alumno_generoM">Masculino</label>
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoF" name="alumno_genero" value="F" <?php echo $alumno_generoF; ?> disabled="">
-													<label class="col-sm-4 form-check-label" for="alumno_generoF">Femenino</label>
-												</div> 
-											</div>
-										</div>     
+												<label for="alumno_observacion">Observación</label>
+												<input type="text" class="form-control" id="alumno_observacion" name="alumno_observacion" value="<?php echo $datos['alumno_observacion']; ?>" disabled>
+											</div>	
+										</div> 
+   
 									</div>  <!--./row line 874--> 
 									<!-- Fin segunda sección foto-->			
 								</div>
@@ -385,37 +409,37 @@
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="repre_identificacion">Identificación</label>
-												<input type="text" class="form-control" id="repre_identificacion" name="repre_identificacion" value="<?php echo $repre_identificacion;?>" disabled="" >                          
+												<input type="text" class="form-control" id="repre_identificacion" name="repre_identificacion" value="<?php echo $repre_identificacion;?>" disabled >                          
 											</div>
 										</div>
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="repre_nombre">Nombre</label>
-												<input type="text" class="form-control" id="repre_nombre" name="repre_nombre" value="<?php echo $repre_nombre;?>" disabled="" >
+												<input type="text" class="form-control" id="repre_nombre" name="repre_nombre" value="<?php echo $repre_nombre;?>" disabled >
 											</div>
 										</div>
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="repre_parentesco">Parentesco</label>
-												<input type="text" class="form-control" id="repre_parentesco" name="repre_parentesco" value="<?php echo $repre_parentesco;?>" disabled="" >
+												<input type="text" class="form-control" id="repre_parentesco" name="repre_parentesco" value="<?php echo $repre_parentesco;?>" disabled >
 											</div> 
 										</div>
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="repre_celular">Celular</label>
-												<input type="text" class="form-control" id="repre_celular" name="repre_celular" value="<?php echo $repre_celular; ?>" disabled="">
+												<input type="text" class="form-control" id="repre_celular" name="repre_celular" value="<?php echo $repre_celular; ?>" disabled>
 											</div> 
 										</div>
 										<div class="col-md-4">
 											<div class="form-group">
 												<label for="repre_direccion">Dirección</label>
-												<input type="text" class="form-control" id="repre_direccion" name="repre_direccion" value="<?php echo $repre_direccion; ?>" disabled="">
+												<input type="text" class="form-control" id="repre_direccion" name="repre_direccion" value="<?php echo $repre_direccion; ?>" disabled>
 											</div>
 										</div>              
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="repre_correo">Correo</label>
-												<input type="text" class="form-control" id="repre_correo" name="repre_correo" value="<?php echo $repre_correo; ?>" disabled="">
+												<input type="text" class="form-control" id="repre_correo" name="repre_correo" value="<?php echo $repre_correo; ?>" disabled>
 											</div> 
 										</div>
 									</div>		
@@ -427,64 +451,64 @@
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="infomedic_tiposangre">Tipo de sangre</label>
-												<input type="text" class="form-control" id="infomedic_tiposangre" name="infomedic_tiposangre" value="<?php echo $tipo_sangre;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_tiposangre" name="infomedic_tiposangre" value="<?php echo $tipo_sangre;?>" disabled >                          
 											</div>
 										</div> 
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Peso">Peso (Kg)</label>
-												<input type="text" class="form-control" id="infomedic_peso" name="infomedic_peso"  value="<?php echo $peso;?>" disabled="">                          
+												<input type="text" class="form-control" id="infomedic_peso" name="infomedic_peso"  value="<?php echo $peso;?>" disabled>                          
 											</div>
 										</div>   
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Talla">Talla (cm)</label>
-												<input type="text" class="form-control" id="infomedic_talla" name="infomedic_talla"  value="<?php echo $talla;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_talla" name="infomedic_talla"  value="<?php echo $talla;?>" disabled >                          
 											</div>
 										</div>
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Enfermedad">Enfermedad diagnosticada</label>
-												<input type="text" class="form-control" id="infomedic_enfermedad" name="infomedic_enfermedad"  value="<?php echo $enfermedad;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_enfermedad" name="infomedic_enfermedad"  value="<?php echo $enfermedad;?>" disabled >                          
 											</div>
 										</div>
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Medicamentos">Medicamentos</label>
-												<input type="text" class="form-control" id="infomedic_medicamentos" name="infomedic_medicamentos"  value="<?php echo $medicamentos;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_medicamentos" name="infomedic_medicamentos"  value="<?php echo $medicamentos;?>" disabled >                          
 											</div>
 										</div> 
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Alergia1">Alergia a medicamentos</label>
-												<input type="text" class="form-control" id="infomedic_alergia1" name="infomedic_alergia1"  value="<?php echo $alergia1;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_alergia1" name="infomedic_alergia1"  value="<?php echo $alergia1;?>" disabled >                          
 											</div>
 										</div> 
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Alergia2">Alergia a objetos</label>
-												<input type="text" class="form-control" id="infomedic_alergia2" name="infomedic_alergia2"  value="<?php echo $alergia2;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_alergia2" name="infomedic_alergia2"  value="<?php echo $alergia2;?>" disabled >                          
 											</div>
 										</div>  
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Cirugias">Cirugías</label>
-												<input type="text" class="form-control" id="infomedic_cirugias" name="infomedic_cirugias"  value="<?php echo $cirugias;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_cirugias" name="infomedic_cirugias"  value="<?php echo $cirugias;?>" disabled >                          
 											</div>
 										</div>  
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Observacion">Observación</label>
-												<input type="text" class="form-control" id="infomedic_observacion" name="infomedic_observacion"  value="<?php echo $observacion;?>" disabled="" >                          
+												<input type="text" class="form-control" id="infomedic_observacion" name="infomedic_observacion"  value="<?php echo $observacion;?>" disabled >                          
 											</div>
 										</div>  
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Covid">Carnet vacunación Covid</label>
 												<div class="form-check">
-													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_covidSi" name="infomedic_covid" value="S" <?php echo $infomedic_covidSi;?> disabled="" > 
+													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_covidSi" name="infomedic_covid" value="S" <?php echo $infomedic_covidSi;?> disabled > 
 													<label class="col-sm-6 form-check-label" for="infomedic_covidSi">Si</label>
-													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_covidNo" name="infomedic_covid" value="N" <?php echo $infomedic_covidNo;?> disabled="" >
+													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_covidNo" name="infomedic_covid" value="N" <?php echo $infomedic_covidNo;?> disabled >
 													<label class="col-sm-4 form-check-label" for="infomedic_covidNo">No</label>
 												</div>
 											</div>
@@ -493,9 +517,9 @@
 											<div class="form-group">
 												<label for="Vacunas">Carnet vacunación habitual</label>
 												<div class="form-check">
-													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_vacunasSi" name="infomedic_vacunas" value="S" <?php echo $infomedic_vacunasSi;?> disabled="" > 
+													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_vacunasSi" name="infomedic_vacunas" value="S" <?php echo $infomedic_vacunasSi;?> disabled > 
 													<label class="col-sm-6 form-check-label" for="infomedic_vacunasSi">Si</label>
-													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_vacunasNo" name="infomedic_vacunas" value="N" <?php echo $infomedic_vacunasNo;?> disabled="" >
+													<input class="col-sm-1 form-check-input" type="radio" id="infomedic_vacunasNo" name="infomedic_vacunas" value="N" <?php echo $infomedic_vacunasNo;?> disabled >
 													<label class="col-sm-4 form-check-label" for="infomedic_vacunasNo">No</label>
 												</div>                         
 											</div>
@@ -509,19 +533,19 @@
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="CEmergencia">Celular</label>
-												<input type="text" class="form-control" id="cemer_celular" name="cemer_celular" value="<?php echo $cemer_celular;?>" disabled="" >                          
+												<input type="text" class="form-control" id="cemer_celular" name="cemer_celular" value="<?php echo $cemer_celular;?>" disabled >                          
 											</div>
 										</div>
 										<div class="col-md-3">
 											<div class="form-group">
 												<label for="Nomcontactoemer">Nombre contacto</label>
-												<input type="text" class="form-control" id="cemer_nombre" name="cemer_nombre" value="<?php echo $cemer_nombre;?>" disabled="" >                          
+												<input type="text" class="form-control" id="cemer_nombre" name="cemer_nombre" value="<?php echo $cemer_nombre;?>" disabled >                          
 											</div>
 										</div>
 										<div class="col-md-4">
 											<div class="form-group">
 												<label for="cemer_parentesco">Parentesco</label>
-												<select class="form-control select2" style="width: 100%;" id="cemer_parentesco" name="cemer_parentesco" disabled="" >
+												<select class="form-control select2" style="width: 100%;" id="cemer_parentesco" name="cemer_parentesco" disabled >
 													<?php echo $insAlumno->listarOptionParentesco($cemer_parentesco); ?>
 												</select>
 											</div> 
@@ -536,7 +560,7 @@
 											<div class="form-group">
 												<label for="alumno_cedulaA">Anverso</label>		
 												<div class="text-left">
-													<img class="profile-user-img img-fluid " style="width: 330px; height: 210px;" src="<?php echo $cedulaA; ?>" alt="Cedula Anverso" disabled=""> 
+													<img class="profile-user-img img-fluid " style="width: 330px; height: 210px;" src="<?php echo $cedulaA; ?>" alt="Cedula Anverso" disabled> 
 												</div>
 											</div>
 										</div>		
@@ -545,7 +569,7 @@
 											<div class="form-group">
 												<label for="alumno_cedulaR">Reverso</label>		
 												<div class="text-left">
-													<img class="profile-user-img img-fluid " style="width: 330px; height: 210px;" src="<?php echo $cedulaR; ?>" alt="Cedula Reverso" disabled=""> 
+													<img class="profile-user-img img-fluid " style="width: 330px; height: 210px;" src="<?php echo $cedulaR; ?>" alt="Cedula Reverso" disabled> 
 												</div>
 											</div>
 										</div>	
@@ -788,6 +812,72 @@
 		}
 		// DropzoneJS Demo Code End
 	</script>
+	<script>
+			window.addEventListener("DOMContentLoaded", function() {
+			const fechaTexto = document.getElementById("alumno_fechanacimiento").value.trim();
+			const edadTexto = document.getElementById("edad_texto");
+
+			if (fechaTexto) {
+				let partes;
+				let fechaNacimiento;
+
+				if (fechaTexto.includes("/")) { 
+					// Formato dd/mm/yyyy
+					partes = fechaTexto.split("/");
+					fechaNacimiento = new Date(partes[2], partes[1] - 1, partes[0]);
+				} else if (fechaTexto.includes("-")) {
+					// Formato yyyy-mm-dd
+					partes = fechaTexto.split("-");
+					fechaNacimiento = new Date(partes[0], partes[1] - 1, partes[2]);
+				}
+
+				if (!isNaN(fechaNacimiento)) {
+					const hoy = new Date();
+					let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+					const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+
+					if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+						edad--;
+					}
+
+					edadTexto.textContent = `${edad} años`;
+				}
+			}
+		});
+
+		window.addEventListener("DOMContentLoaded", function() {
+			const fechaIngresoTexto = document.getElementById("alumno_fechaingreso").value.trim();
+			const ingresoTexto = document.getElementById("ingreso_texto");
+
+			if (fechaIngresoTexto) {
+				let partes;
+				let fechaIngreso;
+
+				if (fechaIngresoTexto.includes("/")) { 
+					// Formato dd/mm/yyyy
+					partes = fechaIngresoTexto.split("/");
+					fechaIngreso = new Date(partes[2], partes[1] - 1, partes[0]);
+				} else if (fechaIngresoTexto.includes("-")) {
+					// Formato yyyy-mm-dd
+					partes = fechaIngresoTexto.split("-");
+					fechaIngreso = new Date(partes[0], partes[1] - 1, partes[2]);
+				}
+
+				if (!isNaN(fechaIngreso)) {
+					const hoy = new Date();
+					let edad = hoy.getFullYear() - fechaIngreso.getFullYear();
+					const mes = hoy.getMonth() - fechaIngreso.getMonth();
+
+					if (mes < 0 || (mes === 0 && hoy.getDate() < fechaIngreso.getDate())) {
+						edad--;
+					}
+
+					ingresoTexto.textContent = `${edad} años`;
+				}
+			}
+		});
+	</script>
+
 	<script>
 		function cerrarVentana() {
 			window.close();

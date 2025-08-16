@@ -1068,4 +1068,216 @@
 		    }
 		    return json_encode($alerta);
 		}
+
+		public function registrarInstitucion(){
+
+			# Almacenando datos#			
+			$institucion_nombre		= $this->limpiarCadena($_POST['institucion_nombre']);
+		    $institucion_direccion	= $this->limpiarCadena($_POST['institucion_direccion']);		    		    
+		    $institucion_email		= $this->limpiarCadena($_POST['institucion_email']);
+			$institucion_telefono	= $this->limpiarCadena($_POST['institucion_telefono']);
+
+		    # Verificando campos obligatorios #
+		    if($institucion_nombre==""){
+		    	$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Ocurrió un error",
+					"texto"=>"No ha completado los campos que son obligatorios",
+					"icono"=>"error"
+				];
+				return json_encode($alerta);
+		    }
+
+		    $institucion_datos_reg=[
+				[
+					"campo_nombre"=>"institucion_nombre",
+					"campo_marcador"=>":Institucion",
+					"campo_valor"=>$institucion_nombre
+				],	
+				[
+					"campo_nombre"=>"institucion_direccion",
+					"campo_marcador"=>":Direccion",
+					"campo_valor"=>$institucion_direccion
+				],			
+				[
+					"campo_nombre"=>"institucion_email",
+					"campo_marcador"=>":Correo",
+					"campo_valor"=>$institucion_email
+				],				
+				[
+					"campo_nombre"=>"institucion_telefono",
+					"campo_marcador"=>":Telefono",
+					"campo_valor"=>$institucion_telefono
+				],				
+				[
+					"campo_nombre"=>"institucion_estado",
+					"campo_marcador"=>":Estado",
+					"campo_valor"=>'A'
+				]
+			];
+
+			$registrar_institucion=$this->guardarDatos("general_institucion",$institucion_datos_reg);
+
+			if($registrar_institucion->rowCount()>0){
+				$alerta=[
+					"tipo"=>"redireccionar",
+					"url"=>APP_URL.'institucionList/',
+					"titulo"=>"Institución registrado",
+					"texto"=>"La ".$institucion_nombre." se registró correctamente",
+					"icono"=>"success"
+				];
+			}else{
+				$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Ocurrió un error",
+					"texto"=>"No se pudo registrar la institución, por favor intente nuevamente",
+					"icono"=>"error"
+				];
+			}
+
+			return json_encode($alerta);
+
+		}
+
+		public function actualizarInstitucion(){
+			$institucion_id=$this->limpiarCadena($_POST['institucion_id']);
+			
+			# Verificando usuario #
+		    $datos=$this->ejecutarConsulta("SELECT * FROM general_institucion WHERE institucion_id='$institucion_id'");
+		    if($datos->rowCount()<=0){
+		        $alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"No existe una institución creada, por favor proceda con la creación a continuación",
+					"icono"=>"error"
+				];
+				return json_encode($alerta);
+		    }else{
+		    	$datos=$datos->fetch();
+		    }
+			
+			# Almacenando datos#			
+			$institucion_nombre		= $this->limpiarCadena($_POST['institucion_nombre']);
+		    $institucion_direccion	= $this->limpiarCadena($_POST['institucion_direccion']);		    		    
+		    $institucion_email		= $this->limpiarCadena($_POST['institucion_email']);
+			$institucion_telefono	= $this->limpiarCadena($_POST['institucion_telefono']);
+
+		    # Verificando campos obligatorios #
+		    if($institucion_nombre==""){
+		    	$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Ocurrió un error",
+					"texto"=>"No ha completado los campos que son obligatorios",
+					"icono"=>"error"
+				];
+				return json_encode($alerta);
+		    }
+
+		    $institucion_datos_up=[
+				[
+					"campo_nombre"=>"institucion_nombre",
+					"campo_marcador"=>":Nombre",
+					"campo_valor"=>$institucion_nombre
+				],	
+				[
+					"campo_nombre"=>"institucion_direccion",
+					"campo_marcador"=>":Direccion",
+					"campo_valor"=>$institucion_direccion
+				],			
+				[
+					"campo_nombre"=>"institucion_email",
+					"campo_marcador"=>":Correo",
+					"campo_valor"=>$institucion_email
+				],				
+				[
+					"campo_nombre"=>"institucion_telefono",
+					"campo_marcador"=>":Telefono",
+					"campo_valor"=>$institucion_telefono
+				]
+			];
+			
+			$condicion=[
+				"condicion_campo"=>"institucion_id",
+				"condicion_marcador"=>":InstitucionId",
+				"condicion_valor"=>$institucion_id
+			];
+
+			if($this->actualizarDatos("general_institucion",$institucion_datos_up,$condicion)){
+					$alerta=[
+					"tipo"=>"recargar",
+					"titulo"=>"Institución actualizada",
+					"texto"=>"Los datos de la ".$institucion_nombre." se actualizaron correctamente",
+					"icono"=>"success"
+				];
+			}else{
+				$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Ocurrió un error",
+					"texto"=>"No se pudo actualizar la institución, por favor intente nuevamente",
+					"icono"=>"error"
+				];
+			}
+
+			return json_encode($alerta);
+
+		}
+		
+		public function verInstitucion($institucionid){
+			# Verificando sede #
+		    $datos=$this->ejecutarConsulta("SELECT * FROM general_institucion WHERE institucion_id='$institucionid'");
+		    if($datos->rowCount()<=0){
+		        $alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Ocurrió un error",
+					"texto"=>"No se encuentra la institución en el sistema",
+					"icono"=>"error"
+				];
+				return json_encode($alerta);
+		    }else{
+		    	return $datos;
+		    }
+		}
+
+		public function listarInstitucion(){
+			$tabla="";
+			$texto = "";
+			$boton = "";
+			$consulta_datos="SELECT *
+							 FROM general_institucion
+							 ORDER BY institucion_id DESC";
+							 					
+			$datos = $this->ejecutarConsulta($consulta_datos);
+			$datos = $datos->fetchAll();
+			foreach($datos as $rows){		
+				if($rows['institucion_estado']=='A'){
+					$texto = "Inactivar";
+					$boton = "btn-secondary";
+				}else{
+					$texto = "Activar";
+					$boton = "btn-info";
+				}		
+				$tabla.='
+					<tr>						
+						<td>'.$rows['institucion_id'].'</td>
+						<td>'.$rows['institucion_nombre'].'</td>
+						<td>'.$rows['institucion_direccion'].'</td>
+						<td>'.$rows['institucion_email'].'</td>
+						<td>'.$rows['institucion_telefono'].'</td>
+						<td>
+							<form class="FormularioAjax" action="'.APP_URL.'app/ajax/escuelaAjax.php" method="POST" autocomplete="off" >
+								<input type="hidden" name="modulo_institucion" value="eliminar">
+								<input type="hidden" name="institucion_id" value="'.$rows['institucion_id'].'">						
+								<button type="submit" class="btn float-right btn-danger btn-xs" style="margin-right: 5px;">Eliminar</button>
+							</form>
+							<a href="'.APP_URL.'institucionList/'.$rows['institucion_id'].'/" class="btn float-right btn-success btn-xs" style="margin-right: 5px;">Editar</a>
+
+							<form class="FormularioAjax" action="'.APP_URL.'app/ajax/empleadoAjax.php" method="POST" autocomplete="off" >
+								<input type="hidden" name="modulo_institucion" value="actualizarestadoinstitucion">
+								<input type="hidden" name="institucion_id" value="'.$rows['institucion_id'].'">						
+								<button type="submit" class="btn float-right '.$boton.' btn-xs" style="margin-right: 5px;""> '.$texto.' </button>
+							</form>
+						</td>						
+					</tr>';	
+			}
+			return $tabla;
+		}
 	}

@@ -6,6 +6,7 @@
 	$insAlumno = new alumnoController();
 	
 	$repreid=$insAlumno->limpiarCadena($url[1]);
+	$unidadid ="";
 ?>
 
 <!DOCTYPE html>
@@ -198,22 +199,49 @@
 																<div class="input-group-prepend">
 																	<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 																</div>
-																<input type="date" class="form-control" name="alumno_fechanacimiento" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" data-mask required="required">
+																<input type="date" class="form-control" id="alumno_fechanacimiento" name="alumno_fechanacimiento" required>
+																<div class="input-group-append">
+																	<span id="edad_texto" class="input-group-text" style="min-width:50px; font-weight:bold; color:#007bff;">--</span>
+																</div>
 															</div>
-														<!-- /.input group -->
 														</div>												
 													</div>
 													<div class="col-md-4">
 														<div class="form-group">
-															<label for="alumno_fechaingreso">Fecha ingreso</label>
-															<div class="input-group">
-																<div class="input-group-prepend">
-																	<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-																</div>
-																<input type="date" class="form-control" name="alumno_fechaingreso" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" data-mask required="required">
+															<label for="alumno_genero">Género</label>
+															<div class="form-check">
+																<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoM" name="alumno_genero" value="M" required="required">
+																<label class="col-sm-5 form-check-label" for="alumno_generoM">Masculino</label>
+																<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoF" name="alumno_genero" value="F">
+																<label class="col-sm-4 form-check-label" for="alumno_generoF">Femenino</label>
+															</div> 
+														</div>
+													</div>
+													<div class="col-md-4">
+														<div class="form-group">
+															<label for="alumno_direccion">Dirección</label>
+															<textarea class="form-control" id="alumno_direccion" name="alumno_direccion" placeholder="Barrio, Calle principal, #casa, calle secundaria"></textarea>
+														</div>	
+													</div>
+													<div class="col-md-4">
+														<div class="form-group">
+															<label for="alumno_unidadid">Unidad Educativa</label>
+															<select class="form-control select2" style="width: 100%;" id="alumno_unidadid" name="alumno_unidadid">
+																<?php echo $insAlumno->listarUnidadEducativa($unidadid); ?>
+															</select>
+														</div> 
+													</div>
+													<div class="col-md-2">
+														<div class="form-group">
+															<label for="alumno_hermanos">Tiene hermanos?</label>
+															<!-- radio -->
+															<div class="form-check">
+																<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosSi" name="alumno_hermanos" value="S" required="required">
+																<label class="col-sm-6 form-check-label" for="alumno_hermanosSi">Si</label>
+																<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosNo" name="alumno_hermanos" value="N" >
+																<label class="col-sm-4 form-check-label" for="alumno_hermanosNo">No</label>
 															</div>
-														<!-- /.input group -->
-														</div>								
+														</div>
 													</div>
 												</div>
 												<!-- Fin primera sección foto-->
@@ -222,11 +250,20 @@
 
 										<!-- Segunda sección foto-->
 										<div class="row">
-											<div class="col-md-2">
+											<div class="col-md-3">
 												<div class="form-group">
-													<label for="Numcamiseta">Número de camiseta</label>
-													<input type="text" class="form-control" id="alumno_numcamiseta" name="alumno_numcamiseta" placeholder="Número de camiseta"> 
-												</div>
+													<label for="alumno_fechaingreso">Fecha ingreso</label>
+													<div class="input-group">
+														<div class="input-group-prepend">
+															<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+														</div>
+														<input type="date" class="form-control" id="alumno_fechaingreso" name="alumno_fechaingreso" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" data-mask required="required">
+														<div class="input-group-append">
+															<span id="ingreso_texto" class="input-group-text" style="min-width:50px; font-weight:bold; color:#007bff;">--</span>
+														</div>
+													</div>
+												<!-- /.input group -->
+												</div>								
 											</div>
 											<div class="col-md-2">
 												<div class="form-group">
@@ -235,42 +272,25 @@
 														<?php echo $insAlumno->listarOptionSede($_SESSION['rol'], $_SESSION['usuario']); ?>
 													</select>	
 												</div>
-											</div> 
-											<div class="col-md-4">
+											</div>
+											<div class="col-md-2">
 												<div class="form-group">
-													<label for="alumno_direccion">Dirección</label>
-													<textarea class="form-control" id="alumno_direccion" name="alumno_direccion" placeholder="Barrio, Calle principal, #casa, calle secundaria"></textarea>
-												</div>	
-											</div> 
-											<div class="col-md-4">
+													<label for="Numcarnet">Número de carnet</label>
+													<input type="text" class="form-control" id="alumno_carnet" name="alumno_carnet" placeholder="Número de carnet" inputmode="numeric" pattern="[0-9]*"> 
+												</div>
+											</div>
+											<div class="col-md-2">
+												<div class="form-group">
+													<label for="Numcamiseta">Número de camiseta</label>
+													<input type="text" class="form-control" id="alumno_numcamiseta" name="alumno_numcamiseta" placeholder="Número de camiseta" inputmode="numeric" pattern="[0-9]*"> 
+												</div>
+											</div> 	 
+											<div class="col-md-3">
 												<div class="form-group">
 													<label for="alumno_observacion">Observación</label>
 													<textarea class="form-control" id="alumno_observacion" name="alumno_observacion" placeholder="Observacion"></textarea>
 												</div>	
-											</div>  
-											<div class="col-md-2">
-												<div class="form-group">
-													<label for="alumno_hermanos">Tiene hermanos?</label>
-													<!-- radio -->
-													<div class="form-check">
-														<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosSi" name="alumno_hermanos" value="S" required="required">
-														<label class="col-sm-6 form-check-label" for="alumno_hermanosSi">Si</label>
-														<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosNo" name="alumno_hermanos" value="N" >
-														<label class="col-sm-4 form-check-label" for="alumno_hermanosNo">No</label>
-													</div>
-												</div>
-											</div>	 
-											<div class="col-md-3">
-												<div class="form-group">
-													<label for="alumno_genero">Género</label>
-													<div class="form-check">
-														<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoM" name="alumno_genero" value="M" required="required">
-														<label class="col-sm-5 form-check-label" for="alumno_generoM">Masculino</label>
-														<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoF" name="alumno_genero" value="F">
-														<label class="col-sm-4 form-check-label" for="alumno_generoF">Femenino</label>
-													</div> 
-												</div>
-											</div>       
+											</div>    
 										</div>  <!--./row line 874--> 
 										<!-- Fin segunda sección foto-->			
 								</div>
@@ -531,7 +551,7 @@
 	
 	<!-- fileinput -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>
-    
+ 
 	<script>
 		$(function () {
 			//Initialize Select2 Elements
@@ -665,6 +685,58 @@
 			myDropzone.removeAllFiles(true)
 		}
 		// DropzoneJS Demo Code End
+	</script>
+
+	<script>
+		document.getElementById("alumno_fechanacimiento").addEventListener("input", function() {
+			const fechaNacimiento = new Date(this.value);
+			const edadTexto = document.getElementById("edad_texto");
+
+			if (!isNaN(fechaNacimiento)) {
+				const hoy = new Date();
+				let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+				const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+
+				// Ajuste si no ha cumplido años aún este año
+				if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+					edad--;
+				}
+
+				edadTexto.textContent = `${edad} años`;
+			} else {
+				edadTexto.textContent = "--";
+			}
+		});
+
+		document.getElementById("alumno_carnet").addEventListener("input", function() {
+			this.value = this.value.replace(/\D/g, ''); // Reemplaza cualquier carácter no numérico
+		});
+
+		document.getElementById("alumno_numcamiseta").addEventListener("input", function() {
+			this.value = this.value.replace(/\D/g, ''); // Reemplaza cualquier carácter no numérico
+		});
+	</script>
+
+	<script>
+		document.getElementById("alumno_fechaingreso").addEventListener("input", function() {
+			const fechaIngreso = new Date(this.value);
+			const ingresoTexto = document.getElementById("ingreso_texto");
+
+			if (!isNaN(fechaIngreso)) {
+				const hoy = new Date();
+				let edad = hoy.getFullYear() - fechaIngreso.getFullYear();
+				const mes = hoy.getMonth() - fechaIngreso.getMonth();
+
+				// Ajuste si no ha cumplido años aún este año
+				if (mes < 0 || (mes === 0 && hoy.getDate() < fechaIngreso.getDate())) {
+					edad--;
+				}
+
+				ingresoTexto.textContent = `${edad} años`;
+			} else {
+				ingresoTexto.textContent = "--";
+			}
+		});
 	</script>
 
 	<!-- horarioid-->
