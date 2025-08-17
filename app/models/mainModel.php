@@ -159,7 +159,7 @@ class mainModel
         return true;
     }
 
-     /* funcion para validar el numero de cedula*/	
+     /* funcion para validar el numero de cedula */	
     public function validarCedula($cedula) {
         // Eliminar caracteres no numéricos
         $cedula = preg_replace('/[^0-9]/', '', $cedula);
