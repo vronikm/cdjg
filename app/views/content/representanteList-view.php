@@ -71,7 +71,7 @@
 			<div class="container-fluid">
 			<div class="row mb-2">
 				<div class="col-sm-6">
-				<h1 class="m-0">Representantes</h1>
+				<h3 class="m-0">Representantes</h3>
 				</div><!-- /.col -->
 				<div class="col-sm-6">
 				<ol class="breadcrumb float-sm-right">
@@ -101,29 +101,28 @@
 
 						<!-- card-body -->                
 						<div class="card-body">
-							<div class="row">
+							<div class="row align-items-end">
 								<div class="col-sm-3">
-									<div class="form-group">
+									<div class="form-group input-group-sm">
 										<label for="repre_identificacion">Identificación</label>                        
 										<input type="text" class="form-control" id="repre_identificacion" name="repre_identificacion" placeholder="Identificación" value="<?php echo $repre_identificacion; ?>">
 									</div>        
 								</div>
 								<div class="col-sm-3">
-									<div class="form-group">
+									<div class="form-group input-group-sm">
 										<label for="repre_apellido1">Apellido paterno</label>
 										<input type="text" class="form-control" id="repre_apellido1" name="repre_apellido1" placeholder="Primer apellido" value="<?php echo $repre_apellidopaterno; ?>">
 									</div>         
 								</div>
 								<div class="col-md-3">
-									<div class="form-group">
+									<div class="form-group input-group-sm">
 										<label for="repre_nombre1">Primer nombre</label>
 										<input type="text" class="form-control" id="repre_nombre1" name="repre_nombre1" placeholder="Primer nombre" value="<?php echo $repre_primernombre; ?>">
 									</div>
 								</div>								
 								<div class="col-md-2">
-									<div class="form-group">
-										<label for="repre_buscar">.</label>
-										<button type="submit" class="form-control btn btn-info">Buscar</button>
+									<div class="form-group input-group-sm">
+										<button type="submit" class="form-control btn btn-sm btn-info"> <i class="fas fa-search"></i> Buscar</button>
 									</div>
 								</div>	
 							</div>					

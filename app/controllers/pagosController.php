@@ -77,8 +77,8 @@
 						<td>'.$rows['alumno_apellidopaterno'].' '.$rows['alumno_apellidomaterno'].'</td>
 						<td>'.$rows['alumno_fechanacimiento'].'</td>
 						<td>
-							<a href="'.APP_URL.'pagosNew/'.$rows['alumno_id'].'/" class="btn float-right '.$botonpago.' btn-sm" target="_blank">Registrar pagos</a>
-							<a href="'.APP_URL.'pagosDescuento/'.$rows['alumno_id'].'/" class="btn float-right '.$boton.' btn-sm" style="margin-right: 5px;" target="_blank">Descuentos</a>
+							<a href="'.APP_URL.'pagosNew/'.$rows['alumno_id'].'/" class="btn float-right '.$botonpago.' btn-xs" target="_blank">Registrar pagos</a>
+							<a href="'.APP_URL.'pagosDescuento/'.$rows['alumno_id'].'/" class="btn float-right '.$boton.' btn-xs" style="margin-right: 5px;" target="_blank">Descuentos</a>
 						</td>
 					</tr>';	
 			}

@@ -66,7 +66,7 @@
 			<div class="container-fluid">
 			<div class="row mb-2">
 				<div class="col-sm-6">
-				<h4 class="m-0">PAGOS RECEPTADOS </h4>
+				<h3 class="m-0">PAGOS RECEPTADOS </h3>
 				</div><!-- /.col -->
 				<div class="col-sm-6">
 				<ol class="breadcrumb float-sm-right">
@@ -94,11 +94,11 @@
 					</div>  
 					<!-- card-body -->                
 					<div class="card-body">
-						<div class="row">
+						<div class="row align-items-end">
 							<div class="col-md-4">
 								<div class="form-group campo">
 									<label for="pago_fecha">Fecha inicio</label>
-									<div class="input-group">
+									<div class="input-group input-group-sm">
 										<div class="input-group-prepend">
 											<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 										</div>
@@ -110,7 +110,7 @@
 							<div class="col-md-4">
 								<div class="form-group campo">
 									<label for="pago_fecha">Fecha fin</label>
-									<div class="input-group">
+									<div class="input-group input-group-sm">
 										<div class="input-group-prepend">
 											<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 										</div>
@@ -119,11 +119,9 @@
 									<!-- /.input group -->
 								</div>
 							</div>	
-							
 							<div class="col-md-3">
-								<div class="form-group">
-									<label for="alumno_sedeid">.</label>
-									<button type="submit" class="form-control btn btn-info">Buscar</button>
+								<div class="form-group input-group-sm">
+									<button type="submit" class="form-control btn btn-sm btn-info"><i class="fas fa-search"></i>Buscar</button>
 								</div>
 							</div>
 						</div>					

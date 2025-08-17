@@ -81,7 +81,7 @@
 			<div class="container-fluid">
 			<div class="row mb-2">
 				<div class="col-sm-6">
-				<h1 class="m-0">Búsqueda de alumnos</h1>
+				<h3 class="m-0">Búsqueda de alumnos</h3>
 				</div><!-- /.col -->
 				<div class="col-sm-6">
 				<ol class="breadcrumb float-sm-right">
@@ -110,36 +110,34 @@
 
 					<!-- card-body -->                
 					<div class="card-body">
-						<div class="row">
+						<div class="row align-items-end">
 							<div class="col-sm-2">
-								<div class="form-group">
+								<div class="form-group input-group-sm">
 									<label for="alumno_identificacion">Identificación</label>                        
 									<input type="text" class="form-control" id="alumno_identificacion" name="alumno_identificacion" placeholder="Identificación" value="<?php echo $alumno_identificacion; ?>">
 								</div>        
 							</div>
 							<div class="col-sm-2">
-								<div class="form-group">
+								<div class="form-group input-group-sm">
 									<label for="alumno_apellido1">Apellido paterno</label>
 									<input type="text" class="form-control" id="alumno_apellido1" name="alumno_apellido1" placeholder="Primer apellido" value="<?php echo $alumno_apellidopaterno; ?>">
 								</div>         
 							</div>
 							<div class="col-md-2">
-								<div class="form-group">
+								<div class="form-group input-group-sm">
 									<label for="alumno_nombre1">Primer nombre</label>
 									<input type="text" class="form-control" id="alumno_nombre1" name="alumno_nombre1" placeholder="Primer nombre" value="<?php echo $alumno_primernombre; ?>">
 								</div>
 							</div>  
 
 							<div class="col-md-2">
-								<div class="form-group">
-									<div class="form-group">
-										<label for="alumno_anio">Año</label>
-										<input type="text" class="form-control" id="alumno_anio" name="alumno_anio" placeholder="año" value="<?php echo $alumno_anio; ?>">
-									</div>	
+								<div class="form-group input-group-sm">								
+									<label for="alumno_anio">Año</label>
+									<input type="text" class="form-control" id="alumno_anio" name="alumno_anio" placeholder="año" value="<?php echo $alumno_anio; ?>">									
 								</div>
 							</div>
 							<div class="col-md-2">
-								<div class="form-group">
+								<div class="form-group input-group-sm">
 									<label for="alumno_sedeid">Sede</label>
 									<select class="form-control select2" id="alumno_sedeid" name="alumno_sedeid">
 										<?php
@@ -157,9 +155,8 @@
 							</div>
 
 							<div class="col-md-2">
-								<div class="form-group">
-									<label for="alumno_sedeid">.</label>
-									<button type="submit" class="form-control btn btn-info">Buscar</button>
+								<div class="form-group input-group-sm">
+									<button type="submit" class="form-control btn btn-sm btn-info"> <i class="fas fa-search"></i> Buscar</button>
 								</div>
 							</div>
 

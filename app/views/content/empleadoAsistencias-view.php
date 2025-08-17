@@ -63,7 +63,7 @@
 			<div class="container-fluid">
 			<div class="row mb-2">
 				<div class="col-sm-6">
-				<h1 class="m-0">Reporte de asistencia de empleados</h1>
+				<h3 class="m-0">Reporte de asistencia de empleados</h3>
 				</div><!-- /.col -->
 				<div class="col-sm-6">
 				<ol class="breadcrumb float-sm-right">
@@ -91,29 +91,30 @@
 						</div>
 						<!-- card-body -->                
 						<div class="card-body">
-							<div class="row">
+							<div class="row align-items-end">
 								<div class="col-md-3">
-									<div class="form-group">
+									<div class="form-group input-group-sm">
 										<label for="empleado_nombre">Nombre empleado</label>
 										<input type="text" class="form-control" id="empleado_nombre" name="empleado_nombre" placeholder="Nombre del empleado" value="<?php echo $empleado_nombre; ?>">
 									</div>
 								</div>
 								<div class="col-md-3">
-									<div class="form-group campo">
+									<div class="form-group">
 										<label for="asistencia_fecha_inicio">Fecha inicio</label>
-										<div class="input-group">
+										<div class="input-group input-group-sm">
 											<div class="input-group-prepend">
 												<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 											</div>
-											<input type="date" class="form-control" id="asistencia_fecha_inicio" name="asistencia_fecha_inicio" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" value=<?php echo $fecha_inicio;?> data-mask required>										
+											<input type="date" class="form-control form-control-sm"
+												id="asistencia_fecha_inicio" name="asistencia_fecha_inicio"
+												value="<?php echo $fechahoy; ?>">
 										</div>
-										<!-- /.input group -->
 									</div>
 								</div>
 								<div class="col-md-3">
-									<div class="form-group campo">
+									<div class="form-group">
 										<label for="asistencia_fecha_fin">Fecha fin</label>
-										<div class="input-group">
+										 <div class="input-group input-group-sm">
 											<div class="input-group-prepend">
 												<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 											</div>
@@ -123,9 +124,8 @@
 									</div>
 								</div>	
 								<div class="col-md-3">
-									<div class="form-group">
-										<label for="empleado_nombre">.</label>
-										<button type="submit" class="form-control btn btn-info">Buscar</button>
+									<div class="form-group input-group-sm">
+										<button type="submit" class="form-control btn btn-sm btn-info"><i class="fas fa-search"></i>Buscar</button>
 									</div>
 								</div>
 							</div>					
