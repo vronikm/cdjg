@@ -327,22 +327,50 @@
 															<div class="input-group-prepend">
 																<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 															</div>
-															<input type="date" class="form-control" name="alumno_fechanacimiento" value="<?php echo $datos['alumno_fechanacimiento']; ?>" required>
+															<input type="date" class="form-control" id="alumno_fechanacimiento" name="alumno_fechanacimiento" value="<?php echo $datos['alumno_fechanacimiento']; ?>" required>
+															<div class="input-group-append">
+																<span id="edad_texto" class="input-group-text" style="min-width:50px; font-weight:bold; color:#007bff;">--</span>
+															</div>
 														</div>
 													<!-- /.input group -->
 													</div>												
 												</div>
 												<div class="col-md-4">
 													<div class="form-group">
-														<label for="alumno_fechaingreso">Fecha ingreso</label>
-														<div class="input-group">
-															<div class="input-group-prepend">
-																<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-															</div>
-															<input type="date" class="form-control" name="alumno_fechaingreso" value="<?php echo $datos['alumno_fechaingreso']; ?>" required>
+														<label for="alumno_genero">Género</label>
+														<div class="form-check">
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoM" name="alumno_genero" value="M" <?php echo $alumno_generoM; ?> required>
+															<label class="col-sm-5 form-check-label" for="alumno_generoM">Masculino</label>
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoF" name="alumno_genero" value="F" <?php echo $alumno_generoF; ?>>
+															<label class="col-sm-4 form-check-label" for="alumno_generoF">Femenino</label>
+														</div> 
+													</div>
+												</div> 
+												<div class="col-md-4">
+													<div class="form-group">
+														<label for="alumno_direccion">Dirección</label>
+														<input type="text" class="form-control" id="alumno_direccion" name="alumno_direccion" value="<?php echo $datos['alumno_direccion']; ?>">
+													</div>	
+												</div>
+												<div class="col-md-4">
+													<div class="form-group">
+														<label for="alumno_unidadid">Unidad Educativa</label>
+														<select class="form-control select2" style="width: 100%;" id="alumno_unidadid" name="alumno_unidadid">
+															<?php echo $insAlumno->listarUnidadEducativa($datos['alumno_unidadid']); ?>
+														</select>
+													</div> 
+												</div>
+												<div class="col-md-2">
+													<div class="form-group">
+														<label for="alumno_hermanos">Tiene hermanos?</label>
+														<!-- radio -->
+														<div class="form-check">
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosSi" name="alumno_hermanos" value="S" <?php echo $alumno_hermanosSi; ?> required>
+															<label class="col-sm-6 form-check-label" for="alumno_hermanosSi">Si</label>
+															<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosNo" name="alumno_hermanos" value="N" <?php echo $alumno_hermanosNo; ?>>
+															<label class="col-sm-4 form-check-label" for="alumno_hermanosNo">No</label>
 														</div>
-													<!-- /.input group -->
-													</div>								
+													</div>
 												</div>
 											</div>
 											<!-- Fin primera sección foto-->
@@ -350,13 +378,19 @@
 									</div> <!--fin col md 10-->
 
 									<!-- Segunda sección foto-->
-									<div class="row">										
-										<div class="col-md-2">
+									<div class="row">
+										<div class="col-md-3">
 											<div class="form-group">
-												<label for="Numcamiseta">Número de camiseta</label>
-												<input type="text" class="form-control" id="alumno_numcamiseta" name="alumno_numcamiseta" value="<?php echo $datos['alumno_numcamiseta']; ?>"> 
-											</div>
-										</div>  
+												<label for="alumno_fechaingreso">Fecha ingreso</label>
+												<div class="input-group">
+													<input type="date" class="form-control" id="alumno_fechaingreso" name="alumno_fechaingreso" value="<?php echo $datos['alumno_fechaingreso']; ?>" required>
+													<div class="input-group-prepend">
+														<span id="ingreso_texto" class="input-group-text" style="font-weight:bold; color:#007bff;">--</span>
+													</div>
+												</div>
+											<!-- /.input group -->
+											</div>								
+										</div>	
 										<div class="col-md-2">
 											<div class="form-group">
 												<label for="alumno_sedeid">Sede</label>
@@ -364,42 +398,25 @@
 													<?php echo $insAlumno->listarSedeAlumno($datos['alumno_sedeid']); ?>
 												</select>	
 											</div>
-										</div> 
-										<div class="col-md-4">
-											<div class="form-group">
-												<label for="alumno_direccion">Dirección</label>
-												<input type="text" class="form-control" id="alumno_direccion" name="alumno_direccion" value="<?php echo $datos['alumno_direccion']; ?>">
-											</div>	
 										</div>
-										<div class="col-md-4">
+										<div class="col-md-2">
+											<div class="form-group">
+												<label for="Numcarnet">Número de carnet</label>
+												<input type="text" class="form-control" id="alumno_carnet" name="alumno_carnet" value="<?php echo $datos['alumno_carnet']; ?>" > 
+											</div>
+										</div> 									
+										<div class="col-md-2">
+											<div class="form-group">
+												<label for="Numcamiseta">Número de camiseta</label>
+												<input type="text" class="form-control" id="alumno_numcamiseta" name="alumno_numcamiseta" value="<?php echo $datos['alumno_numcamiseta']; ?>"> 
+											</div>
+										</div>  
+										<div class="col-md-3">
 											<div class="form-group">
 												<label for="alumno_observacion">Observación</label>
 												<input type="text" class="form-control" id="alumno_observacion" name="alumno_observacion" value="<?php echo $datos['alumno_observacion']; ?>">
 											</div>	
-										</div>
-										<div class="col-md-2">
-											<div class="form-group">
-												<label for="alumno_hermanos">Tiene hermanos?</label>
-												<!-- radio -->
-												<div class="form-check">
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosSi" name="alumno_hermanos" value="S" <?php echo $alumno_hermanosSi; ?> required>
-													<label class="col-sm-6 form-check-label" for="alumno_hermanosSi">Si</label>
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_hermanosNo" name="alumno_hermanos" value="N" <?php echo $alumno_hermanosNo; ?>>
-													<label class="col-sm-4 form-check-label" for="alumno_hermanosNo">No</label>
-												</div>
-											</div>
-										</div>	  
-										<div class="col-md-3">
-											<div class="form-group">
-												<label for="alumno_genero">Género</label>
-												<div class="form-check">
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoM" name="alumno_genero" value="M" <?php echo $alumno_generoM; ?> required>
-													<label class="col-sm-5 form-check-label" for="alumno_generoM">Masculino</label>
-													<input class="col-sm-1 form-check-input" type="radio" id="alumno_generoF" name="alumno_genero" value="F" <?php echo $alumno_generoF; ?>>
-													<label class="col-sm-4 form-check-label" for="alumno_generoF">Femenino</label>
-												</div> 
-											</div>
-										</div>   
+										</div>	    
 									</div>  <!--./row line 874--> 
 									<!-- Fin segunda sección foto-->			
 								</div>
@@ -753,6 +770,60 @@
 		})		
 	</script>
 
+	<script>
+		function calcularEdad(fecha) {
+			if (!fecha) return "";
+			const fechaNacimiento = new Date(fecha);
+			if (isNaN(fechaNacimiento)) return "";
+			
+			const hoy = new Date();
+			let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+			const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+			if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+				edad--;
+			}
+			return `${edad} años`;
+		}
+
+		function actualizarEdad() {
+			const fecha = document.getElementById("alumno_fechanacimiento").value;
+			document.getElementById("edad_texto").textContent = calcularEdad(fecha) || "--";
+		}
+
+		// Calcular edad al cargar la página
+		window.addEventListener("DOMContentLoaded", actualizarEdad);
+
+		// Recalcular edad cuando cambia la fecha
+		document.getElementById("alumno_fechanacimiento").addEventListener("input", actualizarEdad);
+
+		//-------------------------------Fecha ingreso ---------------------------------//
+
+		function calcularFechaIngreso(fecha) {
+			if (!fecha) return "";
+			const fechaIngreso = new Date(fecha);
+			if (isNaN(fechaIngreso)) return "";
+			
+			const hoy = new Date();
+			let edad = hoy.getFullYear() - fechaIngreso.getFullYear();
+			const mes = hoy.getMonth() - fechaIngreso.getMonth();
+			if (mes < 0 || (mes === 0 && hoy.getDate() < fechaIngreso.getDate())) {
+				edad--;
+			}
+			return `${edad} años`;
+		}
+
+		function actualizarIngreso() {
+			const fecha = document.getElementById("alumno_fechaingreso").value;
+			document.getElementById("ingreso_texto").textContent = calcularFechaIngreso(fecha) || "--";
+		}
+
+		// Calcular edad al cargar la página
+		window.addEventListener("DOMContentLoaded", actualizarIngreso);
+
+		// Recalcular edad cuando cambia la fecha
+		document.getElementById("alumno_fechaingreso").addEventListener("input", actualizarIngreso);
+	</script>
+	
 		<!-- horarioid-->
 		<script>
 		$(document).ready(function() {

@@ -300,6 +300,13 @@
                     </a>
                   </li>
 
+                  <li class="nav-item">
+                    <a href="<?php echo APP_URL."institucionList/" ?>" class="nav-link <?php if ($url[0]=='institucionList') echo 'active'; else echo ''; ?>" >
+                      <i class="nav-icon far fa-circle text-info"></i>
+                      <p>Institución</p>
+                    </a>
+                  </li>
+
                 </ul>
               </li>
 

@@ -16,18 +16,21 @@
 			$alumno_primernombre 		= $this->limpiarCadena($_POST['alumno_nombre1']);
 			$alumno_segundonombre 		= $this->limpiarCadena($_POST['alumno_nombre2']);
 			$alumno_nacionalidadid		= $this->limpiarCadena($_POST['alumno_nacionalidadid']);
+			$alumno_unidadid			= $this->limpiarCadena($_POST['alumno_unidadid']);
 			$alumno_fechanacimiento 	= $this->limpiarCadena($_POST['alumno_fechanacimiento']);
 			$alumno_direccion 			= $this->limpiarCadena($_POST['alumno_direccion']);	
 			$alumno_observacion 		= $this->limpiarCadena($_POST['alumno_observacion']);	
 			$alumno_fechaingreso		= $this->limpiarCadena($_POST['alumno_fechaingreso']);
-			$alumno_sedeid 				= $this->limpiarCadena($_POST['alumno_sedeid']);
+			$alumno_sedeid 				= $this->limpiarCadena($_POST['alumno_sedeid']);			
 			$alumno_nombrecorto 		= ""; //$this->limpiarCadena($_POST['alumno_nombrecorto']);
-			$alumno_posicionid			= ""; //$this->limpiarCadena($_POST['alumno_posicionid']);					
+			$alumno_posicionid			= ""; //$this->limpiarCadena($_POST['alumno_posicionid']);	
+			$alumno_carnet 				= $_POST['alumno_carnet'];				
 			$alumno_numcamiseta 		= $_POST['alumno_numcamiseta'];
 			$alumno_estado 				= "A";
 			$alumno_genero 				= "";
 			$alumno_hermanos 			= "";
 
+			if ($alumno_carnet == "" ){$alumno_carnet = 0;}
 			if ($alumno_numcamiseta == "" ){$alumno_numcamiseta = 0;}
 
 			if (isset($_POST['alumno_genero']) && isset($_POST['alumno_hermanos'])) {
@@ -342,6 +345,11 @@
 					"campo_valor"=>$alumno_tipoidentificacion
 				],
 				[
+					"campo_nombre"=>"alumno_unidadid",
+					"campo_marcador"=>":UnidadEducativa",
+					"campo_valor"=>$alumno_unidadid
+				],
+				[
 					"campo_nombre"=>"alumno_identificacion",
 					"campo_marcador"=>":Identificacion",
 					"campo_valor"=>$alumno_identificacion
@@ -410,6 +418,11 @@
 					"campo_nombre"=>"alumno_imagen",
 					"campo_marcador"=>":Foto",
 					"campo_valor"=>$foto
+				],
+				[
+					"campo_nombre"=>"alumno_carnet",
+					"campo_marcador"=>":Carnet",
+					"campo_valor"=>$alumno_carnet
 				],
 				[
 					"campo_nombre"=>"alumno_numcamiseta",
@@ -630,7 +643,8 @@
 			} 					
 
 			$tabla="";
-			$consulta_datos="SELECT * FROM sujeto_alumno 
+			$consulta_datos="SELECT *, TIMESTAMPDIFF(YEAR, alumno_fechanacimiento, CURDATE()) AS EDAD
+								FROM sujeto_alumno 
 								WHERE (alumno_primernombre LIKE '".$primernombre."' 
 								OR alumno_identificacion LIKE '".$identificacion."' 
 								OR alumno_apellidopaterno LIKE '".$apellidopaterno."') ";			
@@ -639,11 +653,11 @@
 			}
 
 			if($identificacion=="" && $primernombre=="" && $apellidopaterno==""){
-				$consulta_datos="SELECT * FROM sujeto_alumno WHERE YEAR(alumno_fechanacimiento) = '".$ano."'";
+				$consulta_datos="SELECT *, TIMESTAMPDIFF(YEAR, alumno_fechanacimiento, CURDATE()) AS EDAD FROM sujeto_alumno WHERE YEAR(alumno_fechanacimiento) = '".$ano."'";
 			}
 			
 			if($identificacion=="" && $primernombre=="" && $apellidopaterno=="" && $ano == ""){
-				$consulta_datos = "SELECT * FROM sujeto_alumno WHERE alumno_primernombre <> '' ";
+				$consulta_datos = "SELECT *, TIMESTAMPDIFF(YEAR, alumno_fechanacimiento, CURDATE()) AS EDAD FROM sujeto_alumno WHERE alumno_primernombre <> '' ";
 			}
 
 			if($sede!=""){
@@ -653,7 +667,7 @@
 					$consulta_datos .= " and alumno_sedeid = '".$sede."'"; 
 				}
 			}else{
-				$consulta_datos = "SELECT * FROM sujeto_alumno WHERE alumno_primernombre = ''";
+				$consulta_datos = "SELECT *, TIMESTAMPDIFF(YEAR, alumno_fechanacimiento, CURDATE()) AS EDAD FROM sujeto_alumno WHERE alumno_primernombre = ''";
 			}			
 
 			$consulta_datos .= " AND alumno_estado <> 'E' ORDER BY alumno_numcamiseta"; 
@@ -674,10 +688,10 @@
 				$tabla.='
 					<tr>
 						<td>'.$rows['alumno_identificacion'].'</td>
-						<td>'.$rows['alumno_numcamiseta'].'</td>
+						<td>'.$rows['alumno_carnet'].'</td>
 						<td>'.$rows['alumno_primernombre'].' '.$rows['alumno_segundonombre'].'</td>
 						<td>'.$rows['alumno_apellidopaterno'].' '.$rows['alumno_apellidomaterno'].'</td>
-						<td>'.$rows['alumno_fechanacimiento'].'</td>
+						<td>'.$rows['alumno_fechanacimiento'].' - <p style="font-weight:bold; color:#007bff; display:inline; margin:0;">'.$rows['EDAD'].' años</p></td>
 						<td>
 							<form class="FormularioAjax" action="'.APP_URL.'app/ajax/alumnoAjax.php" method="POST" autocomplete="off" >
 								<input type="hidden" name="modulo_alumno" value="eliminar">
@@ -938,17 +952,20 @@
 			$alumno_primernombre 		= $this->limpiarCadena($_POST['alumno_nombre1']);
 			$alumno_segundonombre 		= $this->limpiarCadena($_POST['alumno_nombre2']);
 			$alumno_nacionalidadid		= $this->limpiarCadena($_POST['alumno_nacionalidadid']);
+			$alumno_unidadid			= $this->limpiarCadena($_POST['alumno_unidadid']);
 			$alumno_fechanacimiento 	= $this->limpiarCadena($_POST['alumno_fechanacimiento']);
 			$alumno_direccion 			= $this->limpiarCadena($_POST['alumno_direccion']);	
 			$alumno_observacion 		= $this->limpiarCadena($_POST['alumno_observacion']);	
 			$alumno_fechaingreso		= $this->limpiarCadena($_POST['alumno_fechaingreso']);
 			$alumno_sedeid 				= $this->limpiarCadena($_POST['alumno_sedeid']);
 			$alumno_nombrecorto 		= ""; //$this->limpiarCadena($_POST['alumno_nombrecorto']);
-			$alumno_posicionid			= ""; //$this->limpiarCadena($_POST['alumno_posicionid']);					
-			$alumno_numcamiseta 		= $_POST['alumno_numcamiseta'];
+			$alumno_posicionid			= ""; //$this->limpiarCadena($_POST['alumno_posicionid']);		
+			$alumno_carnet 				= $this->limpiarCadena($_POST['alumno_carnet']);			
+			$alumno_numcamiseta 		= $this->limpiarCadena($_POST['alumno_numcamiseta']);
 			$alumno_genero 				= "";
 			$alumno_hermanos 			= "";
 
+			if ($alumno_carnet == ""){$alumno_carnet = 0;}
 			if ($alumno_numcamiseta == ""){$alumno_numcamiseta = 0;}
 
 			if (isset($_POST['alumno_genero']) && isset($_POST['alumno_hermanos'])) {
@@ -1007,6 +1024,11 @@
 					"campo_nombre"=>"alumno_tipoidentificacion",
 					"campo_marcador"=>":Tipoidentificacion",
 					"campo_valor"=>$alumno_tipoidentificacion
+				],
+				[
+					"campo_nombre"=>"alumno_unidadid",
+					"campo_marcador"=>":UnidadEducativa",
+					"campo_valor"=>$alumno_unidadid
 				],
 				[
 					"campo_nombre"=>"alumno_identificacion",
@@ -1068,6 +1090,11 @@
 					"campo_marcador"=>":Hermanos",
 					"campo_valor"=>$alumno_hermanos
 				],			
+				[
+					"campo_nombre"=>"alumno_carnet",
+					"campo_marcador"=>":Carnet",
+					"campo_valor"=>$alumno_carnet
+				],
 				[
 					"campo_nombre"=>"alumno_numcamiseta",
 					"campo_marcador"=>":Camiseta",
@@ -2006,6 +2033,26 @@
 			$datos = $datos->fetchAll();
 			foreach($datos as $rows){
 				$option.='<option value='.$rows['catalogo_valor'].'>'.$rows['catalogo_descripcion'].'</option>';	
+			}
+			return $option;
+		}
+
+		public function listarUnidadEducativa($unidadid){
+		
+			$option ='<option value=0> Seleccione la unidad educativa</option>';
+
+			$consulta_datos="SELECT institucion_id, institucion_nombre
+								FROM general_institucion
+								WHERE institucion_estado = 'A'";	
+					
+			$datos = $this->ejecutarConsulta($consulta_datos);
+			$datos = $datos->fetchAll();
+			foreach($datos as $rows){
+				if($unidadid == $rows['institucion_id']){	
+					$option.='<option value='.$rows['institucion_id'].' selected="selected">'.$rows['institucion_nombre'].'</option>';
+				}else{
+					$option.='<option value='.$rows['institucion_id'].'>'.$rows['institucion_nombre'].'</option>';
+				}					
 			}
 			return $option;
 		}
