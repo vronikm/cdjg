@@ -108,8 +108,8 @@
 
 			/* ----------  5. Redirección según rol ---------- */
 			$destino = match ($_SESSION['rol']) {
-				4       => APP_URL . 'representanteList/',
-				1, 2, 6 => APP_URL . 'dashboard/',
+				//4       => APP_URL . 'representanteList/',
+				1, 2, 4, 5 => APP_URL . 'dashboard/',
 				default => APP_URL . 'empleadoEntrada/',
 			};
 
