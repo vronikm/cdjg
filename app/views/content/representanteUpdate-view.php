@@ -217,7 +217,7 @@
 											<div class="form-group">
 												<label for="repre_parentesco">Parentesco</label>
 												<select class="form-control select2" style="width: 100%;" id="repre_parentesco" name="repre_parentesco" >													
-													<?php echo $insRepre->listarOptionParentesco($repre_parentesco); ?>
+													<?php echo $insRepre->listarCatalogoParentesco($repre_parentesco); ?>
 												</select>
 											</div> 
 										</div>

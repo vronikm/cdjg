@@ -93,7 +93,7 @@
 
 		<!-- Section búsqueda de representados -->
 		<section class="content">
-			<form action="<?php echo APP_URL."representanteAsoc/".$repreid."/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >
+			<form action="<?php echo APP_URL."representanteVinc/".$repreid."/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >
 			
 			<div class="container-fluid">
 				<div class="card card-default">

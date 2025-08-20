@@ -319,7 +319,7 @@
 			return $option;
 		}
 		
-		public function listarCatalogoParentesco(){
+		public function listarCatalogoParentesco($repre_parentesco){
 			$option ='<option value=0> Seleccione una opción</option>';
 
 			$consulta_datos="SELECT C.catalogo_valor, C.catalogo_descripcion 
@@ -330,7 +330,11 @@
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
 			foreach($datos as $rows){
-				$option.='<option value='.$rows['catalogo_valor'].'>'.$rows['catalogo_descripcion'].'</option>';	
+				if($repre_parentesco == $rows['catalogo_valor']){
+					$option.='<option value='.$rows['catalogo_valor'].' selected="selected">'.$rows['catalogo_descripcion'].'</option>';
+				}else{
+					$option.='<option value='.$rows['catalogo_valor'].'>'.$rows['catalogo_descripcion'].'</option>';	
+				}	
 			}
 			return $option;
 		}
@@ -355,25 +359,7 @@
 			}
 			return $option;
 		}
-		public function listarOptionParentesco($cemer_parentesco){
-			$option="";
-
-			$consulta_datos="SELECT C.catalogo_valor, C.catalogo_descripcion 
-								FROM general_tabla_catalogo C
-								INNER JOIN general_tabla T on T.tabla_id = C.catalogo_tablaid
-								WHERE T.tabla_nombre = 'parentesco'";	
-					
-			$datos = $this->ejecutarConsulta($consulta_datos);
-			$datos = $datos->fetchAll();
-			foreach($datos as $rows){
-				if($cemer_parentesco == $rows['catalogo_valor']){
-					$option.='<option value='.$rows['catalogo_valor'].' selected="selected">'.$rows['catalogo_descripcion'].'</option>';	
-				}else{
-					$option.='<option value='.$rows['catalogo_valor'].'>'.$rows['catalogo_descripcion'].'</option>';	
-				}
-			}
-			return $option;
-		}
+		
 		/*----------  Matriz de representados  ----------*/
 		public function listarRepresentados($repreid){
 			$tabla="";

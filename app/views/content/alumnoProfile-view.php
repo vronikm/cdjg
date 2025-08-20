@@ -403,7 +403,7 @@
 									<!-- Fin segunda sección foto-->			
 								</div>
 
-								<!-- Tab información contacto de emergencia -->
+								<!-- Tab información representante -->
 								<div class="tab-pane" id="representante">
 									<div class="row">
 										<div class="col-md-3">
@@ -546,7 +546,7 @@
 											<div class="form-group">
 												<label for="cemer_parentesco">Parentesco</label>
 												<select class="form-control select2" style="width: 100%;" id="cemer_parentesco" name="cemer_parentesco" disabled >
-													<?php echo $insAlumno->listarOptionParentesco($cemer_parentesco); ?>
+													<?php echo $insAlumno->listarCatalogoParentesco($cemer_parentesco); ?>
 												</select>
 											</div> 
 										</div>
