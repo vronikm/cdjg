@@ -491,7 +491,8 @@
 									<div class="card-footer">						
 										<button type="submit" class="btn btn-success btn-sm">Guardar</button>
 										<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>
-										<a class="btn btn-dark btn-sm" href="#" onclick="cerrarVentana(); return false;">Regresar</a>					
+										<!--a class="btn btn-dark btn-sm" href="#" onclick="cerrarVentana(); return false;">Regresar</a-->					
+										<?php include "./app/views/inc/btn_back.php";	?>						
 									</div>	
 								</form>	
 								<!-- /.tab-pane -->
