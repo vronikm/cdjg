@@ -394,7 +394,7 @@
 													echo '						
 														<div class="card-footer">						
 															<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-															<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>						
+															<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
 														</div>
 													';
 												}
@@ -547,7 +547,7 @@
 													echo '
 														<div class="card-footer">						
 															<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-															<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>						
+															<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
 														</div>
 													';							
 												}
@@ -679,7 +679,7 @@
 											<!-- /.post -->
 											<div class="card-footer">						
 												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-												<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>						
+												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
 											</div>
 											</form>
 
@@ -812,7 +812,7 @@
 											<!-- /.post -->
 											<div class="card-footer">						
 												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-												<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>						
+												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
 											</div>	
 											</form>	
 											
@@ -934,11 +934,16 @@
 													</div>
 												</div>										
 												<!-- /.post -->
-											<div class="card-footer">						
-												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-												<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>						
-											</div>	
+												<div class="card-footer">						
+													<button type="submit" class="btn btn-success btn-sm">Guardar</button>
+													<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>
+													<a href="#" class="btn btn-dark btn-sm" onclick="document.getElementById('form-regresar').submit(); return false;">Regresar</a>					
+												</div>	
 											</form>	
+
+											<form id="form-regresar" action="<?php echo APP_URL."pagosList/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >	
+												<input type="hidden" name="alumno_sedeid" value="<?php echo $sede; ?>">												
+											</form>
 											
 											<div class="tab-custom-content">
 												<p class="lead mb-0">Pagos realizados por accesorios de entrenamiento</p>
@@ -1060,7 +1065,7 @@
 
 											<div class="card-footer">						
 												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-												<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>						
+												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
 											</div>	
 											</form>	
 											
@@ -1139,8 +1144,7 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>		
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>	
 	<!-- fileinput -->
-	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>  
-	
+	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>	
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/ekko-lightbox/ekko-lightbox.min.js"></script>
 		
 	<script>
@@ -1266,5 +1270,34 @@
 		})		
 	</script>
 	
+	<script>
+		// Guardar el tab activo cuando el usuario cambia de pestaña
+		document.querySelectorAll('a[data-toggle="tab"]').forEach(tab => {
+			tab.addEventListener('shown.bs.tab', function (e) {
+				localStorage.setItem('activeTab', e.target.getAttribute('href'));
+			});
+		});
+
+		// Antes de enviar cualquier formulario Ajax, guardar el tab activo
+		document.querySelectorAll("form.FormularioAjax").forEach(form => {
+			form.addEventListener("submit", function () {
+				let activeTab = document.querySelector(".nav-pills .nav-link.active");
+				if (activeTab) {
+					localStorage.setItem("activeTab", activeTab.getAttribute("href"));
+				}
+			});
+		});
+
+		// Restaurar el tab activo después del reload
+		window.addEventListener("load", function () {
+			let activeTab = localStorage.getItem("activeTab");
+			if (activeTab) {
+				let tab = document.querySelector(a[href="${activeTab}"]);
+				if (tab) {
+					new bootstrap.Tab(tab).show(); // Bootstrap 4/5 activa el tab
+				}
+			}
+		});
+	</script>
   </body>
 </html>

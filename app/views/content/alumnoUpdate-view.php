@@ -149,8 +149,7 @@
 	<!-- Google Font: Source Sans Pro -->
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
 	<!-- Font Awesome -->
-	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/fontawesome-free/css/all.min.css">
-	
+	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/fontawesome-free/css/all.min.css">	
 	<!-- daterange picker -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/daterangepicker/daterangepicker.css">
 	<!-- iCheck for checkboxes and radio inputs -->
@@ -167,15 +166,10 @@
 	<!-- BS Stepper -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/bs-stepper/css/bs-stepper.min.css">
 	<!-- dropzonejs -->
-	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/dropzone/min/dropzone.min.css">
-	
+	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/dropzone/min/dropzone.min.css">	
 	<!-- Theme style -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/adminlte.css">
-
-
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/sweetalert2.min.css">
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/sweetalert2.all.min.js" ></script>
-
 	<!-- fileinput -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.css">
     
@@ -197,11 +191,6 @@
 
   <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-
-		<!-- Preloader -->
-		<!--?php require_once "app/views/inc/preloader.php"; ?-->
-		<!-- /.Preloader -->
-
 		<!-- Navbar -->
 		<?php require_once "app/views/inc/navbar.php"; ?>
 		<!-- /.navbar -->
@@ -212,7 +201,6 @@
 
 		<!-- vista -->
 		<div class="content-wrapper">
-
 			<!-- Content Header (Page header) -->
 			<div class="content-header">
 				<div class="container-fluid">
@@ -234,7 +222,7 @@
 			<!-- Main content -->
 			<section class="content">				
 				<!-- /.container-fluid información alumno -->
-				<form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/alumnoAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data" >
+				<form id="formAlumno" class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/alumnoAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data" novalidate>
 				<input type="hidden" name="modulo_alumno" value="actualizar">
 				<input type="hidden" name="alumno_id" value="<?php echo $datos['alumno_id']; ?>">
 				<div class="container-fluid">						
@@ -508,13 +496,13 @@
 									<div class="row">
 										<div class="col-md-3">
 											<div class="form-group">
-												<label for="CEmergencia">Celular</label>
+												<label for="cemer_celular">Celular emergencia</label>
 												<input type="text" class="form-control" id="cemer_celular" name="cemer_celular" value="<?php echo $cemer_celular;?>" >                          
 											</div>
 										</div>
 										<div class="col-md-3">
 											<div class="form-group">
-												<label for="Nomcontactoemer">Nombre contacto</label>
+												<label for="cemer_nombre">Nombre contacto emergencia</label>
 												<input type="text" class="form-control" id="cemer_nombre" name="cemer_nombre" value="<?php echo $cemer_nombre;?>" >                          
 											</div>
 										</div>
@@ -677,14 +665,10 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/bs-stepper/js/bs-stepper.min.js"></script>
 	<!-- dropzonejs -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/dropzone/min/dropzone.min.js"></script>
-
 	<!-- AdminLTE App -->
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>
-		
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>		
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>
-
-	<!--script src="app/views/dist/js/main.js" ></script-->
-	
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/sweetalert2.all.min.js" ></script>	
 	<!-- fileinput -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>
     
@@ -824,8 +808,8 @@
 		document.getElementById("alumno_fechaingreso").addEventListener("input", actualizarIngreso);
 	</script>
 	
-		<!-- horarioid-->
-		<script>
+	<!-- horarioid-->
+	<script>
 		$(document).ready(function() {
 			$('#horarioid').change(function() {
 				var horario_id = $(this).val();
@@ -849,6 +833,77 @@
 		});
 	</script>	
 	
+	<!-- Controlar los campos required y volver al tab-pane que tienes los campos vacíos-->
+	<script>
+		document.addEventListener("DOMContentLoaded", function() {
+			document.getElementById("formAlumno").addEventListener("submit", function(e) {
+				let form = this;
+				let camposRequeridos = form.querySelectorAll("[required]");
+				let valido = true;
+				let primerCampoVacio = null;
+
+				camposRequeridos.forEach(function(campo){
+					if((campo.type === "radio" || campo.type === "checkbox")){
+						// Validación para radios/checkbox
+						let grupo = form.querySelectorAll(`[name="${campo.name}"]`);
+						let algunoMarcado = Array.from(grupo).some(el => el.checked);
+						if(!algunoMarcado){
+							valido = false;
+							if(!primerCampoVacio) primerCampoVacio = campo;
+						}
+					} else if(!campo.value.trim()){
+						valido = false;
+						campo.style.border = "1px solid red";
+						if(!primerCampoVacio) primerCampoVacio = campo;
+					} else {
+						campo.style.border = "";
+					}
+				});
+
+				if(!valido){
+					e.preventDefault();
+
+					if(primerCampoVacio){
+						// Obtener label del campo
+						let labelTexto = "";
+						let label = form.querySelector(`label[for="${primerCampoVacio.id}"]`);
+						if(label){
+							labelTexto = label.innerText.trim();
+						} else {
+							let labelPadre = primerCampoVacio.closest("label");
+							if(labelPadre){
+								labelTexto = labelPadre.innerText.trim();
+							}
+						}
+
+						// Abrir tab donde está el campo vacío
+						let tabPane = primerCampoVacio.closest(".tab-pane");
+						if(tabPane && !tabPane.classList.contains("active")){
+							let trigger =
+								document.querySelector(`.nav-pills [href="#${tabPane.id}"]`) ||
+								document.querySelector(`.nav-pills [data-toggle="tab"][data-target="#${tabPane.id}"]`);
+							if(trigger){
+								trigger.click(); // activa el tab
+							}
+						}
+
+						// Dar foco al campo vacío
+						setTimeout(() => {
+							primerCampoVacio.focus();
+						}, 200);
+
+						// Mostrar alerta con nombre del campo
+						Swal.fire({
+							title: "Error",
+							text: `Por favor complete el campo obligatorio: "${labelTexto}"`,
+							icon: "error"
+						});
+					}
+				}
+			});
+		});
+	</script>
+
 	<script>
 		function cerrarVentana() {
 			window.close();
