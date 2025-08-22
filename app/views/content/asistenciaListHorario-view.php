@@ -81,17 +81,17 @@
 		</div>
 		<!-- /.content-header -->
 
-		<!-- Section listado de alumnos -->
+		<!-- Section listado de horarios -->
 		<section class="content">			
 			<div class="container-fluid">
 				<div class="card card-default" style='height: 140px;'>
 					<div class="card-header" style='height: 40px;'>
 						<h3 class="card-title">Búsqueda de horarios</h3>
 						<div class="card-tools">
-								<?php
+							<?php
 								if($horario_sedeid != 0){
 									echo '										
-										<form action="'.APP_URL.'asistenciaHorario/"  method="POST" autocomplete="off" target="_blank">								
+										<form action="'.APP_URL.'asistenciaHorario/"  method="POST" autocomplete="off">								
 											<input type="hidden" name="horario_sedeid" value="'.$horario_sedeid.'">						
 											<button type="submit" class="btn float-right btn-ver btn-xs" >Nuevo</button>
 										</form>	
@@ -104,21 +104,21 @@
 					<form action="<?php echo APP_URL."asistenciaListHorario/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >
 					<!-- card-body -->                
 						<div class="card-body">
-							<div class="row" style='font-size: 14px; height: 60px;'>
+							<div class="row align-items-end">
 								<div class="col-sm-3">
-									<div class="form-group">
+									<div class="form-group input-group-sm">
 										<label for="horario_nombre">Horario nombre</label>                        
 										<input type="text" class="form-control" style='font-size: 13px; height: 31px;' id="horario_nombre" name="horario_nombre" placeholder="Nombre" value="<?php echo $horario_nombre; ?>">
 									</div>        
 								</div>
 								<div class="col-sm-3">
-									<div class="form-group">
+									<div class="form-group input-group-sm">
 										<label for="horario_detalle">Horario detalle</label>
 										<input type="text" class="form-control" style='font-size: 13px; height: 31px;' id="horario_detalle" name="horario_detalle" placeholder="Detalle" value="<?php echo $horario_detalle; ?>">
 									</div>         
 								</div>											
 								<div class="col-md-3">
-									<div class="form-group">
+									<div class="form-group input-group-sm">
 										<label for="horario_sedeid">Sede</label>
 										<select class="form-control select2" style='font-size: 13px; height: 31px;' id="horario_sedeid" name="horario_sedeid">
 											<?php
@@ -134,9 +134,8 @@
 								</div>
 
 								<div class="col-md-3">
-									<div class="form-group">
-										<label for="alumno_sedeid">.</label>
-										<button type="submit" style='font-size: 13px; height: 31px;' class="form-control btn btn-info">Buscar</button>
+									<div class="form-group input-group-sm">
+										<button type="submit" class="form-control btn btn-sm btn-info"><i class="fas fa-search"></i>Buscar</button>
 									</div>
 								</div>
 							</div>						

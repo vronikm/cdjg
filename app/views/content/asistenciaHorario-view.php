@@ -169,9 +169,15 @@
 									</table>
 								</div>
 
-								<button type="submit" class="btn btn-success btn-sm">Guardar</button>								
-								<button onclick="cerrarPestana()" class="btn btn-info btn-sm">Cancelar</button>
+								<button type="submit" class="btn btn-success btn-sm">Guardar</button>	
 								<button type="reset" class="btn btn-dark btn-sm">Limpiar</button>								
+							</form>	
+							<form id="form-regresar" action="<?php echo APP_URL."asistenciaListHorario/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >	
+								<input type="hidden" name="horario_sedeid" value="<?php echo $lugar_sedeid; ?>">
+
+								<a href="#" class="btn btn-dark btn-sm" onclick="document.getElementById('form-regresar').submit(); return false;">
+								   Regresar
+								</a>
 							</form>	
 
 						</div>

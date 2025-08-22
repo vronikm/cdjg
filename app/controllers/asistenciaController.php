@@ -93,7 +93,7 @@
 								<input type="hidden" name="hora_id" value="'.$rows['hora_id'].'">						
 								<button type="submit" class="btn float-right btn-danger btn-xs" style="margin-right: 5px;">Eliminar</button>
 							</form>	
-							<a href="'.APP_URL.'asistenciaHora/'.$rows['hora_id'].'/" class="btn float-right btn-actualizar btn-xs" style="margin-right: 5px;" >Editar</a>							
+							<a href="'.APP_URL.'asistenciaHora/'.$rows['hora_id'].'/" class="btn float-right btn-actualizar btn-xs" style="margin-right: 5px;" >Editar</a>
 						</td>
 					</tr>';	
 			}
@@ -694,8 +694,8 @@
 						<td>'.$estado.'</td>
 						<td>'.$rows['ALUMNOS'].'</td>
 						<td>							
-							<a href="'.APP_URL.'asistenciaHorarioJugador/'.$rows['horario_id'].'/'.$horario_sedeid.'/" target="_blank" class="btn float-right btn-warning btn-xs" style="margin-right: 5px;">Asignar alumnos</a>
-							<a href="'.APP_URL.'asistenciaHorarioLista/'.$rows['horario_id'].'/" target="_blank" class="btn float-right btn-ver btn-xs" style="margin-right: 5px;">Ver lista</a>
+							<a href="'.APP_URL.'asistenciaHorarioJugador/'.$rows['horario_id'].'/'.$horario_sedeid.'/" class="btn float-right btn-warning btn-xs" style="margin-right: 5px;">Asignar alumnos</a>
+							<a href="'.APP_URL.'asistenciaHorarioLista/'.$rows['horario_id'].'/" class="btn float-right btn-ver btn-xs" style="margin-right: 5px;">Ver lista</a>
 						</td>
 						<td>
 							<form class="FormularioAjax" action="'.APP_URL.'app/ajax/asistenciaAjax.php" method="POST" autocomplete="off" >
@@ -704,8 +704,8 @@
 								<button type="submit" class="btn float-right btn-danger btn-xs" style="margin-right: 5px;">Eliminar</button>
 							</form>	
 
-							<a href="'.APP_URL.'asistenciaHorario/'.$rows['horario_id'].'/" target="_blank" class="btn float-right btn-actualizar btn-xs" style="margin-right: 5px;">Editar</a>
-							<a href="'.APP_URL.'asistenciaVerHorario/'.$rows['horario_id'].'/" target="_blank" class="btn float-right btn-ver btn-xs" style="margin-right: 5px;">Ver</a>
+							<a href="'.APP_URL.'asistenciaHorario/'.$rows['horario_id'].'/" class="btn float-right btn-actualizar btn-xs" style="margin-right: 5px;">Editar</a>
+							<a href="'.APP_URL.'asistenciaVerHorario/'.$rows['horario_id'].'/" class="btn float-right btn-ver btn-xs" style="margin-right: 5px;">Ver</a>
 						</td>
 					</tr>';	
 			}
@@ -924,7 +924,7 @@
 					"titulo"=>"Registro correcto",
 					"texto"=>"El horario se registró correctamente",
 					"icono"=>"success"
-				];	
+				];
 
 				$detalle=$this->ejecutarConsulta("SELECT max(horario_id) HORARIO FROM asistencia_horario");// WHERE horario_nombre='$horario_nombre'");
 				if($detalle->rowCount()>0){

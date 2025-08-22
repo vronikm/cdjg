@@ -4,17 +4,24 @@
 
 	$horario_id = ($url[1] != "") ? $url[1] : 0;
 	$sede_id = ($url[2] != "") ? $url[2] : 0;
+	$vista = ($url[3] != "") ? $url[3]."/" : "";
+
+	$url = ($vista != "") ? 'asistenciaHorarioLista/'.$horario_id : 'asistenciaListHorario';
+	
 
 	if($sede_id != 0){
 		$sede=$insAsignar->BuscarSede($sede_id);		
 		if($sede->rowCount()==1){
-			$sede =	$sede->fetch();			
+			$sede =	$sede->fetch();	
+			$sede_nombre = $sede['sede_nombre'];
+			/*		
 			if($sede['sede_id'] ==1){
 				$sede_nombre="JIPIRO";
 			}
 			else{
 				$sede_nombre = $sede['sede_nombre'];
 			}
+				*/
 		}
 	}else{
 		$sede_nombre 	= '';
@@ -122,7 +129,7 @@
 				<!-- Section listado de alumnos -->
 				<section class="content">					
 					<div class="container-fluid">
-						<form action="<?php echo APP_URL."asistenciaHorarioJugador/".$horario_id."/".$sede_id."/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >					
+						<form action="<?php echo APP_URL."asistenciaHorarioJugador/".$horario_id."/".$sede_id."/".$vista ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >					
 							<div class="card card-default">
 								<div class="card-header" style='height: 40px;'>
 									<h3 class="card-title">Búsqueda de alumnos</h3>
@@ -203,8 +210,12 @@
 								</table>	
 							</div>
 							<div class="card-footer">		
-								<!--a href="<?php echo APP_URL.'asistenciaListHorario/'; ?>" class="btn btn-dark btn-sm">Regresar</a-->	
-								<button class="btn btn-dark btn-back btn-sm" onclick="cerrarPestana()">Regresar</button>													
+								<!--a href="<?php echo APP_URL.'asistenciaListHorario/'; ?>" class="btn btn-dark btn-sm">Regresar</a>	
+								<button class="btn btn-dark btn-back btn-sm" onclick="cerrarPestana()">Regresar</button-->	
+								<a href="#" class="btn btn-dark btn-sm" onclick="document.getElementById('form-regresar').submit(); return false;">Regresar</a>								
+								<form id="form-regresar" action="<?php echo APP_URL.$url."/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data">	
+									<input type="hidden" name="horario_sedeid" value="<?php echo $sede_id; ?>">
+								</form>												
 							</div>	
 						</div>
 

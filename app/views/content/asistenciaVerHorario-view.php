@@ -179,7 +179,11 @@
 								<div class="row no-print">
 									<div class="col-12">
 										<a href="<?php echo APP_URL.'asistenciaHorarioPDF/'.$horario_id.'/'; ?> " class="btn btn-dark float-right btn-sm" style="margin-right: 10px;" target="_blank"> <i class="fas fa-print"></i> Imprimir</a>
-										<button class="btn btn-dark btn-back btn-sm" onclick="cerrarPestana()">Regresar</button>
+										<a href="#" class="btn btn-dark btn-sm" onclick="document.getElementById('form-regresar').submit(); return false;">Regresar</a>						
+										</form>	
+										<form id="form-regresar" action="<?php echo APP_URL."asistenciaListHorario/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data">	
+											<input type="hidden" name="horario_sedeid" value="<?php echo $lugar_sedeid; ?>">
+										</form>
 									</div>
 								</div>
 							</div>

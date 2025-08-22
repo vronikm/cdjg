@@ -87,7 +87,7 @@
 					<div class="card-header">
 						<h3 class="card-title">Listado de alumnos para asignación a horario</h3>
 						<div class="card-tools">	
-							<a href="<?php echo APP_URL.'asistenciaHorarioJugador/'.$horarioSede["horario_id"].'/'.$horarioSede["horario_sedeid"].'/'; ?>" class="btn btn-warning btn-sm" >Asignar</a>
+							<a href="<?php echo APP_URL.'asistenciaHorarioJugador/'.$horarioSede["horario_id"].'/'.$horarioSede["horario_sedeid"].'/1/'; ?>" class="btn btn-warning btn-sm" >Asignar</a>
 							<a href="<?php echo APP_URL.'horarioListaPDF/'.$horarioSede["horario_id"].'/'; ?> " class="btn btn-success btn-sm" style="margin-right: 10px;" target="_blank"> <i class="fas fa-print"></i> Imprimir</a>							
 							<button type="button" class="btn btn-tool" data-card-widget="collapse">
 								<i class="fas fa-minus"></i>
@@ -113,8 +113,11 @@
 							</tbody>	
 						</table>	
 						<div class="card-footer">
-							<!--a href="<?php echo APP_URL.'equipoList/'.$horarioSede["horario_id"].'/'; ?>" class="btn btn-dark btn-sm">Regresar</a-->
-							<button class="btn btn-dark btn-back btn-sm" onclick="cerrarPestana()">Regresar</button>
+							<!--a href="<?php echo APP_URL.'equipoList/'.$horarioSede["horario_id"].'/'; ?>" class="btn btn-dark btn-sm">Regresar</a-->							
+							<a href="#" class="btn btn-dark btn-sm" onclick="document.getElementById('form-regresar').submit(); return false;">Regresar</a>								
+							<form id="form-regresar" action="<?php echo APP_URL."asistenciaListHorario/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data">	
+								<input type="hidden" name="horario_sedeid" value="<?php echo $horarioSede["horario_sedeid"]; ?>">
+							</form>
 						</div>
 					</div>					
 
