@@ -9,28 +9,34 @@
 			$estado = "";
 			$texto = "";
 			$boton = "";
-
-			if($identificacion!=""){
-				$identificacion .= '%'; 
-			}
-			if($primernombre!=""){
-				$primernombre .= '%';
-			} 
-			if($apellidopaterno!=""){
-				$apellidopaterno .= '%';
-			} 					
-
+			$condiciones = [];
+			$busqueda = [];
 			$tabla="";
-			$consulta_datos="SELECT * FROM alumno_representante
-								WHERE repre_estado in ('A','I')
-									AND (repre_primernombre LIKE '".$primernombre."' 
-										OR repre_identificacion LIKE '".$identificacion."' 
-										OR repre_apellidopaterno LIKE '".$apellidopaterno."')";			
+
+			// Identificación
+			if ($identificacion != "") {
+				$busqueda[] = "repre_identificacion LIKE '".$identificacion."%'";
+			}
+
+			// Nombre
+			if ($primernombre != "") {
+				$busqueda[] = "repre_primernombre LIKE '".$primernombre."%'";
+			}
+
+			// Apellido
+			if ($apellidopaterno != "") {
+				$busqueda[] = "repre_apellidopaterno LIKE '".$apellidopaterno."%'";
+			}
+
+			// Agrupar búsqueda por nombre/identificación/apellido
+			if (!empty($busqueda)) {
+				$condiciones[] = "(".implode(" OR ", $busqueda).")";
+			}	
 			
-			if($identificacion=="" && $primernombre=="" && $apellidopaterno==""){
-				$consulta_datos = "SELECT * FROM alumno_representante WHERE repre_primernombre <> '' AND repre_estado in ('A','I') ";
-			}			
-										
+			$condiciones[] = "repre_estado in ('A','I')";
+
+			$consulta_datos = "SELECT * FROM alumno_representante WHERE " . implode(" AND ", $condiciones);
+													
 			$datos = $this->ejecutarConsulta($consulta_datos);
 		
 			if($datos->rowCount()>0){

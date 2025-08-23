@@ -22,49 +22,54 @@
 
         /*----------  Encabezado de búsqueda de alumnos para agregarlos como jugadores  ----------*/
 		public function listarAlumnos($equipo_torneoid, $equipo_id, $identificacion, $apellidopaterno, $primernombre, $anio, $sede, $equipo_categoria){	
-			if($identificacion!=""){
-				$identificacion .= '%'; 
-			}
-			if($primernombre!=""){
-				$primernombre .= '%';
-			} 
-			if($apellidopaterno!=""){
-				$apellidopaterno .= '%';
-			} 			
-
-			$tabla="";
-			$consulta_datos="SELECT * FROM sujeto_alumno 
-								WHERE (alumno_primernombre LIKE '".$primernombre."' 
-								OR alumno_identificacion LIKE '".$identificacion."' 
-								OR alumno_apellidopaterno LIKE '".$apellidopaterno."') ";			
-			if($anio!=""){
-				$consulta_datos .= " and YEAR(alumno_fechanacimiento) = '".$anio."'"; 
-			}
-
-			if($identificacion=="" && $primernombre=="" && $apellidopaterno==""){
-				$consulta_datos="SELECT * FROM sujeto_alumno WHERE YEAR(alumno_fechanacimiento) = '".$anio."'";
-			}
 			
-			if($identificacion=="" && $primernombre=="" && $apellidopaterno=="" && $anio == ""){
-				$consulta_datos = "SELECT * FROM sujeto_alumno WHERE alumno_primernombre <> '' ";
+			// Preparar condiciones dinámicas
+			$tabla="";			
+			$condiciones = [];
+			$busqueda = [];
+
+			// Identificación
+			if ($identificacion != "") {
+				$busqueda[] = "alumno_identificacion LIKE '".$identificacion."%'";
 			}
 
-			if($sede!=""){
-				if($sede == 0){
-					$consulta_datos .= " and alumno_sedeid <> '$sede'"; 
-				}else{
-					$consulta_datos .= " and alumno_sedeid = '$sede'"; 
-				}
-			}else{
-				$consulta_datos = "SELECT * FROM sujeto_alumno WHERE alumno_primernombre = ''";
-			}			
+			// Nombre
+			if ($primernombre != "") {
+				$busqueda[] = "alumno_primernombre LIKE '".$primernombre."%'";
+			}
 
-			$consulta_datos .= " AND alumno_estado = 'A'";
-			$consulta_datos .= " AND alumno_id NOT IN (SELECT jugador_alumnoid FROM torneo_equipo, torneo_jugador 
-																			   WHERE equipo_id = jugador_equipoid
-																			   	AND equipo_torneoid = $equipo_torneoid
-																				AND equipo_categoria = $equipo_categoria
-																				AND equipo_estado <> 'E')";
+			// Apellido
+			if ($apellidopaterno != "") {
+				$busqueda[] = "alumno_apellidopaterno LIKE '".$apellidopaterno."%'";
+			}
+
+			// Agrupar búsqueda por nombre/identificación/apellido
+			if (!empty($busqueda)) {
+				$condiciones[] = "(".implode(" OR ", $busqueda).")";
+			}
+
+			// Filtro por año (usar rango en lugar de YEAR para índices)
+			if ($anio != "") {
+				$condiciones[] = "alumno_fechanacimiento BETWEEN '".$anio."-01-01' AND '".$anio."-12-31'";
+			}	
+
+			// Filtro de sede
+			if ($sede != "") {
+				if ($sede == 0) {
+					$condiciones[] = "alumno_sedeid <> 0";
+				} else {
+					$condiciones[] = "alumno_sedeid = '".$sede."'";
+				}
+			}
+
+			$condiciones[] = "alumno_estado = 'A'  
+							  AND alumno_id NOT IN (SELECT jugador_alumnoid FROM torneo_equipo, torneo_jugador 
+													WHERE equipo_id = jugador_equipoid
+													AND equipo_torneoid = $equipo_torneoid
+													AND equipo_categoria = $equipo_categoria
+													AND equipo_estado <> 'E')";
+			
+			$consulta_datos = "SELECT * FROM sujeto_alumno WHERE " . implode(" AND ", $condiciones);
 
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();

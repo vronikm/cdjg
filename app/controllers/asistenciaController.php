@@ -1120,37 +1120,43 @@
 
 		//-------------------------------------------------Asignar alumnos--------------------------------------
 		public function listarAlumnos($horario_id, $identificacion, $apellidopaterno, $primernombre, $anio, $sede){	
-			if($identificacion!=""){
-				$identificacion .= '%'; 
-			}
-			if($primernombre!=""){
-				$primernombre .= '%';
-			} 
-			if($apellidopaterno!=""){
-				$apellidopaterno .= '%';
-			} 			
-
+			// Preparar condiciones dinámicas
 			$tabla="";
-			$consulta_datos="SELECT S.sede_nombre, A.* FROM sujeto_alumno A
-								INNER JOIN general_sede S ON S.sede_id = A.alumno_sedeid
-								WHERE (A.alumno_primernombre LIKE '".$primernombre."' 
-								OR A.alumno_identificacion LIKE '".$identificacion."' 
-								OR A.alumno_apellidopaterno LIKE '".$apellidopaterno."') ";			
-			if($anio!=""){
-				$consulta_datos .= " and YEAR(alumno_fechanacimiento) = '".$anio."'"; 
+			$condiciones = [];
+			$busqueda = [];
+
+			// Identificación
+			if ($identificacion != "") {
+				$busqueda[] = "alumno_identificacion LIKE '".$identificacion."%'";
 			}
 
+			// Nombre
+			if ($primernombre != "") {
+				$busqueda[] = "alumno_primernombre LIKE '".$primernombre."%'";
+			}
 
+			// Apellido
+			if ($apellidopaterno != "") {
+				$busqueda[] = "alumno_apellidopaterno LIKE '".$apellidopaterno."%'";
+			}
 
-			if($identificacion=="" && $primernombre=="" && $apellidopaterno==""){
-				$consulta_datos="SELECT S.sede_nombre, A.* FROM sujeto_alumno A
-								INNER JOIN general_sede S ON S.sede_id = A.alumno_sedeid WHERE YEAR(A.alumno_fechanacimiento) = '".$anio."'";
-			}	
+			// Agrupar búsqueda por nombre/identificación/apellido
+			if (!empty($busqueda)) {
+				$condiciones[] = "(".implode(" OR ", $busqueda).")";
+			}
 
-			$consulta_datos .= " AND A.alumno_estado = 'A' AND A.alumno_sedeid='".$sede."'";
+			// Filtro por año (usar rango en lugar de YEAR para índices)
+			if ($anio != "") {
+				$condiciones[] = "alumno_fechanacimiento BETWEEN '".$anio."-01-01' AND '".$anio."-12-31'";
+			}		
+			
+			$condiciones[] = "A.alumno_estado = 'A' AND A.alumno_sedeid='".$sede."' AND A.alumno_id NOT IN (SELECT asignahorario_alumnoid FROM asistencia_asignahorario)";
 
-			$consulta_datos .= " AND A.alumno_id NOT IN (SELECT asignahorario_alumnoid FROM asistencia_asignahorario)";
-
+			$consulta_datos = "SELECT S.sede_nombre, A.* FROM sujeto_alumno A
+							   INNER JOIN general_sede S ON S.sede_id = A.alumno_sedeid
+							   WHERE " . implode(" AND ", $condiciones);
+			
+			// Ejecutar consulta			
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
 

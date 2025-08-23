@@ -4,44 +4,63 @@
 	use app\models\mainModel;
 
 	class pagosController extends mainModel{
-		public function listarAlumnosPagos($identificacion, $apellidopaterno, $primernombre, $anio, $sede){					
-			if($identificacion!=""){
-				$identificacion .= '%'; 
-			}
-			if($primernombre!=""){
-				$primernombre .= '%';
-			} 
-			if($apellidopaterno!=""){
-				$apellidopaterno .= '%';
-			}
+		public function listarAlumnosPagos($identificacion, $apellidopaterno, $primernombre, $anio, $sede){		
+			
+
+			// Preparar condiciones dinámicas
 			$tabla="";
-			$consulta_datos="SELECT * FROM sujeto_alumno 
-								WHERE (alumno_primernombre LIKE '".$primernombre."' 
-								OR alumno_identificacion LIKE '".$identificacion."' 
-								OR alumno_apellidopaterno LIKE '".$apellidopaterno."') ";			
-			if($anio!=""){
-				$consulta_datos .= " and YEAR(alumno_fechanacimiento) = '".$anio."'"; 
+			$condiciones = [];
+			$busqueda = [];
+
+			// Identificación
+			if ($identificacion != "") {
+				$busqueda[] = "alumno_identificacion LIKE '".$identificacion."%'";
 			}
 
-			if($identificacion=="" && $primernombre=="" && $apellidopaterno==""){
-				$consulta_datos="SELECT * FROM sujeto_alumno WHERE YEAR(alumno_fechanacimiento) = '".$anio."'";
-			}
-			
-			if($identificacion=="" && $primernombre=="" && $apellidopaterno=="" && $anio == ""){
-				$consulta_datos = "SELECT * FROM sujeto_alumno WHERE alumno_primernombre <> '' ";
+			// Nombre
+			if ($primernombre != "") {
+				$busqueda[] = "alumno_primernombre LIKE '".$primernombre."%'";
 			}
 
-			if($sede!=""){
-				if($sede == 0){
-					$consulta_datos .= " and alumno_sedeid <> '".$sede."'"; 
-				}else{
-					$consulta_datos .= " and alumno_sedeid = '".$sede."'"; 
+			// Apellido
+			if ($apellidopaterno != "") {
+				$busqueda[] = "alumno_apellidopaterno LIKE '".$apellidopaterno."%'";
+			}
+
+			// Agrupar búsqueda por nombre/identificación/apellido
+			if (!empty($busqueda)) {
+				$condiciones[] = "(".implode(" OR ", $busqueda).")";
+			}
+
+			// Filtro por año (usar rango en lugar de YEAR para índices)
+			if ($anio != "") {
+				$condiciones[] = "alumno_fechanacimiento BETWEEN '".$anio."-01-01' AND '".$anio."-12-31'";
+			}
+
+			// Si no hay ningún filtro de identificación, nombre o apellido
+			if ($identificacion == "" && $primernombre == "" && $apellidopaterno == "") {
+				if ($anio == "") {					
+					$condiciones = ["alumno_primernombre <> ''"];
 				}
-			}else{
-				$consulta_datos = "SELECT * FROM sujeto_alumno WHERE alumno_primernombre = '' ";
-			}	
-			
-			$consulta_datos .= " AND alumno_estado <> 'E'";
+			}
+
+			// Filtro de sede
+			if ($sede != "") {
+				if ($sede == 0) {
+					$condiciones[] = "alumno_sedeid <> 0";
+				} else {
+					$condiciones[] = "alumno_sedeid = '".$sede."'";
+				}
+			} else {
+				$condiciones = ["alumno_primernombre = ''"]; // sin sede -> nunca traerá resultados
+			}
+
+			// Condición fija
+			$condiciones[] = "alumno_estado <> 'E'";
+
+			// Construir SQL final
+			$consulta_datos = "SELECT * FROM sujeto_alumno WHERE " . implode(" AND ", $condiciones);
+
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
 			foreach($datos as $rows){				
