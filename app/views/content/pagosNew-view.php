@@ -394,7 +394,8 @@
 													echo '						
 														<div class="card-footer">						
 															<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-															<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
+															<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>	
+															<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>					
 														</div>
 													';
 												}
@@ -547,7 +548,8 @@
 													echo '
 														<div class="card-footer">						
 															<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-															<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
+															<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>
+															<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>						
 														</div>
 													';							
 												}
@@ -679,7 +681,8 @@
 											<!-- /.post -->
 											<div class="card-footer">						
 												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
+												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>	
+												<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>					
 											</div>
 											</form>
 
@@ -803,16 +806,19 @@
 													</div>
 
 													<div class="col-md-10">
-														<div class="form-group">
-														<label for="pago_concepto">Detalle uniforme</label>
-														<textarea class="form-control" id="pago_concepto" name="pago_concepto" placeholder="Detalle del pago" rows="3" ></textarea>
+														<div class="col-md-12">
+															<div class="form-group">
+																<label for="pago_concepto">Detalle uniforme</label>
+																<textarea class="form-control" id="pago_concepto" name="pago_concepto" placeholder="Detalle del pago" rows="3" ></textarea>
+															</div>
 														</div>
 													</div>
 												</div>											
 											<!-- /.post -->
 											<div class="card-footer">						
 												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
+												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>	
+												<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>					
 											</div>	
 											</form>	
 											
@@ -927,9 +933,11 @@
 													</div>
 
 													<div class="col-md-10">
-														<div class="form-group">
-														<label for="pago_concepto">Detalle accesorios entrenamiento</label>
-														<textarea class="form-control" id="pago_concepto" name="pago_concepto" placeholder="Detalle del pago" rows="3" ></textarea>
+														<div class="col-md-12">
+															<div class="form-group">
+																<label for="pago_concepto">Detalle accesorios entrenamiento</label>
+																<textarea class="form-control" id="pago_concepto" name="pago_concepto" placeholder="Detalle del pago" rows="3" ></textarea>
+															</div>
 														</div>
 													</div>
 												</div>										
@@ -937,14 +945,10 @@
 												<div class="card-footer">						
 													<button type="submit" class="btn btn-success btn-sm">Guardar</button>
 													<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>
-													<a href="#" class="btn btn-dark btn-sm" onclick="document.getElementById('form-regresar').submit(); return false;">Regresar</a>					
+													<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>		
 												</div>	
 											</form>	
 
-											<form id="form-regresar" action="<?php echo APP_URL."pagosList/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >	
-												<input type="hidden" name="alumno_sedeid" value="<?php echo $sede; ?>">												
-											</form>
-											
 											<div class="tab-custom-content">
 												<p class="lead mb-0">Pagos realizados por accesorios de entrenamiento</p>
 											</div>
@@ -1055,9 +1059,11 @@
 													</div>
 
 													<div class="col-md-10">
-														<div class="form-group">
-														<label for="pago_concepto">Detalle Otros</label>
-														<textarea class="form-control" id="pago_concepto" name="pago_concepto" placeholder="Detalle del pago" rows="3" ></textarea>
+														<div class="col-md-12">
+															<div class="form-group">
+															<label for="pago_concepto">Detalle Otros</label>
+															<textarea class="form-control" id="pago_concepto" name="pago_concepto" placeholder="Detalle del pago" rows="3" ></textarea>
+															</div>
 														</div>
 													</div>
 												</div>											
@@ -1065,7 +1071,8 @@
 
 											<div class="card-footer">						
 												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
-												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>						
+												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>	
+												<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>					
 											</div>	
 											</form>	
 											
@@ -1292,12 +1299,18 @@
 		window.addEventListener("load", function () {
 			let activeTab = localStorage.getItem("activeTab");
 			if (activeTab) {
-				let tab = document.querySelector(a[href="${activeTab}"]);
+				let tab = document.querySelector(`a[href="${activeTab}"]`);
 				if (tab) {
 					new bootstrap.Tab(tab).show(); // Bootstrap 4/5 activa el tab
 				}
 			}
 		});
 	</script>
+
+	<script>
+		function cerrarVentana() {
+			window.close();
+		}
+    </script>
   </body>
 </html>
