@@ -1924,7 +1924,7 @@
 		public function listarhorariosProfile($horarioid = null, $sedeid = null){
 			$option="";
 
-			$consulta_datos="SELECT AH.horario_id, CONCAT(AH.horario_detalle, ' | ',HORA.hora_inicio, ' - ', HORA.hora_fin ) AS HORARIO
+			$consulta_datos="SELECT AH.horario_id, CONCAT(HORA.hora_inicio, ' - ', HORA.hora_fin, ' | ', AH.horario_detalle) AS HORARIO
 								FROM asistencia_horario AH
 									INNER JOIN( 
 										SELECT detalle_horarioid, detalle_horaid, H.hora_inicio, H.hora_fin

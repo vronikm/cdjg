@@ -86,58 +86,12 @@
 
 		<!-- Section listado de representados -->
 		<section class="content">
-			<form action="<?php echo APP_URL."representanteList/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >
-			
-				<div class="container-fluid">
-					<div class="card card-default">
-						<div class="card-header">
-							<h3 class="card-title">Búsqueda de representantes</h3>
-							<div class="card-tools">
-								<button type="button" class="btn btn-tool" data-card-widget="collapse">
-									<i class="fas fa-minus"></i>
-								</button>
-							</div>
-						</div>  
-
-						<!-- card-body -->                
-						<div class="card-body">
-							<div class="row align-items-end">
-								<div class="col-sm-3">
-									<div class="form-group input-group-sm">
-										<label for="repre_identificacion">Identificación</label>                        
-										<input type="text" class="form-control" id="repre_identificacion" name="repre_identificacion" placeholder="Identificación" value="<?php echo $repre_identificacion; ?>">
-									</div>        
-								</div>
-								<div class="col-sm-3">
-									<div class="form-group input-group-sm">
-										<label for="repre_apellido1">Apellido paterno</label>
-										<input type="text" class="form-control" id="repre_apellido1" name="repre_apellido1" placeholder="Primer apellido" value="<?php echo $repre_apellidopaterno; ?>">
-									</div>         
-								</div>
-								<div class="col-md-3">
-									<div class="form-group input-group-sm">
-										<label for="repre_nombre1">Primer nombre</label>
-										<input type="text" class="form-control" id="repre_nombre1" name="repre_nombre1" placeholder="Primer nombre" value="<?php echo $repre_primernombre; ?>">
-									</div>
-								</div>								
-								<div class="col-md-2">
-									<div class="form-group input-group-sm">
-										<button type="submit" class="form-control btn btn-sm btn-info"> <i class="fas fa-search"></i> Buscar</button>
-									</div>
-								</div>	
-							</div>					
-						</div>
-					</div>
-				</div>  
-			</form>
-
 			<div class="container-fluid">
 			<!-- Small boxes (Stat box) -->
 				<div class="card card-default">
 					<div class="card-header">
-						<h3 class="card-title">Resultado de la búsqueda</h3>
-						<div class="card-tools">
-							<a href="<?php echo APP_URL; ?>representanteNew/" class="btn btn-primary btn-sm" >Nuevo Representante</a>
+						<a href="<?php echo APP_URL; ?>representanteNew/" class="btn btn-primary btn-sm" >Nuevo Representante</a>
+						<div class="card-tools">							
 							<button type="button" class="btn btn-tool" data-card-widget="collapse">
 								<i class="fas fa-minus"></i>
 							</button>

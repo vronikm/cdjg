@@ -1119,36 +1119,10 @@
 		}
 
 		//-------------------------------------------------Asignar alumnos--------------------------------------
-		public function listarAlumnos($horario_id, $identificacion, $apellidopaterno, $primernombre, $anio, $sede){	
+		public function listarAlumnos($horario_id, $sede){	
 			// Preparar condiciones dinámicas
 			$tabla="";
 			$condiciones = [];
-			$busqueda = [];
-
-			// Identificación
-			if ($identificacion != "") {
-				$busqueda[] = "alumno_identificacion LIKE '".$identificacion."%'";
-			}
-
-			// Nombre
-			if ($primernombre != "") {
-				$busqueda[] = "alumno_primernombre LIKE '".$primernombre."%'";
-			}
-
-			// Apellido
-			if ($apellidopaterno != "") {
-				$busqueda[] = "alumno_apellidopaterno LIKE '".$apellidopaterno."%'";
-			}
-
-			// Agrupar búsqueda por nombre/identificación/apellido
-			if (!empty($busqueda)) {
-				$condiciones[] = "(".implode(" OR ", $busqueda).")";
-			}
-
-			// Filtro por año (usar rango en lugar de YEAR para índices)
-			if ($anio != "") {
-				$condiciones[] = "alumno_fechanacimiento BETWEEN '".$anio."-01-01' AND '".$anio."-12-31'";
-			}		
 			
 			$condiciones[] = "A.alumno_estado = 'A' AND A.alumno_sedeid='".$sede."' AND A.alumno_id NOT IN (SELECT asignahorario_alumnoid FROM asistencia_asignahorario)";
 
@@ -1180,8 +1154,17 @@
 			return $tabla;			
 		}
 
-		public function buscarHorario($horario_id){
-			$consulta_datos="SELECT * FROM asistencia_horario WHERE horario_id = ".$horario_id;	
+		public function buscarHorario($horario_id){			
+			$consulta_datos="SELECT AH.horario_id, CONCAT(HORA.hora_inicio, ' - ', HORA.hora_fin, ' - ', AH.horario_detalle) AS HORARIO
+								FROM asistencia_horario AH
+									INNER JOIN( 
+										SELECT detalle_horarioid, detalle_horaid, H.hora_inicio, H.hora_fin
+										FROM asistencia_horario_detalle D
+										INNER JOIN asistencia_hora H on H.hora_id = D.detalle_horaid
+										GROUP BY detalle_horarioid, detalle_horaid, H.hora_inicio, H.hora_fin
+									)HORA ON HORA.detalle_horarioid = AH.horario_id
+
+								WHERE AH.horario_estado = 'A' AND AH.horario_id = ".$horario_id;
 
 			$datos = $this->ejecutarConsulta($consulta_datos);		
 			return $datos;
