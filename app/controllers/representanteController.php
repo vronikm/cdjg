@@ -5,37 +5,12 @@
 	class representanteController extends mainModel{
 
 		/*----------  Matriz de representantes con opciones Ver, Actualizar, Eliminar  ----------*/
-		public function listarRepresentantes($identificacion, $apellidopaterno, $primernombre){
-			$estado = "";
+		public function listarRepresentantes(){			
 			$texto = "";
 			$boton = "";
-			$condiciones = [];
-			$busqueda = [];
 			$tabla="";
 
-			// Identificación
-			if ($identificacion != "") {
-				$busqueda[] = "repre_identificacion LIKE '".$identificacion."%'";
-			}
-
-			// Nombre
-			if ($primernombre != "") {
-				$busqueda[] = "repre_primernombre LIKE '".$primernombre."%'";
-			}
-
-			// Apellido
-			if ($apellidopaterno != "") {
-				$busqueda[] = "repre_apellidopaterno LIKE '".$apellidopaterno."%'";
-			}
-
-			// Agrupar búsqueda por nombre/identificación/apellido
-			if (!empty($busqueda)) {
-				$condiciones[] = "(".implode(" OR ", $busqueda).")";
-			}	
-			
-			$condiciones[] = "repre_estado in ('A','I')";
-
-			$consulta_datos = "SELECT * FROM alumno_representante WHERE " . implode(" AND ", $condiciones);
+			$consulta_datos = "SELECT repre_id, repre_identificacion, repre_primernombre, repre_segundonombre, repre_apellidopaterno, repre_apellidomaterno, repre_firmado FROM alumno_representante WHERE repre_estado in ('A','I')";
 													
 			$datos = $this->ejecutarConsulta($consulta_datos);
 		
@@ -45,11 +20,9 @@
 
 			foreach($datos as $rows){	
 				if($rows['repre_firmado']=='S'){
-					$estado = "N";
 					$texto = "Firmado";
 					$boton = "btn-secondary";
 				}else{
-					$estado = "S";
 					$texto = "Pendiente";
 					$boton = "btn-info";
 				}

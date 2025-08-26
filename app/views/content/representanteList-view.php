@@ -3,25 +3,6 @@
 	$insRepre = new representanteController();	
 
 	$repreid=$insRepre->limpiarCadena($url[1]);
-
-	if(isset($_POST['repre_identificacion'])){
-		$repre_identificacion = $insRepre->limpiarCadena($_POST['repre_identificacion']);
-	} ELSE{
-		$repre_identificacion = "";
-	}
-
-	if(isset($_POST['repre_nombre1'])){
-		$repre_primernombre = $insRepre->limpiarCadena($_POST['repre_nombre1']);
-	} ELSE{
-		$repre_primernombre = "";
-	}
-
-	if(isset($_POST['repre_apellido1'])){
-		$repre_apellidopaterno = $insRepre->limpiarCadena($_POST['repre_apellido1']);
-	} ELSE{
-		$repre_apellidopaterno = "";
-	}
-
 ?>
 
 
@@ -113,7 +94,7 @@
 							</thead>
 							<tbody>
 								<?php 
-									echo $insRepre->listarRepresentantes($repre_identificacion,$repre_apellidopaterno, $repre_primernombre); 
+									echo $insRepre->listarRepresentantes(); 
 								?>								
 							</tbody>
 						</table>					
