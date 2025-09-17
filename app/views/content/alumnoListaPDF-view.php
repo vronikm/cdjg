@@ -32,9 +32,9 @@
     $pdf->SetMargins(0,0,0);	    
  	   
     $pdf->AddPage();
-    $pdf->Image(APP_URL.'app/views/imagenes/fotos/sedes/'.$sede['sede_foto'], 24, 10, 47, 26);
+    $pdf->Image(APP_URL.'app/views/imagenes/fotos/sedes/'.$sede['sede_foto'], 24, 13, 30, 30);
     $pdf->SetLineWidth(0.1); $pdf->Rect(10, 10, 190, 35, "D"); $x=15; $y=13;  
-    $pdf->SetXY( $x, $y ); $pdf->SetFont( "Arial", "B", 12 ); $pdf->Cell( 240, 10, mb_convert_encoding("ACADEMIA DE FÚTBOL PEDRO LARREA", 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); $y+=5; 
+    $pdf->SetXY( $x, $y ); $pdf->SetFont( "Arial", "B", 12 ); $pdf->Cell( 240, 10, mb_convert_encoding("ESCUELA FORMATIVA JORGE GUZMAN", 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); $y+=5; 
     $pdf->SetXY( $x, $y); $pdf->SetFont( "Arial", "", 9 ); $pdf->Cell(240, 10, mb_convert_encoding("Dirección: ".$sede["sede_direccion"], 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); $y+=5;
     $pdf->SetXY( $x, $y); $pdf->SetFont( "Arial", "", 9 ); $pdf->Cell(240, 10, mb_convert_encoding("Celular: ".$sede["sede_telefono"], 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
     $pdf->SetXY( $x, $y ); $pdf->SetFont( "Arial", "B", 12 ); $pdf->Cell( 190, 30, "REPORTE DE ALUMNOS", 0, 0, 'C'); $y+=5; 
