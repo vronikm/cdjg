@@ -593,7 +593,7 @@
 				/*---------------Actulizar horario de entrenamiento---------------------*/
 				$horario_id = $this->limpiarCadena($_POST['horarioid']);
 				
-				if($horario_id!="" || $alumnoid!=""){
+				if($horario_id!=""){
 
 					$asignacion_horario_reg = [
 						[
@@ -609,6 +609,15 @@
 					];
 
 					$this->guardarDatos("asistencia_asignahorario",$asignacion_horario_reg);
+				}
+				else{
+					$alerta=[
+						"tipo"=>"limpiar",
+						"titulo"=>"Alumno registrado",
+						"texto"=>"El alumno ".$alumno_identificacion." | ".$alumno_primernombre." ".$alumno_apellidopaterno." se registró correctamente sin horario de entrenamiento",
+						"icono"=>"success"
+					];
+					return json_encode($alerta);
 				}
 
 			}else{				
