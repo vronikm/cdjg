@@ -179,7 +179,7 @@
 				"lengthChange": false, // Deshabilitar el cambio de longitud
 				"autoWidth": false,
 				"paging": false, // Deshabilitar la paginación
-				"searching": false, // Habilitar la búsqueda
+				"searching": true, // Habilitar la búsqueda
 				"ordering": false, // Desactiva la opción de ordenar
 				"language": {
 					"decimal": "",
