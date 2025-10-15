@@ -377,7 +377,7 @@
 		}
 
 		public function informacionSede($sedeid){		
-			$consulta_datos="SELECT * FROM general_sede WHERE sede_id  = $sedeid";
+			$consulta_datos="SELECT *, escuela_nombre FROM general_sede inner join general_escuela on escuela_id = sede_escuelaid WHERE sede_id  = $sedeid";
 			$datos = $this->ejecutarConsulta($consulta_datos);		
 			return $datos;
 		}

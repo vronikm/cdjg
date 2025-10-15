@@ -118,7 +118,7 @@
 									<!-- /.col -->
 									<div class="col-sm-6 invoice-col">									
 										<address class="text-center"> <br><br>
-											<strong class="profile-username">ACADEMIA DE FÚTBOL PEDRO LARREA</strong>
+											<strong class="profile-username"><?php echo $sede["escuela_nombre"]; ?></strong>
 											<br>Dirección: <?php echo $sede["sede_direccion"]; ?><br>
 											Celular: <?php echo $sede["sede_telefono"]; ?> 													
 											<div class="row">
