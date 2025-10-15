@@ -54,7 +54,7 @@
 	    $ProfesorPDF=$ProfesorPDF->fetch(); 
     }
    											
-    $data="Horario ".$horario_nombre. " | "."\nIDV Loja\n".$sede["sede_telefono"]."\n".$sede["sede_email"];
+    $data="Horario ".$horario_nombre. " | "."\nClub Jorge Guzman\n".$sede["sede_telefono"]."\n".$sede["sede_email"];
 
     $image = $generator->render_image($symbology, $data, $optionsQR);
     imagejpeg($image, $filename);
@@ -72,15 +72,13 @@
     // logo : 80 de largo por 55 de alto
     //,,ancho,
 
-    $pdf->Image($sede_foto, 34, 10, 44, 36);
-    //$pdf->Image(APP_URL.'app/views/dist/img/Logos/login.jpg', 165, 88, 25, 25);
-
+    $pdf->Image($sede_foto, 34, 10, 30, 30);
     $pdf->SetLineWidth(0.1); $pdf->Rect(10, 10, 190, 45, "D"); $x=15; $y=13;
   
-    $pdf->SetXY( $x, $y ); $pdf->SetFont( "Arial", "B", 11 ); $pdf->Cell( 270, 15, mb_convert_encoding("ACADEMIA DE FÚTBOL PEDRO LARREA", 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); $y+=5;
+    $pdf->SetXY( $x, $y ); $pdf->SetFont( "Arial", "B", 11 ); $pdf->Cell( 270, 15, mb_convert_encoding($sede["escuela_nombre"], 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); $y+=5;
 
     $pdf->SetXY( $x+8, $y+10); $pdf->SetFont( "Arial", "", 9 ); $pdf->Cell(16, 35, mb_convert_encoding("Dirección:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
-    $pdf->SetXY( $x+9, $y+10); $pdf->SetFont( "Arial", "", 9 ); $pdf->Cell( 135, 35, mb_convert_encoding($sede["sede_direccion"], 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); $y+=5;
+    $pdf->SetXY( $x+9, $y+10); $pdf->SetFont( "Arial", "", 9 ); $pdf->Cell( 80, 35, mb_convert_encoding($sede["sede_direccion"], 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); $y+=5;
     $pdf->SetXY( $x, $y+10); $pdf->SetFont( "Arial", "", 9 ); $pdf->Cell(35, 35, mb_convert_encoding("Celular:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'C');
     $pdf->SetXY( $x-12, $y+10); $pdf->SetFont( "Arial", "", 9 ); $pdf->Cell( 90, 35, mb_convert_encoding($sede["sede_telefono"], 'ISO-8859-1', 'UTF-8'), 0, 0,'C');
 
@@ -126,24 +124,31 @@
     $pdf->SetXY( 10, 83); $pdf->SetFont( "Arial", "B", 10 ); $pdf->Cell( 20, 0, "Cancha", 0, 0, 'L');
     $pdf->SetXY( 10, 92); $pdf->SetFont( "Arial", "B", 10 ); $pdf->Cell( 20, 0, "Profesor", 0, 0, 'L');
 
-    $pdf->SetXY( 30, 76 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, $HorarioPDF['Lunes'], 0, 0, 'L');
-    $pdf->SetXY( 65, 76 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0,$HorarioPDF['Martes'], 0, 0, 'L');
-    $pdf->SetXY( 101, 76 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, $HorarioPDF['Miercoles'], 0, 0, 'L');
-    $pdf->SetXY( 136, 76 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, $HorarioPDF['Jueves'], 0, 0, 'L');
-    $pdf->SetXY( 170, 76 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, $HorarioPDF['Viernes'], 0, 0, 'L');
+    // Función para dibujar texto dentro de una celda con ajuste
+    function drawCellText($pdf, $x, $y, $w, $h, $text){
+        $pdf->SetXY($x, $y);
+        $pdf->MultiCell($w, $h, mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8'), 0, 'C');
+    }
 
-    $pdf->SetXY( 27, 83); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($CanchaPDF['Lunes']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 62, 83); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($CanchaPDF['Martes']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 97, 83); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($CanchaPDF['Miercoles']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 132, 83); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($CanchaPDF['Jueves']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 167, 83); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($CanchaPDF['Viernes']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+    // Ajuste de textos dentro de celdas
+    $pdf->SetFont("Arial", "", 8);
+    drawCellText($pdf, 30, 75, 30, 4, $HorarioPDF['Lunes']);
+    drawCellText($pdf, 65, 75, 30, 4, $HorarioPDF['Martes']);
+    drawCellText($pdf, 100, 75, 30, 4, $HorarioPDF['Miercoles']);
+    drawCellText($pdf, 135, 75, 30, 4, $HorarioPDF['Jueves']);
+    drawCellText($pdf, 170, 75, 30, 4, $HorarioPDF['Viernes']);
 
-    $pdf->SetXY( 27, 93 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($ProfesorPDF['Lunes']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 62, 93 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($ProfesorPDF['Martes']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 97, 93 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($ProfesorPDF['Miercoles']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 132, 93 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($ProfesorPDF['Jueves']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
-    $pdf->SetXY( 167, 93 ); $pdf->SetFont( "Arial", "", 8 ); $pdf->Cell( 20, 0, mb_convert_encoding($ProfesorPDF['Viernes']?? '', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+    drawCellText($pdf, 27, 82, 30, 4, $CanchaPDF['Lunes'] ?? '');
+    drawCellText($pdf, 62, 82, 30, 4, $CanchaPDF['Martes'] ?? '');
+    drawCellText($pdf, 97, 82, 30, 4, $CanchaPDF['Miercoles'] ?? '');
+    drawCellText($pdf, 132, 82, 30, 4, $CanchaPDF['Jueves'] ?? '');
+    drawCellText($pdf, 167, 82, 30, 4, $CanchaPDF['Viernes'] ?? '');
 
+    drawCellText($pdf, 27, 90, 30, 4, $ProfesorPDF['Lunes'] ?? '');
+    drawCellText($pdf, 62, 90, 30, 4, $ProfesorPDF['Martes'] ?? '');
+    drawCellText($pdf, 97, 90, 30, 4, $ProfesorPDF['Miercoles'] ?? '');
+    drawCellText($pdf, 132, 90, 30, 4, $ProfesorPDF['Jueves'] ?? '');
+    drawCellText($pdf, 167, 90, 30, 4, $ProfesorPDF['Viernes'] ?? '');
 
     $pdf->Image(APP_URL.$filename, 171, 100, 23, 23);
       
