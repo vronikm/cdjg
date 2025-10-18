@@ -59,8 +59,7 @@
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
 	<!-- Theme style -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/adminlte.css">
-	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/sweetalert2.min.css">
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/sweetalert2.all.min.js" ></script>
+	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/sweetalert2.min.css">	
     
   </head>
   <body class="hold-transition sidebar-mini layout-fixed">
@@ -159,9 +158,7 @@
 									<button type="submit" class="form-control btn btn-sm btn-info"> <i class="fas fa-search"></i> Buscar</button>
 								</div>
 							</div>
-
-						</div>
-					
+						</div>					
 					</div>
 				</div>
             </div>  
@@ -203,13 +200,10 @@
 				</div>
 			<!-- /.row -->
 			</div><!-- /.container-fluid -->
-
 		</section>
-		<!-- /.section -->
-      
+		<!-- /.section -->      
       </div>
       <!-- /.vista -->
-
       <?php require_once "app/views/inc/footer.php"; ?>
 
       <!-- Control Sidebar -->
@@ -219,7 +213,6 @@
       <!-- /.control-sidebar -->
     </div>
     <!-- ./wrapper -->
-
     
 	<!-- jQuery -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/jquery/jquery.min.js"></script>
@@ -241,80 +234,80 @@
 	<!-- AdminLTE App -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/main.js" ></script>	
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/main.js" ></script>
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/sweetalert2.all.min.js" ></script>
      <!-- Page specific script -->
 	<script>
-	$(function () {
-		$("#example1").DataTable({
-		"order": [[1, "desc"]], // Ordena la segunda columna ("# de camiseta") por defecto de manera descendente
-		"responsive": true, "lengthChange": false, "autoWidth": false,
-		"language": {
-			"decimal": "",
-			"emptyTable": "No hay datos disponibles en la tabla",
-			"info": "Mostrando _START_ a _END_ de _TOTAL_ entradas",
-			"infoEmpty": "Mostrando 0 a 0 de 0 entradas",
-			"infoFiltered": "(filtrado de _MAX_ entradas totales)",
-			"infoPostFix": "",
-			"thousands": ",",
-			"lengthMenu": "Mostrar _MENU_ entradas",
-			"loadingRecords": "Cargando...",
-			"processing": "Procesando...",
-			"search": "Buscar:",
-			"zeroRecords": "No se encontraron registros coincidentes",
-			"paginate": {
-				"first": "Primero",
-				"last": "Último",
-				"next": "Siguiente",
-				"previous": "Anterior"
-			},
-			"aria": {
-				"sortAscending": ": activar para ordenar la columna ascendente",
-				"sortDescending": ": activar para ordenar la columna descendente"
-			},
-			"buttons": {
-				"copy": "Copiar",
-				"print": "Imprimir",
-                "text": 'Imprimir Tabla',
-                "title": 'Datos de Alumnos',
-                "messageTop": 'Generado por el sistema de gestión de alumnos.',
-                "messageBottom": 'Página generada automáticamente.',
-                customize: function(win) {
-                    $(win.document.body)
-                        .css('font-family', 'Arial')
-                        .css('background-color', '#f3f3f3');
+		$(function () {
+			$("#example1").DataTable({
+			"stateSave": true, // 🔹 guarda la página actual y estado
+			"order": [[1, "desc"]], // Ordena la segunda columna ("# de camiseta") por defecto de manera descendente
+			"responsive": true, "lengthChange": false, "autoWidth": false,
+			"language": {
+				"decimal": "",
+				"emptyTable": "No hay datos disponibles en la tabla",
+				"info": "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+				"infoEmpty": "Mostrando 0 a 0 de 0 entradas",
+				"infoFiltered": "(filtrado de _MAX_ entradas totales)",
+				"infoPostFix": "",
+				"thousands": ",",
+				"lengthMenu": "Mostrar _MENU_ entradas",
+				"loadingRecords": "Cargando...",
+				"processing": "Procesando...",
+				"search": "Buscar:",
+				"zeroRecords": "No se encontraron registros coincidentes",
+				"paginate": {
+					"first": "Primero",
+					"last": "Último",
+					"next": "Siguiente",
+					"previous": "Anterior"
+				},
+				"aria": {
+					"sortAscending": ": activar para ordenar la columna ascendente",
+					"sortDescending": ": activar para ordenar la columna descendente"
+				},
+				"buttons": {
+					"copy": "Copiar",
+					"print": "Imprimir",
+					"text": 'Imprimir Tabla',
+					"title": 'Datos de Alumnos',
+					"messageTop": 'Generado por el sistema de gestión de alumnos.',
+					"messageBottom": 'Página generada automáticamente.',
+					customize: function(win) {
+						$(win.document.body)
+							.css('font-family', 'Arial')
+							.css('background-color', '#f3f3f3');
 
-                    // Cambiar el estilo de la tabla impresa
-                    $(win.document.body).find('table')
-                        .addClass('display')  // Añadir una clase CSS a la tabla impresa
-                        .css('font-size', '12pt')
-                        .css('border', '1px solid black');
+						// Cambiar el estilo de la tabla impresa
+						$(win.document.body).find('table')
+							.addClass('display')  // Añadir una clase CSS a la tabla impresa
+							.css('font-size', '12pt')
+							.css('border', '1px solid black');
 
-                    // Agregar logotipo al principio
-                    $(win.document.body).prepend(
-                        '<img src="https://example.com/logo.png" style="position:absolute; top:0; left:0; width:100px;" />'
-                    );
+						// Agregar logotipo al principio
+						$(win.document.body).prepend(
+							'<img src="https://example.com/logo.png" style="position:absolute; top:0; left:0; width:100px;" />'
+						);
 
-                    // Modificar título y agregar estilos CSS adicionales
-                    $(win.document.body).find('h1')
-                        .css('text-align', 'center')
-                        .css('color', '#4CAF50');
+						// Modificar título y agregar estilos CSS adicionales
+						$(win.document.body).find('h1')
+							.css('text-align', 'center')
+							.css('color', '#4CAF50');
+					}
 				}
-			}
-		},
-		"buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-		}).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-		$('#example2').DataTable({
-		"paging": true,
-		"lengthChange": false,
-		"searching": false,
-		"ordering": true,
-		"info": true,
-		"autoWidth": false,
-		"responsive": true,
+			},
+			"buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+			}).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+			$('#example2').DataTable({
+			"paging": true,
+			"lengthChange": false,
+			"searching": false,
+			"ordering": true,
+			"info": true,
+			"autoWidth": false,
+			"responsive": true,
+			});
 		});
-	});
 	</script>
   </body> 
 </html>
