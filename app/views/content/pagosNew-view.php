@@ -1158,24 +1158,26 @@
 		$(document).ready(function () {
 			$("#pago_fecha").keyup(function () {
 				var value = $(this).val();
+				
+				// Dividir la fecha manualmente para evitar problemas de zona horaria
+				var partes = value.split('-'); // Formato esperado: YYYY-MM-DD
+				
+				if (partes.length === 3) {
+					var año = parseInt(partes[0]);
+					var mesNumero = parseInt(partes[1]) - 1; // Restar 1 porque los meses van de 0 a 11
+					var dia = parseInt(partes[2]);
 					
-				
-				var fecha = new Date(value);
-				
-				// Array con los nombres de los meses
-				var nombresMeses = [
-				"Enero","Febrero", "Marzo", "Abril", "Mayo", "Junio",
-				"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-				];
-
-				// Obtener el mes (los meses van de 0 a 11 en JavaScript)
-				var mesNumero = fecha.getMonth();
-				var mesNombre = nombresMeses[mesNumero];
-				var año = fecha.getFullYear();
-
-				$("#pago_periodo").val(mesNombre + " / " + año );
+					// Array con los nombres de los meses
+					var nombresMeses = [
+						"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+						"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+					];
+					
+					var mesNombre = nombresMeses[mesNumero];
+					$("#pago_periodo").val(mesNombre + " / " + año);
+				}
 			});
-		});		
+		});
 	</script>
 
 	<script>	
