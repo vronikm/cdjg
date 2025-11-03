@@ -91,14 +91,15 @@
         }
 
         public function EstadoAlumno($alumnoid){		
-			$consulta_datos="SELECT max(FechaPension) FechaUltPension, max(pago_estado)Estado,
-								CASE WHEN FechaPension >= CURDATE() THEN 'Al día' ELSE 'Pendiente' END Condicion
+			$consulta_datos="SELECT max(FechaPension) FechaUltPension, max(pago_estado)Estado, Condicion
 								from(
-									SELECT max(pago_fecha) FechaPension, pago_estado
+									SELECT max(pago_fecha) FechaPension, pago_estado,
+                                    CASE WHEN pago_fecha >= CURDATE() THEN 'Al día' ELSE 'Pendiente' END Condicion
 									from alumno_pago 
 									where pago_alumnoid = ".$alumnoid."
-										and pago_estado <> 'E'
-									group by  pago_estado) as subquery;";	
+										and pago_estado not in ('J','E')
+									group by  pago_estado, pago_fecha) as subquery                                 
+                            	group by Condicion";	
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			return $datos;
 		}
