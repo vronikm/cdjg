@@ -14,7 +14,7 @@
 
               <li class="nav-item">
                 <a href="<?php echo APP_URL."alumnoList/" ?>" class="nav-link <?php if ($url[0]=='alumnoList') echo 'active'; else echo ''; ?>">
-                  <i class="nav-icon far fa-address-card text-info"></i>
+                  <i class="nav-icon far fa-user-circle text-info"></i>
                   <p>Alumnos</p>
                 </a>
               </li>
@@ -23,6 +23,13 @@
                 <a href="<?php echo APP_URL."pagosList/" ?>" class="nav-link <?php if ($url[0]=='pagosList') echo 'active'; else echo ''; ?>">
                   <i class="nav-icon far fa-money-bill-alt text-info"></i>
                   <p>Pagos</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="<?php echo APP_URL."carnetList/" ?>" class="nav-link <?php if ($url[0]=='carnetList') echo 'active'; else echo ''; ?>">
+                  <i class="nav-icon far fa-address-card text-info"></i>
+                  <p>Carnets</p>
                 </a>
               </li>
 
@@ -304,6 +311,13 @@
                     <a href="<?php echo APP_URL."institucionList/" ?>" class="nav-link <?php if ($url[0]=='institucionList') echo 'active'; else echo ''; ?>" >
                       <i class="nav-icon far fa-circle text-info"></i>
                       <p>Institución</p>
+                    </a>
+                  </li>
+
+                  <li class="nav-item">
+                    <a href="<?php echo APP_URL."carnetConf/" ?>" class="nav-link <?php if ($url[0]=='carnetConf') echo 'active'; else echo ''; ?>">
+                      <i class="nav-icon far fa-address-card text-info"></i>
+                      <p>Carnets</p>
                     </a>
                   </li>
 
