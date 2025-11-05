@@ -14,7 +14,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height: 100vh; /*Posicionamiento en pantalla*/
     padding: 20px;
     flex-direction: column;
 }
@@ -50,7 +50,7 @@ body {
     width: 150px; /* Ancho de la silueta izquierda */
     height: 100%;
     object-fit: cover;
-    opacity: 0.8;
+    opacity: 1;
     z-index: 1;
     pointer-events: none;
 }
@@ -64,6 +64,7 @@ body {
     height: 100%;
     object-fit: cover;
     z-index: 1;
+    opacity: 0.4;
 }
 
 /* Capa 2: Máscara de color (vertical_azul.png) */
@@ -77,19 +78,19 @@ body {
     z-index: 2;
     opacity: 0.1; /* Ajusta para ver la silueta debajo */
 }
-
-/* Capa 3: Overlay del color del mes (color dinámico desde PHP) */
+/*
+/* Capa 3: Overlay del color del mes (color dinámico desde PHP) 
 .capa-color-overlay {
     position: absolute;
     left: 0;
     top: 0;
     width: 150px;
     height: 100%;
-    /* background-color se define inline según el mes */
+    /* background-color se define inline según el mes 
     mix-blend-mode: multiply;
     z-index: 3;
     pointer-events: none;
-}
+}*/
 
 /* ============================================
    CENTRO: Decoración principal (entre silueta y datos)
@@ -125,7 +126,7 @@ body {
     height: 120px;
     border-radius: 8px;
     border: 2px solid #fff;
-    margin-bottom: -30px; /* Distancia entre el logo y los datos del alumno */
+    margin-bottom: -20px; /* Distancia entre el logo y los datos del alumno */
 }
 
 .qr {
@@ -136,8 +137,8 @@ body {
 }
 
 .qr svg {
-    width: 75px;
-    height: 75px;
+    width: 110px;
+    height: 110px;
     background: white;
 }
 
@@ -156,7 +157,7 @@ body {
     z-index: 2;
     display: flex;
     justify-content: space-between;
-    padding: 15px 20px;
+    padding: 0px 20px;
     margin: 5px;
     border-radius: 5px;
     min-height: 300px;
@@ -200,8 +201,8 @@ body {
    FOTO DEL ALUMNO
    ============================================ */
 .foto {
-    width: 130px;
-    height: 190px;
+    width: 140px;
+    height: 200px;
     overflow: hidden;
     border-radius: 10px;
     border: 1px solid #ddd;
@@ -210,8 +211,8 @@ body {
 }
 
 .foto img {
-    width: 130px;
-    height: 190px;
+    width: 140px;
+    height: 200px;
     border-radius: 10px;
     object-fit: cover;
     border: 1px solid var(--color1, #004aad);

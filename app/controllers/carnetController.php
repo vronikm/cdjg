@@ -70,7 +70,16 @@
 						<td>'.$rows['Condicion'].'</td>
 						<td>							
 							<a href="'.APP_URL.'carnetFoto/'.$rows['alumno_id'].'/" class="btn float-right btn-secondary btn-xs" style="margin-right: 5px;">Ver carnet</a>	
-							<a href="'.APP_URL.'representanteVinc/'.$rows['alumno_id'].'/" class="btn float-right btn-warning btn-xs" style="margin-right: 5px;">Imprimir</a>
+						</td>
+						<td>
+							<div class="custom-control custom-checkbox">
+								<input class="custom-control-input chk-pago" 
+									type="checkbox" 
+									id="'.$rows['alumno_id'].'" 
+									name="pagos_seleccionados[]" 
+									value="'.$rows['alumno_id'].'">								
+								<label for="'.$rows['alumno_id'].'" class="custom-control-label"></label>
+							</div>
 						</td>						
 					</tr>';	
 			}
