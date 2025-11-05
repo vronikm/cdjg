@@ -50,7 +50,7 @@
               <li class="nav-item">
                 <a href="<?php echo APP_URL."facturasList/" ?>" class="nav-link <?php if ($url[0]=='facturasList') echo 'active'; else echo ''; ?>">
                   <i class="nav-icon fa fa-money-check text-info"></i>
-                  <p>Facturas</p>
+                  <p>Facturación</p>
                 </a>
               </li>
 
