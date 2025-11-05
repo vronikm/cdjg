@@ -107,7 +107,7 @@
 			$consulta_datos="SELECT FechaUltPension, Estado, 
 								CASE 
 										WHEN FechaUltPension >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
-										THEN 'Al día' 
+										THEN 'Al dia' 
 										ELSE 'Pendiente' 
 										END Condicion
 								FROM(SELECT max(pago_fecha) FechaUltPension, max(pago_estado)Estado
