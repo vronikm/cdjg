@@ -233,6 +233,9 @@
 
 									<ul class="list-group list-group-unbordered mb-3">
 										<li class="list-group-item">
+											<b>Carnet N°</b> <a class="float-right"><?php echo $datos['alumno_carnet']; ?></a>
+										</li>
+										<li class="list-group-item">
 											<b>Categoría</b> <a class="float-right"><?php echo $datos['anio']; ?></a>
 										</li>
 										<li class="list-group-item">

@@ -1572,7 +1572,7 @@
 					$estado = '<span class="badge bg-danger"> Pendiente';
 					$class = 'class="text-danger"';
 				}elseif($rows['pago_estado'] == 'J'){
-					$estado = ' Justificado';
+					$estado = ' No asiste';
 					$class = 'class="text-primary"';
 				}
 
