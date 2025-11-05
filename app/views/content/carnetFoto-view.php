@@ -12,6 +12,7 @@
     $datos=$insCarnet->infoAlumnoCarnet($alumnoid);
 	if($datos->rowCount()==1){
 		$datos=$datos->fetch();
+        
 		if ($datos['alumno_imagen']!=""){
 			$foto = APP_URL.'app/views/imagenes/fotos/alumno/'.$datos['alumno_imagen'];
 		}else{
@@ -19,8 +20,15 @@
 		}
     }
 
-    // Obtener mes actual
-    $mesActual = (int)date('n'); // 1 para Enero, 2 para Febrero, etc.
+    // Obtener mes actual y el estado de pensión del alumno
+    $estadoalumno=$insCarnet->EstadoAlumno($alumnoid);
+    if($estadoalumno->rowCount()==1){
+        $estadoalumno=$estadoalumno->fetch();
+        $fechapension = $estadoalumno['FechaUltPension'];
+        $mesActual = (int)date('n', strtotime($fechapension));
+    }else{
+        $mesActual = (int)date('n');
+    }    
     
     // Obtener color asignado al mes actual
     $colorMes = $insCarnet->BuscarColorPorMes($mesActual);
@@ -50,12 +58,7 @@
         $carnet_verticalprincipal = APP_URL.'app/views/imagenes/carnet/vertical_principal.png';
         $carnet_verticalfondo = APP_URL.'app/views/imagenes/carnet/vertical_fondo.png';        
         $carnet_verticalcolor = APP_URL.'app/views/imagenes/carnet/vertical_azul.png';
-    }
-
-    $estadoalumno=$insCarnet->EstadoAlumno($alumnoid);
-    if($estadoalumno->rowCount()==1){
-		$estadoalumno=$estadoalumno->fetch(); 
-    }
+    }    
     
     // Obtener nombre del mes en español
     $nombresMeses = [
@@ -72,7 +75,7 @@
         <meta charset="UTF-8">
         <title>Carnet de Alumno</title>
         <link rel="icon" type="image/png" href="<?php echo APP_URL; ?>app/views/dist/img/Logos/LogoCDJG.png">
-        <link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/carnet_style.css">
+        <link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/carnet_style.css?v=1.0.8">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <style>
@@ -111,7 +114,7 @@
                 <img src="<?php echo $carnet_verticalfondo ?>" class="capa-silueta" alt="Silueta jugador">
                 
                 <!-- Capa 2: Máscara de color del mes (vertical_azul.png coloreada) -->
-                <img src="<?php echo $carnet_verticalcolor ?>" class="capa-color" alt="Color del mes">
+                <!-- <img src="<?php echo $carnet_verticalcolor ?>" class="capa-color" alt="Color del mes"> -->
                 
                 <!-- Overlay de color para teñir la imagen -->
                 <div class="capa-color-overlay"></div>
@@ -163,6 +166,6 @@
 
         <button id="descargar">Descargar PDF</button>
 
-        <script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_pdf.js?v=1.2.5"></script>
+        <script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_pdf.js?v=1.2.7"></script>
     </body>
 </html>

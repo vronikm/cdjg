@@ -38,7 +38,11 @@
 									CONCAT(alumno_apellidopaterno, ' ', alumno_apellidomaterno) APELLIDOS, 
 									alumno_carnet, 
 									FechaUltPension, 
-									CASE WHEN FechaUltPension >= CURDATE() THEN 'Al día' ELSE 'Pendiente' END Condicion
+									CASE 
+										WHEN FechaUltPension >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
+										THEN 'Al día' 
+										ELSE 'Pendiente' 
+										END Condicion
 									FROM sujeto_alumno
 									INNER JOIN (        
 										SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(pago_estado) Estado
@@ -100,15 +104,19 @@
         }
 
         public function EstadoAlumno($alumnoid){		
-			$consulta_datos="SELECT max(FechaPension) FechaUltPension, max(pago_estado)Estado, Condicion
-								from(
-									SELECT max(pago_fecha) FechaPension, pago_estado,
-                                    CASE WHEN pago_fecha >= CURDATE() THEN 'Al día' ELSE 'Pendiente' END Condicion
-									from alumno_pago 
-									where pago_alumnoid = ".$alumnoid."
-										and pago_estado not in ('J','E')
-									group by  pago_estado, pago_fecha) as subquery                                 
-                            	group by Condicion";	
+			$consulta_datos="SELECT FechaUltPension, Estado, 
+								CASE 
+										WHEN FechaUltPension >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
+										THEN 'Al día' 
+										ELSE 'Pendiente' 
+										END Condicion
+								FROM(SELECT max(pago_fecha) FechaUltPension, max(pago_estado)Estado
+										from(
+												SELECT pago_fecha, pago_estado
+														FROM alumno_pago 
+														WHERE pago_alumnoid = $alumnoid
+															AND pago_estado NOT IN ('E')
+														GROUP BY pago_estado, pago_fecha) as subquery) AS Total";	
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			return $datos;
 		}
