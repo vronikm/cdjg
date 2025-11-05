@@ -115,7 +115,7 @@
 												SELECT pago_fecha, pago_estado
 														FROM alumno_pago 
 														WHERE pago_alumnoid = $alumnoid
-															AND pago_estado NOT IN ('E')
+															AND pago_estado NOT IN ('J','E')
 														GROUP BY pago_estado, pago_fecha) as subquery) AS Total";	
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			return $datos;
