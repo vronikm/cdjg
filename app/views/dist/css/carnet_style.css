@@ -78,19 +78,6 @@ body {
     z-index: 2;
     opacity: 0.1; /* Ajusta para ver la silueta debajo */
 }
-/*
-/* Capa 3: Overlay del color del mes (color dinámico desde PHP) 
-.capa-color-overlay {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 150px;
-    height: 100%;
-    /* background-color se define inline según el mes 
-    mix-blend-mode: multiply;
-    z-index: 3;
-    pointer-events: none;
-}*/
 
 /* ============================================
    CENTRO: Decoración principal (entre silueta y datos)
@@ -98,9 +85,9 @@ body {
 
 .decorativo-derecha {
     position: absolute;
-    left: 28%; /* Justo después de la silueta izquierda */
+    left: 27%; /* Justo después de la silueta izquierda */
     top: 0;
-    width: 50;
+    width: 2%; /* Ancho de la decoración central */
     height: 100%;
     object-fit: cover;
     z-index: 2;

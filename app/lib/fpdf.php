@@ -1268,16 +1268,154 @@ protected function _parsejpg($file)
 	return array('w'=>$a[0], 'h'=>$a[1], 'cs'=>$colspace, 'bpc'=>$bpc, 'f'=>'DCTDecode', 'data'=>$data);
 }
 
-protected function _parsepng($file)
+function _parsepng($file)
 {
-	// Extract info from a PNG file
-	$f = fopen($file,'rb');
-	if(!$f)
-		$this->Error('Can\'t open image file: '.$file);
-	$info = $this->_parsepngstream($f,$file);
-	fclose($f);
-	return $info;
+    // Leer archivo PNG
+    $f = fopen($file,'rb');
+    if(!$f)
+        $this->Error('Can\'t open image file: '.$file);
+    
+    $info = array();
+    
+    // Verificar firma PNG
+    if(@fread($f,8)!=chr(137).'PNG'.chr(13).chr(10).chr(26).chr(10))
+        $this->Error('Not a PNG file: '.$file);
+    
+    // Leer header
+    fread($f,4);
+    if(fread($f,4)!='IHDR')
+        $this->Error('Incorrect PNG file: '.$file);
+    
+    $w = $this->_readint($f);
+    $h = $this->_readint($f);
+    $bpc = ord(fread($f,1));
+    
+    if($bpc>8)
+        $this->Error('16-bit depth not supported: '.$file);
+    
+    $ct = ord(fread($f,1));
+    
+    if($ct==0 || $ct==4)
+        $colspace = 'DeviceGray';
+    elseif($ct==2 || $ct==6)
+        $colspace = 'DeviceRGB';
+    elseif($ct==3)
+        $colspace = 'Indexed';
+    else
+        $this->Error('Unknown color type: '.$file);
+    
+    if(ord(fread($f,1))!=0)
+        $this->Error('Unknown compression method: '.$file);
+    
+    if(ord(fread($f,1))!=0)
+        $this->Error('Unknown filter method: '.$file);
+    
+    if(ord(fread($f,1))!=0)
+        $this->Error('Interlacing not supported: '.$file);
+    
+    fread($f,4);
+    $dp = '/Predictor 15 /Colors '.($colspace=='DeviceRGB' ? 3 : 1).' /BitsPerComponent '.$bpc.' /Columns '.$w;
+    
+    // Leer chunks
+    $pal = '';
+    $trns = '';
+    $data = '';
+    
+    do {
+        $n = $this->_readint($f);
+        $type = fread($f,4);
+        
+        if($type=='PLTE') {
+            // Leer paleta
+            $pal = fread($f,$n);
+            fread($f,4);
+        }
+        elseif($type=='tRNS') {
+            // Leer transparencia
+            $t = fread($f,$n);
+            
+            if($ct==0)
+                $trns = array(ord(substr($t,1,1)));
+            elseif($ct==2)
+                $trns = array(ord(substr($t,1,1)), ord(substr($t,3,1)), ord(substr($t,5,1)));
+            else {
+                $pos = strpos($t,chr(0));
+                if($pos!==false)
+                    $trns = array($pos);
+            }
+            fread($f,4);
+        }
+        elseif($type=='IDAT') {
+            // Leer datos de imagen
+            $data .= fread($f,$n);
+            fread($f,4);
+        }
+        elseif($type=='IEND')
+            break;
+        else
+            fread($f,$n+4);
+    }
+    while($n);
+    
+    if($colspace=='Indexed' && empty($pal))
+        $this->Error('Missing palette in '.$file);
+    
+    fclose($f);
+    
+    $info['w'] = $w;
+    $info['h'] = $h;
+    $info['cs'] = $colspace;
+    $info['bpc'] = $bpc;
+    $info['f'] = 'FlateDecode';
+    $info['dp'] = $dp;
+    $info['pal'] = $pal;
+    $info['trns'] = $trns;
+    
+    if($ct>=4) {
+        // Extraer canal alpha
+        if(!function_exists('gzuncompress'))
+            $this->Error('Zlib not available, can\'t handle alpha channel: '.$file);
+        
+        $data = gzuncompress($data);
+        $color = '';
+        $alpha = '';
+        
+        if($ct==4) {
+            // Gray image
+            $len = 2*$w;
+            for($i=0;$i<$h;$i++) {
+                $pos = (1+$len)*$i;
+                $color .= $data[$pos];
+                $alpha .= $data[$pos];
+                $line = substr($data,$pos+1,$len);
+                $color .= preg_replace('/(.)./s','$1',$line);
+                $alpha .= preg_replace('/.(.)/s','$1',$line);
+            }
+        }
+        else {
+            // RGB image
+            $len = 4*$w;
+            for($i=0;$i<$h;$i++) {
+                $pos = (1+$len)*$i;
+                $color .= $data[$pos];
+                $alpha .= $data[$pos];
+                $line = substr($data,$pos+1,$len);
+                $color .= preg_replace('/(.{3})./s','$1',$line);
+                $alpha .= preg_replace('/.{3}(.)/s','$1',$line);
+            }
+        }
+        unset($data);
+        $data = gzcompress($color);
+        $info['smask'] = gzcompress($alpha);
+        
+        if($this->PDFVersion<'1.4')
+            $this->PDFVersion = '1.4';
+    }
+    
+    $info['data'] = $data;
+    return $info;
 }
+
 
 protected function _parsepngstream($f, $file)
 {
@@ -1422,11 +1560,11 @@ protected function _readstream($f, $n)
 	return $res;
 }
 
-protected function _readint($f)
+function _readint($f)
 {
-	// Read a 4-byte integer from stream
-	$a = unpack('Ni',$this->_readstream($f,4));
-	return $a['i'];
+    // Leer un entero de 4 bytes
+    $a = unpack('Ni',fread($f,4));
+    return $a['i'];
 }
 
 protected function _parsegif($file)

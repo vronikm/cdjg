@@ -37,7 +37,7 @@ $pdf->SetMargins(0, 0, 0);
 // Dimensiones del carnet (tamaño tarjeta de crédito estándar)
 $carnetWidth = 85.6;  // 85.6mm = ancho tarjeta estándar
 $carnetHeight = 53.98; // 53.98mm = alto tarjeta estándar
-$margenX = 12;
+$margenX = 10;
 $margenY = 10;
 $espacioX = 0;
 $espacioY = 0;

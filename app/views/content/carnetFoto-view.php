@@ -75,7 +75,7 @@
         <meta charset="UTF-8">
         <title>Carnet de Alumno</title>
         <link rel="icon" type="image/png" href="<?php echo APP_URL; ?>app/views/dist/img/Logos/LogoCDJG.png">
-        <link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/carnet_style.css?v=1.0.9">
+        <link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/carnet_style.css?v=1.1.5">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <style>
