@@ -87,11 +87,19 @@ foreach($carnetsData as $carnet) {
     // IMÁGENES DECORATIVAS
     // ====================
     
-    // Capa de color del mes sobre la silueta (simulando overlay)
-    $pdf->SetFillColor($r, $g, $b);
-    $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
-
-    // Imagen decorativa izquierda (silueta de fondo)
+    // Primero poner la imagen coloreada del mes
+    $imgColor = "./app/views/imagenes/carnet/" . $sede['escuela_verticalcolor'];
+    if(!file_exists($imgColor)) {
+        // Crear una versión coloreada temporalmente
+        // Como FPDF no soporta tinte de color, usamos directamente la imagen de color
+        $pdf->Image($imgColor, $x, $y, 20, $carnetHeight);
+    } else {
+        // Si no existe la imagen de color, usar un rectángulo del color del mes
+        $pdf->SetFillColor($r, $g, $b);
+        $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
+    }
+    
+    // Luego poner la silueta encima (debe tener transparencia PNG)
     $imgFondo = "./app/views/imagenes/carnet/" . $sede['escuela_verticalfondo'];
     if(file_exists($imgFondo)) {
         $pdf->Image($imgFondo, $x, $y, 20, $carnetHeight);
@@ -129,13 +137,18 @@ foreach($carnetsData as $carnet) {
               "Sede: " . $sede['sede_nombre'] . "\n" .
               $sede['sede_telefono'];
     
+    // Generar archivo QR temporal
     $qrFile = $tempDir . "qr_" . $carnet['alumno_id'] . ".jpeg";
+
+    // Generar imagen QR
     $image = $generator->render_image($symbology, $qrData, $optionsQR);
     imagejpeg($image, $qrFile);
     imagedestroy($image);
     
+    // Insertar QR en el PDF
     if(file_exists($qrFile)) {
         $pdf->Image($qrFile, $x + $carnetWidth - 15, $y + 2, 12, 12);
+        // Eliminar archivo temporal después de usarlo
         @unlink($qrFile);
     }
     
