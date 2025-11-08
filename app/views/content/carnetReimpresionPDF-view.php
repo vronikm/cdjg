@@ -160,7 +160,7 @@ foreach($carnetsData as $carnet) {
     // FOTO DEL ALUMNO
     $fotoPath = "./app/views/imagenes/fotos/alumno/" . $carnet['alumno_imagen'];
     if(!file_exists($fotoPath) || empty($carnet['alumno_imagen'])) {
-        $fotoPath = "./app/views/imagenes/fotos/alumno/koki.png";
+        $fotoPath = "./app/views/imagenes/fotos/alumno/koki.jpg";
     }
 
     $fotoX = $x + $carnetWidth - 20;
