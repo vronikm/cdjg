@@ -87,17 +87,9 @@ foreach($carnetsData as $carnet) {
     // IMÁGENES DECORATIVAS
     // ====================
     
-    // Primero poner la imagen coloreada del mes
-    $imgColor = "./app/views/imagenes/carnet/" . $sede['escuela_verticalcolor'];
-    if(!file_exists($imgColor)) {
-        // Crear una versión coloreada temporalmente
-        // Como FPDF no soporta tinte de color, usamos directamente la imagen de color
-        $pdf->Image($imgColor, $x, $y, 20, $carnetHeight);
-    } else {
-        // Si no existe la imagen de color, usar un rectángulo del color del mes
-        $pdf->SetFillColor($r, $g, $b);
-        $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
-    }
+    // CAPA DE COLOR DEL MES (rectángulo sólido)
+    $pdf->SetFillColor($r, $g, $b);
+    $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
     
     // Luego poner la silueta encima (debe tener transparencia PNG)
     $imgFondo = "./app/views/imagenes/carnet/" . $sede['escuela_verticalfondo'];
