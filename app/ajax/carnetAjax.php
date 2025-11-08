@@ -23,6 +23,10 @@ if(isset($_POST['modulo_carnet'])) {
                 echo json_encode(['color_hex' => $color_hex]);
             }
             break;
+
+        case 'procesar_reimpresion':
+            echo $insCarnet->procesarReimpresion();
+            break;
             
         default:
             $alerta = [

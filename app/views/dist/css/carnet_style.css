@@ -58,9 +58,9 @@ body {
 /* Capa 1: Silueta base del jugador */
 .capa-silueta {
     position: absolute;
-    left: 0;
+    left: 20px;
     top: 0;
-    width: 150px;
+    width: 120px;
     height: 100%;
     object-fit: cover;
     z-index: 1;

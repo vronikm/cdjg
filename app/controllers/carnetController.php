@@ -30,10 +30,15 @@
             return $datos;
         }
 
-        public function listarAlumnos(){
-			$tabla="";
+		/**
+		 * Listar alumnos con pagos de pensión del mes actual
+		 * @return string HTML de filas de tabla
+		 */
+		public function listarAlumnos() {
+			$tabla = "";
 
-			$consulta_datos = "SELECT alumno_id, alumno_identificacion, 
+			$consulta_datos = "SELECT alumno_id, 
+									alumno_identificacion, 
 									CONCAT(alumno_primernombre, ' ', alumno_segundonombre) NOMBRES, 
 									CONCAT(alumno_apellidopaterno, ' ', alumno_apellidomaterno) APELLIDOS, 
 									alumno_carnet, 
@@ -42,51 +47,66 @@
 										WHEN FechaUltPension >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
 										THEN 'Al día' 
 										ELSE 'Pendiente' 
-										END Condicion
-									FROM sujeto_alumno
-									INNER JOIN (        
-										SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(pago_estado) Estado
-											FROM (
-												SELECT MAX(pago_fecha) FechaPension, pago_estado, pago_alumnoid                               
-													FROM alumno_pago 
-													WHERE pago_estado <> 'E'
-													GROUP BY pago_estado, pago_alumnoid
-											) AS Pagos
-											GROUP BY pago_alumnoid
-										) EstadoPagos ON pago_alumnoid = alumno_id
-									WHERE alumno_estado = 'A'";
+									END Condicion
+								FROM sujeto_alumno
+								INNER JOIN (        
+									SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(pago_estado) Estado
+									FROM (
+										SELECT MAX(pago_fecha) FechaPension, pago_estado, pago_alumnoid                               
+										FROM alumno_pago 
+										WHERE pago_estado NOT IN ('E', 'J')
+										GROUP BY pago_estado, pago_alumnoid
+									) AS Pagos
+									GROUP BY pago_alumnoid
+								) EstadoPagos ON pago_alumnoid = alumno_id
+								WHERE alumno_estado = 'A'
+								ORDER BY alumno_apellidopaterno, alumno_apellidomaterno";
 													
 			$datos = $this->ejecutarConsulta($consulta_datos);
-		
-			if($datos->rowCount()>0){
-				$datos = $datos->fetchAll();
-			}
 
-			foreach($datos as $rows){	
-		
-				$tabla.='				
-					<tr>
-						<td>'.$rows['alumno_identificacion'].'</td>
-						<td>'.$rows['NOMBRES'].'</td>
-						<td>'.$rows['APELLIDOS'].'</td>
-                        <td>'.$rows['alumno_carnet'].'</td>
-						<td>'.$rows['FechaUltPension'].'</td>
-						<td>'.$rows['Condicion'].'</td>
-						<td>							
-							<a href="'.APP_URL.'carnetFoto/'.$rows['alumno_id'].'/" class="btn float-right btn-secondary btn-xs" style="margin-right: 5px;">Ver carnet</a>	
-						</td>
-						<td>
-							<div class="custom-control custom-checkbox">
-								<input class="custom-control-input chk-pago" 
-									type="checkbox" 
-									id="'.$rows['alumno_id'].'" 
-									name="pagos_seleccionados[]" 
-									value="'.$rows['alumno_id'].'">								
-								<label for="'.$rows['alumno_id'].'" class="custom-control-label"></label>
-							</div>
-						</td>						
-					</tr>';	
+			if($datos->rowCount() > 0) {
+				$datos = $datos->fetchAll();
+				
+				foreach($datos as $rows) {	
+					$tabla .= '				
+						<tr>
+							<td>' . $rows['alumno_identificacion'] . '</td>
+							<td>' . $rows['NOMBRES'] . '</td>
+							<td>' . $rows['APELLIDOS'] . '</td>
+							<td>' . $rows['alumno_carnet'] . '</td>
+							<td>' . $rows['FechaUltPension'] . '</td>
+							<td>' . $rows['Condicion'] . '</td>
+							<td>							
+								<a href="' . APP_URL . 'carnetFoto/' . $rows['alumno_id'] . '/" 
+								class="btn float-right btn-secondary btn-xs" 
+								style="margin-right: 5px;">
+								Ver carnet
+								</a>	
+							</td>
+							<td style="text-align: center;">
+								<div class="custom-control custom-checkbox">
+									<input class="custom-control-input chk-pago" 
+										type="checkbox" 
+										id="alumno_' . $rows['alumno_id'] . '" 
+										name="pagos_seleccionados[]" 
+										value="' . $rows['alumno_id'] . '">								
+									<label for="alumno_' . $rows['alumno_id'] . '" 
+										class="custom-control-label"></label>
+								</div>
+							</td>						
+						</tr>';	
+				}
+			} else {
+				$tabla = '<tr>
+							<td colspan="8" class="text-center">
+								<div class="alert alert-info mb-0">
+									<i class="fas fa-info-circle"></i> 
+									No hay alumnos con pagos de pensión este mes
+								</div>
+							</td>
+						</tr>';
 			}
+			
 			return $tabla;			
 		}
 
@@ -397,5 +417,364 @@
 				9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
 			];
 			return $meses[$mes] ?? 'Mes desconocido';
-		}	
+		}
+		
+				
+		/**
+		 * ============================================================
+		 * MÉTODOS PARA GENERACIÓN E IMPRESIÓN DE CARNETS
+		 * ============================================================
+		 */
+
+		/**
+		 * Obtener carnets del mes actual listos para imprimir
+		 * Incluye todos los alumnos con pagos de pensión (RPE) del mes
+		 * @return array Array con datos de carnets
+		 */
+		public function obtenerCarnetsMesActual() {
+			$mes_actual = date('n'); // Mes actual (1-12)
+			$anio_actual = date('Y');
+			
+			// Obtener color asignado al mes
+			$colorMes = $this->BuscarColorPorMes($mes_actual);
+			$colorData = $colorMes->fetch();
+			
+			$consulta = "SELECT 
+							a.alumno_id, alumno_carnet,
+							a.alumno_identificacion,
+							CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
+								a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
+							a.alumno_imagen,
+							a.alumno_sedeid,
+							h.horario_nombre,
+							ac.carnet_id,
+							ac.carnet_numero,
+							ac.carnet_mes,
+							ac.carnet_anio,
+							ac.carnet_fecha_emision,
+							ac.carnet_fecha_impresion,
+							0 as es_reimpresion,
+							:color_hex as color_hex,
+							:mes_nombre as mes_nombre
+						FROM sujeto_alumno a
+						INNER JOIN asistencia_asignahorario ah ON ah.asignahorario_alumnoid = a.alumno_id
+						INNER JOIN asistencia_horario h ON h.horario_id = ah.asignahorario_horarioid
+						INNER JOIN alumno_pago ap ON ap.pago_alumnoid = a.alumno_id
+						LEFT JOIN alumno_carnet ac ON ac.carnet_alumnoid = a.alumno_id 
+												AND ac.carnet_mes = :mes 
+												AND ac.carnet_anio = :anio
+						WHERE a.alumno_estado = 'A'
+						AND ap.pago_estado NOT IN ('E', 'J')
+						AND MONTH(ap.pago_fecha) = :mes
+						AND YEAR(ap.pago_fecha) = :anio
+						AND ap.pago_rubroid = 'RPE'
+						GROUP BY a.alumno_id
+						ORDER BY a.alumno_apellidopaterno, a.alumno_apellidomaterno, a.alumno_primernombre";
+			
+			$parametros = [
+				':mes' => $mes_actual,
+				':anio' => $anio_actual,
+				':color_hex' => $colorData['color_hex'] ?? '#CCCCCC',
+				':mes_nombre' => $this->nombreMes($mes_actual)
+			];
+			
+			$datos = $this->ejecutarConsulta($consulta, $parametros);
+			$carnets = $datos->fetchAll();
+			
+			// Generar carnets si no existen
+			$carnetsFinales = [];
+			foreach($carnets as $carnet) {
+				if(empty($carnet['carnet_id'])) {
+					// Crear nuevo carnet
+					$nuevoCarnet = $this->crearCarnet(
+						$carnet['alumno_id'], 
+						$mes_actual, 
+						$anio_actual
+					);
+					$carnet['carnet_id'] = $nuevoCarnet['carnet_id'];
+					$carnet['carnet_numero'] = $nuevoCarnet['carnet_numero'];
+					$carnet['carnet_fecha_emision'] = $nuevoCarnet['carnet_fecha_emision'];
+				}
+				$carnetsFinales[] = $carnet;
+			}
+			
+			return $carnetsFinales;
+		}
+
+		/**
+		 * Crear un nuevo carnet para un alumno
+		 * @param int $alumno_id ID del alumno
+		 * @param int $mes Mes de vigencia
+		 * @param int $anio Año de vigencia
+		 * @return array Datos del carnet creado
+		 */
+		private function crearCarnet($alumno_id, $mes, $anio) {
+			// Generar número de carnet único
+			$numero_carnet = $this->generarNumeroCarnet($alumno_id, $mes, $anio);
+			
+			$sql = "INSERT INTO alumno_carnet 
+					(carnet_numero, carnet_mes, carnet_anio, carnet_alumnoid, carnet_fecha_emision) 
+					VALUES
+					(:numero, :mes, :anio, :alumno_id, CURDATE())";
+			
+			$parametros = [
+				':numero' => $numero_carnet,
+				':mes' => $mes,
+				':anio' => $anio,
+				':alumno_id' => $alumno_id
+			];
+			
+			$this->ejecutarConsulta($sql, $parametros);
+			
+			return [
+				'carnet_id' => $this->obtenerUltimoId(),
+				'carnet_numero' => $numero_carnet,
+				'carnet_fecha_emision' => date('Y-m-d')
+			];
+		}
+
+		/**
+		 * Generar número único de carnet
+		 * Formato: AAMM-XXXXX (Año, Mes, Número secuencial)
+		 * @param int $alumno_id ID del alumno
+		 * @param int $mes Mes
+		 * @param int $anio Año
+		 * @return string Número de carnet
+		 */
+		private function generarNumeroCarnet($alumno_id, $mes, $anio) {
+			$prefijo = substr($anio, -2) . str_pad($mes, 2, '0', STR_PAD_LEFT);
+			
+			// Obtener el último número del mes
+			$sql = "SELECT MAX(CAST(SUBSTRING(carnet_numero, 6) AS UNSIGNED)) as ultimo
+					FROM alumno_carnet 
+					WHERE carnet_mes = :mes 
+					AND carnet_anio = :anio";
+			
+			$parametros = [':mes' => $mes, ':anio' => $anio];
+			$datos = $this->ejecutarConsulta($sql, $parametros);
+			$resultado = $datos->fetch();
+			
+			$siguiente = ($resultado['ultimo'] ?? 0) + 1;
+			
+			return $prefijo . '-' . str_pad($siguiente, 5, '0', STR_PAD_LEFT);
+		}
+
+		/**
+		 * Obtener el último ID insertado
+		 * @return int ID insertado
+		 */
+		private function obtenerUltimoId() {
+			$sql = "SELECT LAST_INSERT_ID() as ultimo_id";
+			$datos = $this->ejecutarConsulta($sql);
+			$resultado = $datos->fetch();
+			return $resultado['ultimo_id'];
+		}
+
+		/**
+		 * Registrar impresión de carnets
+		 * @param array $carnet_ids IDs de carnets impresos
+		 * @return bool
+		 */
+		public function registrarImpresion($carnet_ids) {
+			if(empty($carnet_ids)) {
+				return false;
+			}
+			
+			$ids_string = implode(',', array_map('intval', $carnet_ids));
+			
+			$sql = "UPDATE alumno_carnet 
+					SET carnet_fecha_impresion = NOW() 
+					WHERE carnet_id IN ($ids_string)";
+			
+			return $this->ejecutarConsulta($sql);
+		}
+
+		/**
+		 * Procesar reimpresión de carnets seleccionados
+		 * Genera pago ROT y reimprimir carnets
+		 * @return string JSON con resultado
+		 */
+		public function procesarReimpresion() {
+			// Limpiar y validar datos
+			$alumno_ids = $_POST['pagos_seleccionados'] ?? [];
+			
+			if(empty($alumno_ids)) {
+				return json_encode([
+					"tipo" => "simple",
+					"titulo" => "Sin selección",
+					"texto" => "Debe seleccionar al menos un alumno para reimprimir",
+					"icono" => "warning"
+				]);
+			}
+			
+			// Limpiar IDs
+			$alumno_ids = array_map([$this, 'limpiarCadena'], $alumno_ids);
+			$alumno_ids = array_filter($alumno_ids, 'is_numeric');
+			
+			if(empty($alumno_ids)) {
+				return json_encode([
+					"tipo" => "simple",
+					"titulo" => "Error",
+					"texto" => "IDs de alumnos inválidos",
+					"icono" => "error"
+				]);
+			}
+			
+			$mes_actual = date('n');
+			$anio_actual = date('Y');
+			$fecha_actual = date('Y-m-d');
+			
+			$exitosos = 0;
+			$errores = [];
+			
+			foreach($alumno_ids as $alumno_id) {
+				try {
+					// Verificar si ya tiene carnet del mes
+					$sqlVerificar = "SELECT carnet_id 
+								FROM alumno_carnet 
+								WHERE carnet_alumnoid = :alumno_id
+								AND carnet_mes = :mes
+								AND carnet_anio = :anio";
+					
+					$datos = $this->ejecutarConsulta($sqlVerificar, [
+						':alumno_id' => $alumno_id,
+						':mes' => $mes_actual,
+						':anio' => $anio_actual
+					]);
+					
+					if($datos->rowCount() == 0) {
+						$errores[] = "Alumno ID $alumno_id no tiene carnet original del mes";
+						continue;
+					}
+					
+					// Generar número de recibo único
+					$recibo = $this->generarNumeroRecibo('ROT');
+					
+					// Insertar pago por reimpresión
+					$sqlPago = "INSERT INTO alumno_pago 
+							(pago_rubroid, pago_formapagoid, pago_alumnoid, pago_valor, 
+								pago_saldo, pago_concepto, pago_fecha, pago_fecharegistro, 
+								pago_recibo, pago_estado)
+							VALUES 
+							('ROT', 'EFE', :alumno_id, 1.00, 0.00, 
+								'Por reimpresión de carnet extraviado', 
+								:fecha, :fecha, :recibo, 'P')";
+					
+					$this->ejecutarConsulta($sqlPago, [
+						':alumno_id' => $alumno_id,
+						':fecha' => $fecha_actual,
+						':recibo' => $recibo
+					]);
+					
+					$exitosos++;
+					
+				} catch (Exception $e) {
+					$errores[] = "Error en alumno ID $alumno_id: " . $e->getMessage();
+				}
+			}
+			
+			// Construir respuesta
+			if($exitosos > 0 && empty($errores)) {
+				return json_encode([
+					"tipo" => "redireccionar",
+					"titulo" => "¡Reimpresión procesada!",
+					"texto" => "Se generaron $exitosos pagos por reimpresión. Redirigiendo a impresión...",
+					"icono" => "success",
+					"url" => APP_URL . "carnetReimpresionPDF/" . implode(',', $alumno_ids)
+				]);
+			}
+			
+			if($exitosos > 0 && !empty($errores)) {
+				return json_encode([
+					"tipo" => "simple",
+					"titulo" => "Procesamiento parcial",
+					"texto" => "Exitosos: $exitosos. Errores: " . implode(", ", $errores),
+					"icono" => "warning"
+				]);
+			}
+			
+			return json_encode([
+				"tipo" => "simple",
+				"titulo" => "Error en procesamiento",
+				"texto" => implode(", ", $errores),
+				"icono" => "error"
+			]);
+		}
+
+		/**
+		 * Generar número de recibo único
+		 * @param string $tipo Tipo de pago (ROT para reimpresión)
+		 * @return string Número de recibo
+		 */
+		private function generarNumeroRecibo($tipo) {
+			$sql = "SELECT MAX(CAST(SUBSTRING(pago_recibo, 4) AS UNSIGNED)) as ultimo
+					FROM alumno_pago 
+					WHERE pago_rubroid = :tipo
+					AND YEAR(pago_fecha) = YEAR(CURDATE())";
+			
+			$datos = $this->ejecutarConsulta($sql, [':tipo' => $tipo]);
+			$resultado = $datos->fetch();
+			
+			$siguiente = ($resultado['ultimo'] ?? 0) + 1;
+			
+			return $tipo . str_pad($siguiente, 6, '0', STR_PAD_LEFT);
+		}
+
+		/**
+		 * Obtener carnets para reimpresión
+		 * @param string $alumno_ids_string IDs separados por coma
+		 * @return array Carnets con marca de reimpresión
+		 */
+		public function obtenerCarnetsReimpresion($alumno_ids_string) {
+			$alumno_ids = explode(',', $alumno_ids_string);
+			$alumno_ids = array_map('intval', $alumno_ids);
+			$alumno_ids = array_filter($alumno_ids);
+			
+			if(empty($alumno_ids)) {
+				return [];
+			}
+			
+			$mes_actual = date('n');
+			$anio_actual = date('Y');
+			
+			$ids_string = implode(',', $alumno_ids);
+			
+			// Obtener color del mes
+			$colorMes = $this->BuscarColorPorMes($mes_actual);
+			$colorData = $colorMes->fetch();
+			
+			$consulta = "SELECT 
+							a.alumno_id, alumno_carnet,
+							a.alumno_identificacion,
+							CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
+								a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
+							a.alumno_imagen,
+							h.horario_nombre,
+							ac.carnet_id,
+							ac.carnet_numero,
+							ac.carnet_mes,
+							ac.carnet_anio,
+							ac.carnet_fecha_emision,
+							1 as es_reimpresion,
+							:color_hex as color_hex,
+							:mes_nombre as mes_nombre
+						FROM sujeto_alumno a
+						INNER JOIN asistencia_asignahorario ah ON ah.asignahorario_alumnoid = a.alumno_id
+						INNER JOIN asistencia_horario h ON h.horario_id = ah.asignahorario_horarioid
+						INNER JOIN alumno_carnet ac ON ac.carnet_alumnoid = a.alumno_id
+						WHERE a.alumno_id IN ($ids_string)
+						AND ac.carnet_mes = :mes
+						AND ac.carnet_anio = :anio
+						ORDER BY a.alumno_apellidopaterno, a.alumno_apellidomaterno";
+			
+			$parametros = [
+				':mes' => $mes_actual,
+				':anio' => $anio_actual,
+				':color_hex' => $colorData['color_hex'] ?? '#CCCCCC',
+				':mes_nombre' => $this->nombreMes($mes_actual)
+			];
+			
+			$datos = $this->ejecutarConsulta($consulta, $parametros);
+			return $datos->fetchAll();
+		}
     }

@@ -6,7 +6,7 @@
     include 'app/lib/barcode.php';
 	
 	$generator = new barcode_generator();
-	$optionsQR=array('sx'=>2.5,'sy'=>2.5,'p'=>-10);
+	$optionsQR=array('sx'=>4,'sy'=>4,'p'=>-12);
     
     $alumnoid=$insCarnet->limpiarCadena($url[1]);
     $datos=$insCarnet->infoAlumnoCarnet($alumnoid);
@@ -75,7 +75,7 @@
         <meta charset="UTF-8">
         <title>Carnet de Alumno</title>
         <link rel="icon" type="image/png" href="<?php echo APP_URL; ?>app/views/dist/img/Logos/LogoCDJG.png">
-        <link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/carnet_style.css?v=1.0.8">
+        <link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/carnet_style.css?v=1.0.9">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <style>
@@ -136,7 +136,7 @@
                         echo $svg;  
                     ?>
                     <!-- Número o código del carnet debajo del QR -->
-                    <h2 style="margin-top: -10px;"><?= $datos['alumno_carnet'] ?></h2>
+                    <h2 style="margin-top: -5px;"><?= $datos['alumno_carnet'] ?></h2>
                 </div>
             </div>
 
