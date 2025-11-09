@@ -1,7 +1,7 @@
 <?php
 use app\controllers\carnetController;
 include 'app/lib/barcode.php';
-include 'app/lib/fpdf.php';
+include 'app/lib/alphapdf.php';
 $insCarnet = new carnetController();
 
 // Generador de código QR
@@ -31,7 +31,7 @@ if(empty($carnetsData)) {
     exit;
 }
 // Configuración PDF
-$pdf = new FPDF('P', 'mm', 'A4');
+$pdf = new AlphaPDF('P', 'mm', 'A4');
 $pdf->SetAutoPagebreak(false);
 $pdf->SetMargins(0, 0, 0);
 // Dimensiones del carnet (tamaño tarjeta de crédito estándar)
@@ -86,86 +86,25 @@ foreach($carnetsData as $carnet) {
     // ====================
     // IMÁGENES DECORATIVAS
     // ====================
-    
-    // CAPA DE COLOR DEL MES (rectángulo sólido)
-    $pdf->SetFillColor($r, $g, $b);
-    $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
-    
+
     // Luego poner la silueta encima (debe tener transparencia PNG)
     $imgFondo = "./app/views/imagenes/carnet/" . $sede['escuela_verticalfondo'];
     if(file_exists($imgFondo)) {
-    // Dimensiones en píxeles
-    $anchoCapa = (int)(20 * 3.78);
-    $altoCapa = (int)($carnetHeight * 3.78);
-    
-    // 1. Cargar silueta del jugador
-    $extension = pathinfo($imgFondo, PATHINFO_EXTENSION);
-    if(strtolower($extension) == 'png') {
-        $silueta = @imagecreatefrompng($imgFondo);
-    } else {
-        $silueta = @imagecreatefromjpeg($imgFondo);
+        $pdf->Image($imgFondo, $x, $y, 20, $carnetHeight);
     }
-    
-    if($silueta) {
-        $anchoSilueta = imagesx($silueta);
-        $altoSilueta = imagesy($silueta);
-        
-        // 2. Crear capa base con color del mes
-        $capaColor = imagecreatetruecolor($anchoCapa, $altoCapa);
-        $colorFondo = imagecolorallocate($capaColor, $r, $g, $b);
-        imagefill($capaColor, 0, 0, $colorFondo);
-        
-        // 3. Redimensionar silueta
-        $siluetaResize = imagecreatetruecolor($anchoCapa, $altoCapa);
-        imagecopyresampled(
-            $siluetaResize, $silueta,
-            0, 0, 0, 0,
-            $anchoCapa, $altoCapa,
-            $anchoSilueta, $altoSilueta
-        );
-        
-        // 4. MÉTODO RÁPIDO: Aplicar tinte de color a la silueta
-        // Convertir a escala de grises primero
-        imagefilter($siluetaResize, IMG_FILTER_GRAYSCALE);
-        
-        // Aplicar colorización con el color del mes
-        // Los valores van de -255 a 255
-        imagefilter($siluetaResize, IMG_FILTER_COLORIZE, 
-                   $r - 127, $g - 127, $b - 127);
-        
-        // 5. Combinar con opacity (mezcla 50/50 para mejor resultado)
-        imagecopymerge($capaColor, $siluetaResize, 
-                      0, 0, 0, 0, 
-                      $anchoCapa, $altoCapa, 70);
-        
-        // 6. Guardar y usar
-        $imagenCompuesta = $tempDir . "capa_" . $carnet['alumno_id'] . ".jpg";
-        imagejpeg($capaColor, $imagenCompuesta, 90);
-        
-        $pdf->Image($imagenCompuesta, $x, $y, 20, $carnetHeight);
-        
-        // 7. Limpiar
-        imagedestroy($silueta);
-        imagedestroy($siluetaResize);
-        imagedestroy($capaColor);
-        @unlink($imagenCompuesta);
-    } else {
-        // Si no se puede cargar la imagen, solo color
-        $pdf->SetFillColor($r, $g, $b);
-        $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
-    }
-    
-} else {
-    // Fallback: Solo color
+
+    // CAPA DE COLOR DEL MES (rectángulo sólido)
+    $pdf->SetAlpha(0.5);
     $pdf->SetFillColor($r, $g, $b);
     $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
-}
+    $pdf->SetAlpha(1);
 
-// Imagen decorativa derecha
-$imgDerecha = "./app/views/imagenes/carnet/" . $sede['escuela_verticalprincipal'];
-if(file_exists($imgDerecha)) {
-    $pdf->Image($imgDerecha, $x + $carnetWidth - 65, $y, 1, $carnetHeight);
-}
+    // Imagen decorativa derecha
+    $imgDerecha = "./app/views/imagenes/carnet/" . $sede['escuela_verticalprincipal'];
+    if(file_exists($imgDerecha)) {
+        $pdf->Image($imgDerecha, $x + $carnetWidth - 65, $y, 1, $carnetHeight);
+    }
+
     // ====================
     // HEADER: LOGO Y QR
     // ====================
