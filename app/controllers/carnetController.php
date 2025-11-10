@@ -755,4 +755,32 @@
 			$datos = $this->ejecutarConsulta($consulta, $parametros);
 			return $datos->fetchAll();
 		}
+
+		public function carnetPendientesImpresion() {	
+			$mes_actual = date('n');
+			$anio_actual = date('Y');
+			
+			$consulta = "SELECT count(*) as total							
+							FROM sujeto_alumno a
+							INNER JOIN asistencia_asignahorario ah ON ah.asignahorario_alumnoid = a.alumno_id
+							INNER JOIN asistencia_horario h ON h.horario_id = ah.asignahorario_horarioid
+							INNER JOIN alumno_pago ap ON ap.pago_alumnoid = a.alumno_id
+							LEFT JOIN alumno_carnet ac ON ac.carnet_alumnoid = a.alumno_id 
+																			AND ac.carnet_mes = :mes 
+																			AND ac.carnet_anio = :anio
+							WHERE a.alumno_estado = 'A'
+									AND ap.pago_estado NOT IN ('E', 'J')
+									AND MONTH(ap.pago_fecha) = :mes
+									AND YEAR(ap.pago_fecha) = :anio
+									AND ap.pago_rubroid = 'RPE'
+									AND ac.carnet_alumnoid IS NULL";
+			
+			$parametros = [
+				':mes' => $mes_actual,
+				':anio' => $anio_actual
+			];
+			
+			$datos = $this->ejecutarConsulta($consulta, $parametros);
+			return $datos->fetchAll();
+		}
     }
