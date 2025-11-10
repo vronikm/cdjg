@@ -2,14 +2,14 @@
 use app\controllers\carnetController;
 
 include 'app/lib/barcode.php';
-include 'app/lib/fpdf.php';
+include 'app/lib/alphapdf.php';
 
 $insCarnet = new carnetController();
 
 // Generador de código QR
 $generator = new barcode_generator();
 $symbology = "qr";
-$optionsQR=array('sx'=>2.5,'sy'=>2.5,'p'=>-10);
+$optionsQR=array('sx'=>4,'sy'=>4,'p'=>-12);
 $tempDir = "app/views/dist/img/temp/";
 
 // Obtener IDs de alumnos desde URL (separados por coma)
@@ -32,15 +32,15 @@ if($sede->rowCount() == 1) {
     $sede = $sede->fetch();
 }
 
-// Configuración PDF (IDÉNTICA a carnetPlantillaPDF.php)
-$pdf = new FPDF('P', 'mm', 'A4');
+// Configuración PDF
+$pdf = new AlphaPDF('P', 'mm', 'A4');
 $pdf->SetAutoPagebreak(false);
 $pdf->SetMargins(0, 0, 0);
 
-// Dimensiones del carnet
-$carnetWidth = 85.6;
-$carnetHeight = 53.98;
-$margenX = 12;
+// Dimensiones del carnet (tamaño tarjeta de crédito estándar)
+$carnetWidth = 85.6;  // 85.6mm = ancho tarjeta estándar
+$carnetHeight = 53.98; // 53.98mm = alto tarjeta estándar
+$margenX = 10;
 $margenY = 10;
 $espacioX = 0;
 $espacioY = 0;
@@ -94,16 +94,18 @@ foreach($carnetsData as $carnet) {
     // IMÁGENES DECORATIVAS
     // ====================
     
-    // Capa de color del mes sobre la silueta (simulando overlay)    
-    $pdf->SetFillColor($r, $g, $b);
-    $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
-    
-        // Imagen decorativa izquierda (silueta de fondo)
+    // Luego poner la silueta encima (debe tener transparencia PNG)
     $imgFondo = "./app/views/imagenes/carnet/" . $sede['escuela_verticalfondo'];
     if(file_exists($imgFondo)) {
         $pdf->Image($imgFondo, $x, $y, 20, $carnetHeight);
     }
     
+    // CAPA DE COLOR DEL MES (rectángulo sólido)
+    $pdf->SetAlpha(0.5);
+    $pdf->SetFillColor($r, $g, $b);
+    $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
+    $pdf->SetAlpha(1);
+
     // Imagen decorativa derecha
     $imgDerecha = "./app/views/imagenes/carnet/" . $sede['escuela_verticalprincipal'];
     if(file_exists($imgDerecha)) {
@@ -136,14 +138,18 @@ foreach($carnetsData as $carnet) {
               $sede['sede_telefono'] . "\n" .
               "REIMPRESION: SI";
     
+    // Generar archivo QR temporal
     $qrFile = $tempDir . "qr_" . $carnet['alumno_id'] . ".jpeg";
+
+    // Generar imagen QR
     $image = $generator->render_image($symbology, $qrData, $optionsQR);
     imagejpeg($image, $qrFile);
     imagedestroy($image);
 
-    
+    // Insertar QR en el PDF
     if(file_exists($qrFile)) {
         $pdf->Image($qrFile, $x + $carnetWidth - 15, $y + 2, 12, 12);
+        // Eliminar archivo temporal después de usarlo
         @unlink($qrFile);
     }
     

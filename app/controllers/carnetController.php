@@ -432,6 +432,7 @@
 		 * @return array Array con datos de carnets
 		 */
 		public function obtenerCarnetsMesActual() {
+			$fecha_actual = date('Y-m-d');
 			$mes_actual = date('n'); // Mes actual (1-12)
 			$anio_actual = date('Y');
 			
@@ -448,11 +449,12 @@
 							a.alumno_sedeid,
 							h.horario_nombre,
 							ac.carnet_id,
+							ac.carnet_alumnoid,
 							ac.carnet_numero,
-							ac.carnet_mes,
-							ac.carnet_anio,
-							ac.carnet_fecha_emision,
-							ac.carnet_fecha_impresion,
+							:mes as carnet_mes,
+							:anio as carnet_anio,
+							:fecha_actual as carnet_fecha_emision,
+							:fecha_actual as carnet_fecha_impresion,
 							0 as es_reimpresion,
 							:color_hex as color_hex,
 							:mes_nombre as mes_nombre
@@ -468,9 +470,11 @@
 								AND MONTH(ap.pago_fecha) = :mes
 								AND YEAR(ap.pago_fecha) = :anio
 								AND ap.pago_rubroid = 'RPE'
+								AND ac.carnet_alumnoid IS NULL
 							ORDER BY a.alumno_apellidopaterno, a.alumno_apellidomaterno, a.alumno_primernombre";
 			
 			$parametros = [
+				':fecha_actual' => $fecha_actual,
 				':mes' => $mes_actual,
 				':anio' => $anio_actual,
 				':color_hex' => $colorData['color_hex'] ?? '#CCCCCC',
@@ -487,6 +491,7 @@
 					// Crear nuevo carnet
 					$nuevoCarnet = $this->crearCarnet(
 						$carnet['alumno_id'], 
+						$carnet['alumno_carnet'], 
 						$mes_actual, 
 						$anio_actual
 					);
@@ -503,21 +508,19 @@
 		/**
 		 * Crear un nuevo carnet para un alumno
 		 * @param int $alumno_id ID del alumno
+		 * @param int $alumno_carnet Código de carnet del alumno
 		 * @param int $mes Mes de vigencia
 		 * @param int $anio Año de vigencia
 		 * @return array Datos del carnet creado
 		 */
-		private function crearCarnet($alumno_id, $mes, $anio) {
-			// Generar número de carnet único
-			$numero_carnet = $this->generarNumeroCarnet($alumno_id, $mes, $anio);
-			
+		private function crearCarnet($alumno_id, $alumno_carnet, $mes, $anio) {
 			$sql = "INSERT INTO alumno_carnet 
-					(carnet_numero, carnet_mes, carnet_anio, carnet_alumnoid, carnet_fecha_emision) 
+					(carnet_numero, carnet_mes, carnet_anio, carnet_alumnoid, carnet_fecha_emision, carnet_fecha_impresion) 
 					VALUES
-					(:numero, :mes, :anio, :alumno_id, CURDATE())";
+					(:numero, :mes, :anio, :alumno_id, CURDATE(), CURDATE())";
 			
 			$parametros = [
-				':numero' => $numero_carnet,
+				':numero' => $alumno_carnet,
 				':mes' => $mes,
 				':anio' => $anio,
 				':alumno_id' => $alumno_id
@@ -527,35 +530,9 @@
 			
 			return [
 				'carnet_id' => $this->obtenerUltimoId(),
-				'carnet_numero' => $numero_carnet,
+				'carnet_numero' => $alumno_carnet,
 				'carnet_fecha_emision' => date('Y-m-d')
 			];
-		}
-
-		/**
-		 * Generar número único de carnet
-		 * Formato: AAMM-XXXXX (Año, Mes, Número secuencial)
-		 * @param int $alumno_id ID del alumno
-		 * @param int $mes Mes
-		 * @param int $anio Año
-		 * @return string Número de carnet
-		 */
-		private function generarNumeroCarnet($alumno_id, $mes, $anio) {
-			$prefijo = substr($anio, -2) . str_pad($mes, 2, '0', STR_PAD_LEFT);
-			
-			// Obtener el último número del mes
-			$sql = "SELECT MAX(CAST(SUBSTRING(carnet_numero, 6) AS UNSIGNED)) as ultimo
-					FROM alumno_carnet 
-					WHERE carnet_mes = :mes 
-					AND carnet_anio = :anio";
-			
-			$parametros = [':mes' => $mes, ':anio' => $anio];
-			$datos = $this->ejecutarConsulta($sql, $parametros);
-			$resultado = $datos->fetch();
-			
-			$siguiente = ($resultado['ultimo'] ?? 0) + 1;
-			
-			return $prefijo . '-' . str_pad($siguiente, 5, '0', STR_PAD_LEFT);
 		}
 
 		/**
@@ -620,6 +597,7 @@
 			}
 			
 			$mes_actual = date('n');
+			$name_mesactual = $this->nombreMes($mes_actual);
 			$anio_actual = date('Y');
 			$fecha_actual = date('Y-m-d');
 			
@@ -653,15 +631,16 @@
 					$sqlPago = "INSERT INTO alumno_pago 
 							(pago_rubroid, pago_formapagoid, pago_alumnoid, pago_valor, 
 								pago_saldo, pago_concepto, pago_fecha, pago_fecharegistro, 
-								pago_recibo, pago_estado)
+								pago_periodo, pago_recibo, pago_estado)
 							VALUES 
-							('ROT', 'EFE', :alumno_id, 1.00, 0.00, 
+							('ROT', 'FEF', :alumno_id, 1.00, 0.00, 
 								'Por reimpresión de carnet extraviado', 
-								:fecha, :fecha, :recibo, 'P')";
+								:fecha, :fecha, :periodo, :recibo, 'C')";
 					
 					$this->ejecutarConsulta($sqlPago, [
 						':alumno_id' => $alumno_id,
 						':fecha' => $fecha_actual,
+						':periodo' => $name_mesactual . '/' . $anio_actual,
 						':recibo' => $recibo
 					]);
 					
