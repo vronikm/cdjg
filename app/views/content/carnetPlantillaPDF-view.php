@@ -112,7 +112,7 @@ foreach($carnetsData as $carnet) {
     // Logo de la sede
     $logoPath = "./app/views/imagenes/fotos/sedes/" . $sede['sede_foto'];
     if(file_exists($logoPath)) {
-        $pdf->Image($logoPath, $x + 40, $y + 2, 12, 16);
+        $pdf->Image($logoPath, $x + 40, $y + 2, 13, 18);
     }
     
     // Código QR
@@ -162,10 +162,10 @@ foreach($carnetsData as $carnet) {
         $fotoPath = "./app/views/imagenes/fotos/alumno/koki.jpg";
     }
     
-    $fotoX = $x + $carnetWidth - 20;
+    $fotoX = $x + $carnetWidth - 23;
     $fotoY = $y + 20;
-    $fotoWidth = 17;
-    $fotoHeight = 22;
+    $fotoWidth = 20;
+    $fotoHeight = 25;
     
     if(file_exists($fotoPath)) {
         $pdf->Image($fotoPath, $fotoX, $fotoY, $fotoWidth, $fotoHeight);
@@ -276,12 +276,12 @@ foreach($carnetsData as $carnet) {
         0, 0, 'L');
     
     // Contacto
-    $infoY += 3;
+    $infoY += 3.5;
     $pdf->SetFont('Arial', '', 6);
     $pdf->SetTextColor(100, 100, 100);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(40, 2, 'clubjorgeguzman@gmail.com', 0, 0, 'L');
-    $infoY += 2;
+    $infoY += 3;
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(40, 2, '0983779393', 0, 0, 'L');
     
