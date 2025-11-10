@@ -112,7 +112,7 @@ foreach($carnetsData as $carnet) {
     // Logo de la sede
     $logoPath = "./app/views/imagenes/fotos/sedes/" . $sede['sede_foto'];
     if(file_exists($logoPath)) {
-        $pdf->Image($logoPath, $x + 40, $y + 2, 10, 14);
+        $pdf->Image($logoPath, $x + 40, $y + 2, 12, 16);
     }
     
     // Código QR
@@ -147,7 +147,7 @@ foreach($carnetsData as $carnet) {
     }
     
     // Número de carnet debajo del QR
-    $pdf->SetFont('Arial', 'B', 7);
+    $pdf->SetFont('Arial', 'B', 8.5);
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetXY($x + $carnetWidth - 15, $y + 14);
     $pdf->Cell(12, 3, $carnet['alumno_carnet'], 0, 0, 'C');
@@ -184,14 +184,14 @@ foreach($carnetsData as $carnet) {
     $infoY = $y + 17;
 
     // TÍTULO "DEPORTISTA"
-    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->SetFont('Arial', 'B', 6);
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(40, 3, 'DEPORTISTA', 0, 0, 'L');
     
     // Nombre completo
     $infoY += 4;
-    $pdf->SetFont('Arial', 'B', 7);
+    $pdf->SetFont('Arial', 'B', 9);
     $pdf->SetXY($infoX, $infoY);
     $nombreCompleto = mb_convert_encoding(
         strtoupper($carnet['alumno_nombre']), 
@@ -199,8 +199,8 @@ foreach($carnetsData as $carnet) {
     );
 
     // Si el nombre es muy largo, dividirlo en 2 líneas
-    if(strlen($carnet['alumno_nombre']) > 26) {
-        $pdf->MultiCell(40, 2.5, $nombreCompleto, 0, 'L');
+    if(strlen($carnet['alumno_nombre']) > 21) {
+        $pdf->MultiCell(40, 3, $nombreCompleto, 0, 'L');
         $infoY = $pdf->GetY(); //Para separar el multicell
     } else {
         $pdf->Cell(40, 3, $nombreCompleto, 0, 0, 'L');
@@ -209,19 +209,19 @@ foreach($carnetsData as $carnet) {
     
     // C.I.
     $infoY += 1;
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont('Arial', '', 7.5);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'C.I.:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 6);
+    $pdf->SetFont('Arial', 'B', 7.5);
     $pdf->SetXY($infoX + 8, $infoY);
     $pdf->Cell(32, 2.5, $carnet['alumno_identificacion'], 0, 0, 'L');
     
     // Horario
     $infoY += 3;
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont('Arial', '', 7.5);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Horario:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 6);
+    $pdf->SetFont('Arial', 'B', 7.5);
     $pdf->SetXY($infoX + 12, $infoY);
     $pdf->Cell(28, 2.5, 
         mb_convert_encoding($carnet['horario_nombre'], 'ISO-8859-1', 'UTF-8'), 
@@ -240,23 +240,23 @@ foreach($carnetsData as $carnet) {
     }
     
     $infoY += 3;
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont('Arial', '', 7.5);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Edad:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 6);
+    $pdf->SetFont('Arial', 'B', 7.5);
     $pdf->SetXY($infoX + 10, $infoY);
     $pdf->Cell(30, 2.5, $edad . ' ' . mb_convert_encoding('años', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
     
     // Mes vigencia con badge de color
     $infoY += 3;
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont('Arial', '', 7.5);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Mes vigencia:', 0, 0, 'L');
     
     // Badge con color del mes
     $pdf->SetFillColor($r, $g, $b);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Arial', 'B', 6);
+    $pdf->SetFont('Arial', 'B', 7.5);
     $pdf->SetXY($infoX + 18, $infoY - 0.5);
     $mesNombre = $nombresMeses[$carnet['carnet_mes']] ?? 'N/A';
     $pdf->Cell(20, 3, 
@@ -266,10 +266,10 @@ foreach($carnetsData as $carnet) {
     // Sede
     $infoY += 3;
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont('Arial', '', 7.5);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Sede:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 6);
+    $pdf->SetFont('Arial', 'B', 7.5);
     $pdf->SetXY($infoX + 10, $infoY);
     $pdf->Cell(30, 2.5, 
         mb_convert_encoding($sede['sede_nombre'], 'ISO-8859-1', 'UTF-8'), 
@@ -277,7 +277,7 @@ foreach($carnetsData as $carnet) {
     
     // Contacto
     $infoY += 3;
-    $pdf->SetFont('Arial', '', 5);
+    $pdf->SetFont('Arial', '', 6);
     $pdf->SetTextColor(100, 100, 100);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(40, 2, 'clubjorgeguzman@gmail.com', 0, 0, 'L');
