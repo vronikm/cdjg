@@ -31,7 +31,7 @@
 								LEFT JOIN alumno_pago_transaccion PT ON PT.transaccion_id  = T.IDT
 							where pago_estado <> 'E'
 								and alumno_sedeid = ".$sede_id."
-								and pago_fecha between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+								and pago_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 							
 							union all 
 														
@@ -53,7 +53,7 @@
 								inner join general_sede S on S.sede_id = alumno_sedeid
 							where transaccion_estado <> 'E'
 								and alumno_sedeid = ".$sede_id."
-								and transaccion_fecha between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+								and transaccion_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 								ORDER BY FECHA_PAGO DESC";
 
 			$datos = $this->ejecutarConsulta($consulta_datos);
@@ -116,7 +116,7 @@
 								GROUP BY PT.transaccion_pagoid)T ON T.transaccion_pagoid = P.pago_id
 								LEFT JOIN alumno_pago_transaccion PT ON PT.transaccion_id  = T.IDT
 							where pago_estado <> 'E'
-								and pago_fecha between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+								and pago_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 							
 							union all 
 														
@@ -138,7 +138,7 @@
 								inner join general_tabla_catalogo F ON F.catalogo_valor = T.transaccion_formapagoid 
 								inner join general_sede S on S.sede_id = alumno_sedeid
 							where transaccion_estado <> 'E'
-								and transaccion_fecha between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+								and transaccion_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 								ORDER BY FECHA_PAGO DESC";
 
 			$datos = $this->ejecutarConsulta($consulta_datos);
