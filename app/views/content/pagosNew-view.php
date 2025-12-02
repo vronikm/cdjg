@@ -4,6 +4,8 @@
 	use app\controllers\pagosController;
 	$insAlumno = new pagosController();	
 
+	$torneo_id = null;
+
 	$alumno=$insLogin->limpiarCadena($url[1]);
 
 	$datos=$insAlumno->BuscarAlumno($alumno);
@@ -620,8 +622,8 @@
 												<div class="col-md-4">
 													<div class="form-group">
 													<label for="pago_campeonatoid">Campeonato</label>
-													<select id="pago_campeonatoid" class="form-control select2" name="pago_campeonatoid" <?php echo $disabled; ?>>																									
-														<?php echo $insAlumno->listarCampeonatos(); ?>
+													<select id="pago_campeonatoid" class="form-control select2" name="pago_campeonatoid" <?php echo $disabled; ?> required>																																							
+														<?php echo $insAlumno->listarCampeonatos($torneo_id); ?>
 													</select>	
 													</div>
 												</div>

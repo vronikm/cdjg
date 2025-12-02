@@ -285,7 +285,7 @@
 		public function listarCampeonatos($torneo_id = null){
 			$option="";
 
-			$consulta_datos="select torneo_id, torneo_nombre from torneo_torneo where torneo_estado = 'A'";	
+			$consulta_datos="select * from torneo_torneo where torneo_estado = 'A'";	
 					
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
@@ -618,6 +618,7 @@
 			
 			if ($pago_valor =="") {$pago_valor = 0;}
 			if ($pago_saldo =="") {$pago_saldo = 0;}
+			if ($pago_campeonatoid == "" ){$pago_campeonatoid = 0;}
 
 			if($pago_rubro == "pension"){
 				$rubroid="RPE";			
