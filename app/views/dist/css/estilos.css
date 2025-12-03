@@ -18,3 +18,39 @@ body,html{
     max-width: 400px;
     min-width: 300px;
 }
+
+/*---- Para la opción Ver asistencias--*/
+.bg-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    text-align: center;
+    font-weight: bold;
+}
+.bg-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
+    text-align: center;
+    font-weight: bold;
+}
+.bg-secondary {
+    background-color: #6c757d !important;
+    text-align: center;
+}
+.bg-light {
+    background-color: #f8f9fa !important;
+    text-align: center;
+}
+#example1 td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 4px !important;
+    font-size: 0.85rem;
+}
+#example1 th {
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.85rem;
+}
+.text-white {
+    color: white !important;
+}

@@ -74,6 +74,12 @@
                       <p>Ver registro</p>
                     </a>
                   </li>
+                  <li class="nav-item">
+                    <a href="<?php echo APP_URL."asistenciaList/" ?>" class="nav-link <?php if ($url[0]=='asistenciaList') echo 'active'; else echo ''; ?>">
+                      <i class="nav-icon far fa-circle text-info"></i>
+                      <p>Ver asistencias</p>
+                    </a>
+                  </li>
                 </ul>
               </li>
               

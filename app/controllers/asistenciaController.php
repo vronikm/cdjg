@@ -1681,6 +1681,206 @@
 			}
 			
 			return json_encode($eventos);
-		} 
+		}
+
+		/*----------- Opción Ver asistencias -------------------------*/
+
+		// Método auxiliar para obtener días hábiles del mes
+		private function obtenerDiasHabiles($anio, $mes) {
+			$dias_habiles = [];
+			$dias_totales = cal_days_in_month(CAL_GREGORIAN, $mes, $anio);
+			
+			// Obtener feriados del mes
+			$consulta_feriados = "SELECT DAY(feriado_fecha) as dia 
+								FROM asistencia_feriados 
+								WHERE YEAR(feriado_fecha) = '$anio' 
+								AND MONTH(feriado_fecha) = '$mes' 
+								AND feriado_activo = 1";
+			
+			$resultado_feriados = $this->ejecutarConsulta($consulta_feriados);
+			$feriados = [];
+			
+			while ($row = $resultado_feriados->fetch()) {
+				$feriados[] = (int)$row['dia'];
+			}
+			
+			// Recorrer todos los días del mes
+			for ($dia = 1; $dia <= $dias_totales; $dia++) {
+				$fecha = mktime(0, 0, 0, $mes, $dia, $anio);
+				$dia_semana = date('N', $fecha); // 1 (Lunes) a 7 (Domingo)
+				
+				// Excluir sábados (6) y domingos (7) y feriados
+				if ($dia_semana < 6 && !in_array($dia, $feriados)) {
+					$dias_habiles[] = $dia;
+				}
+			}
+			
+			return $dias_habiles;
+		}
+
+		public function listarAsistenciaAlumnos($identificacion = "", $apellido = "", $nombre = "", $anio = "", $mes = "", $sedeid = "") {
+			$tabla = "";
+			
+			// Construir la condición de año-mes
+			$condicionAnioMes = "";
+			$aniomes_param = "";
+			
+			if (!empty($anio) && !empty($mes)) {
+				$aniomes_param = $anio . str_pad($mes, 2, '0', STR_PAD_LEFT);
+				$condicionAnioMes = " AND a.asistencia_aniomes = '$aniomes_param'";
+			} elseif (!empty($anio) && empty($mes)) {
+				$condicionAnioMes = " AND a.asistencia_aniomes LIKE '$anio%'";
+			}
+			
+			// Calcular días hábiles si hay año y mes específico
+			$dias_habiles = [];
+			if (!empty($anio) && !empty($mes)) {
+				$dias_habiles = $this->obtenerDiasHabiles($anio, $mes);
+			}
+			
+			// Consulta SQL
+			$consulta_datos = "SELECT al.alumno_id,
+									CONCAT(al.alumno_apellidopaterno, ' ', al.alumno_apellidomaterno, ' ', al.alumno_primernombre, ' ', al.alumno_segundonombre) as nombre_completo,
+									TIMESTAMPDIFF(YEAR, al.alumno_fechanacimiento, CURDATE()) AS alumno_edad,
+									a.asistencia_aniomes,
+									a.asistencia_D01, a.asistencia_D02, a.asistencia_D03, a.asistencia_D04, a.asistencia_D05,
+									a.asistencia_D06, a.asistencia_D07, a.asistencia_D08, a.asistencia_D09, a.asistencia_D10,
+									a.asistencia_D11, a.asistencia_D12, a.asistencia_D13, a.asistencia_D14, a.asistencia_D15,
+									a.asistencia_D16, a.asistencia_D17, a.asistencia_D18, a.asistencia_D19, a.asistencia_D20,
+									a.asistencia_D21, a.asistencia_D22, a.asistencia_D23, a.asistencia_D24, a.asistencia_D25,
+									a.asistencia_D26, a.asistencia_D27, a.asistencia_D28, a.asistencia_D29, a.asistencia_D30,
+									a.asistencia_D31
+								FROM sujeto_alumno al
+								LEFT JOIN asistencia_asistencia a ON al.alumno_id = a.asistencia_alumnoid
+								WHERE 1=1";
+			
+			if ($identificacion != "") {
+				$consulta_datos .= " AND al.alumno_identificacion LIKE '%$identificacion%'";
+			}
+			if ($apellido != "") {
+				$consulta_datos .= " AND al.alumno_apellidopaterno LIKE '%$apellido%'";
+			}
+			if ($nombre != "") {
+				$consulta_datos .= " AND al.alumno_primernombre LIKE '%$nombre%'";
+			}
+			if ($sedeid != "" && $sedeid != "0") {
+				$consulta_datos .= " AND al.alumno_sedeid = '$sedeid'";
+			}
+			
+			$consulta_datos .= $condicionAnioMes;
+			$consulta_datos .= " ORDER BY al.alumno_apellidopaterno, al.alumno_primernombre";
+			
+			$datos = $this->ejecutarConsulta($consulta_datos);
+			$datos = $datos->fetchAll();
+			
+			foreach ($datos as $rows) {
+				// Calcular porcentaje de asistencia
+				$presentes = 0;
+				$faltas = 0;
+				
+				// Si hay año y mes específico, usar días hábiles calculados
+				if (!empty($dias_habiles)) {
+					$total_dias_habiles = count($dias_habiles);
+					
+					foreach ($dias_habiles as $dia) {
+						$campo_dia = 'asistencia_D' . str_pad($dia, 2, '0', STR_PAD_LEFT);
+						
+						if ($rows[$campo_dia] == 'P') {
+							$presentes++;
+						} elseif ($rows[$campo_dia] == 'F') {
+							$faltas++;
+						}
+						// NULL o vacío se considera como no registrado aún
+					}
+					
+					$porcentaje = $total_dias_habiles > 0 ? round(($presentes / $total_dias_habiles) * 100, 1) : 0;
+					
+				} else {
+					// Si no hay filtro específico, calcular basado en registros existentes
+					// Extraer año y mes del aniomes del registro
+					if ($rows['asistencia_aniomes']) {
+						$anio_registro = substr($rows['asistencia_aniomes'], 0, 4);
+						$mes_registro = substr($rows['asistencia_aniomes'], 4, 2);
+						$dias_habiles_registro = $this->obtenerDiasHabiles($anio_registro, $mes_registro);
+						$total_dias_habiles = count($dias_habiles_registro);
+						
+						foreach ($dias_habiles_registro as $dia) {
+							$campo_dia = 'asistencia_D' . str_pad($dia, 2, '0', STR_PAD_LEFT);
+							
+							if ($rows[$campo_dia] == 'P') {
+								$presentes++;
+							} elseif ($rows[$campo_dia] == 'F') {
+								$faltas++;
+							}
+						}
+						
+						$porcentaje = $total_dias_habiles > 0 ? round(($presentes / $total_dias_habiles) * 100, 1) : 0;
+					} else {
+						$total_dias_habiles = 0;
+						$porcentaje = 0;
+					}
+				}
+				
+				$tabla .= '<tr>
+					<td>' . $rows['nombre_completo'] . '</td>
+					<td>' . $rows['alumno_edad'] . '</td>';
+				
+				// Mostrar cada día del mes
+				for ($i = 1; $i <= 31; $i++) {
+					$dia = 'asistencia_D' . str_pad($i, 2, '0', STR_PAD_LEFT);
+					$valor = $rows[$dia];
+					
+					// Verificar si el día es hábil
+					$es_dia_habil = empty($dias_habiles) || in_array($i, $dias_habiles);
+					
+					if (!$es_dia_habil) {
+						// Día de fin de semana o feriado
+						$tabla .= '<td class="bg-secondary text-white" title="Fin de semana/Feriado">-</td>';
+					} elseif ($valor == 'P') {
+						$tabla .= '<td class="bg-success text-white" title="Presente">P</td>';
+					} elseif ($valor == 'F') {
+						$tabla .= '<td class="bg-danger text-white" title="Falta">F</td>';
+					} else {
+						$tabla .= '<td class="bg-light" title="Sin registro">-</td>';
+					}
+				}
+				
+				// Mostrar estadísticas
+				$tabla .= '<td>
+					<strong>' . $porcentaje . '%</strong><br>
+					<small class="text-success">P: ' . $presentes . '</small> | 
+					<small class="text-danger">F: ' . $faltas . '</small><br>
+					<small class="text-muted">Total: ' . $total_dias_habiles . ' días</small>
+				</td></tr>';
+			}
+			
+			return $tabla;
+		}
+
+		public function listarSede($sedeid, $rolid = null, $usuario = null){
+			$option="";
+
+			if($rolid != 1 && $rolid != 2){
+				$consulta_datos="SELECT S.sede_id, S.sede_nombre 
+									FROM general_sede S
+									INNER JOIN seguridad_usuario_sede US ON US.usuariosede_sedeid = S.sede_id
+									INNER JOIN seguridad_usuario U ON U.usuario_id = US.usuariosede_usuarioid
+									WHERE U.usuario_usuario  = '".$usuario."'";
+			}else{
+				$consulta_datos="SELECT sede_id, sede_nombre FROM general_sede";
+			}						
+					
+			$datos = $this->ejecutarConsulta($consulta_datos);
+			$datos = $datos->fetchAll();
+			foreach($datos as $rows){
+				if($sedeid == $rows['sede_id']){
+					$option.='<option value='.$rows['sede_id'].' selected>'.$rows['sede_nombre'].'</option>';
+				}else{
+					$option.='<option value='.$rows['sede_id'].'>'.$rows['sede_nombre'].'</option>';	
+				}
+					
+			}
+			return $option;
+		}
 	}
 			
