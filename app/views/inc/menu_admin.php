@@ -334,6 +334,12 @@
                     </a>
                   </li>
 
+                  <li class="nav-item">
+                    <a href="<?php echo APP_URL."feriadosList/" ?>" class="nav-link <?php if ($url[0]=='feriadosList') echo 'active'; else echo ''; ?>">
+                      <i class="nav-icon far fa-calendar-alt text-info"></i>
+                      <p>Feriados</p>
+                    </a>
+                  </li>
                 </ul>
               </li>
 
