@@ -3,7 +3,12 @@
 	$insRecibidos = new reporteController();
 	$sede_id 	  = ($url[1] != "") ? $url[1] : 0;
 	$sede_nombre  = "";
-
+	
+	if(isset($_POST['pago_rubro'])){
+		$pago_rubro = $insRecibidos->limpiarCadena($_POST['pago_rubro']);
+	} ELSE{
+		$pago_rubro = "";
+	}
 	if(isset($_POST['pago_fecha_inicio'])){
 		$fecha_inicio = $insRecibidos->limpiarCadena($_POST['pago_fecha_inicio']);
 	} ELSE{
@@ -11,7 +16,6 @@
 		$fecha_inicio = $fecha_inicio->fetch(); 
 		$fecha_inicio = $fecha_inicio['FECHA_MAXIMA'];
 	}
-
 	if(isset($_POST['pago_fecha_fin'])){
 		$fecha_fin = $insRecibidos->limpiarCadena($_POST['pago_fecha_fin']);
 	} ELSE{
@@ -19,7 +23,6 @@
 		$fecha_fin = $fecha_fin->fetch(); 
 		$fecha_fin = $fecha_fin['FECHA_MAXIMA'];
 	}	
-
 	$datos=$insRecibidos->seleccionarDatos("Unico","general_sede","sede_id",$sede_id);
 	if($datos->rowCount()==1){
 		$datos		  = $datos->fetch();
@@ -27,7 +30,6 @@
 		$sede_nombre  = $datos["sede_nombre"];
 	}
 ?>
-
 <html lang="es">
   <head>
     <meta charset="UTF-8">
@@ -53,14 +55,11 @@
       <!-- Navbar -->
       <?php require_once "app/views/inc/navbar.php"; ?>
       <!-- /.navbar -->
-
       <!-- Main Sidebar Container -->
       <?php require_once "app/views/inc/main-sidebar.php"; ?>
       <!-- /.Main Sidebar Container -->  
-
       <!-- vista -->
       <div class="content-wrapper">
-
 		<!-- Content Header (Page header) -->
 		<div class="content-header">
 			<div class="container-fluid">
@@ -78,7 +77,6 @@
 			</div><!-- /.container-fluid -->
 		</div>
 		<!-- /.content-header -->
-
 		<!-- Section listado de alumnos -->
 		<section class="content">
 			<form action="<?php echo APP_URL."reportePagos/" ?>" method="POST" autocomplete="off" enctype="multipart/form-data" >			
@@ -94,8 +92,8 @@
 					</div>  
 					<!-- card-body -->                
 					<div class="card-body">
-						<div class="row">
-							<div class="col-md-4">
+						<div class="row align-items-end">
+							<div class="col-md-3">
 								<div class="form-group campo">
 									<label for="pago_fecha">Fecha inicio</label>
 									<div class="input-group">
@@ -107,7 +105,7 @@
 									<!-- /.input group -->
 								</div>
 							</div>
-							<div class="col-md-4">
+							<div class="col-md-3">
 								<div class="form-group campo">
 									<label for="pago_fecha">Fecha fin</label>
 									<div class="input-group">
@@ -119,11 +117,17 @@
 									<!-- /.input group -->
 								</div>
 							</div>	
-							
 							<div class="col-md-3">
 								<div class="form-group">
-									<label for="alumno_sedeid">.</label>
-									<button type="submit" class="form-control btn btn-info">Buscar</button>
+									<label for="pago_rubro">Rubro</label>
+									<select class="form-control select2" id="pago_rubro" name="pago_rubro" required>																									
+										<?php echo $insRecibidos->listarOptionRubro($pago_rubro); ?>
+									</select>	
+								</div>
+							</div>
+							<div class="col-md-3">
+								<div class="form-group input-group-sm">
+									<button type="submit" class="form-control btn btn-sm btn-info"> <i class="fas fa-search"></i> Buscar</button>
 								</div>
 							</div>
 						</div>					
@@ -162,11 +166,10 @@
 							</thead>
 							<tbody>
 								<?php 
-									if($sede_id!=0){
-										echo $insRecibidos->listarPagos($fecha_inicio, $fecha_fin, $sede_id); 
-									}else{
+									if($pago_rubro == 0)
 										echo $insRecibidos->listarPagosConsolidado($fecha_inicio, $fecha_fin); 
-									}	
+									else
+										echo $insRecibidos->listarPagosRubros($fecha_inicio, $fecha_fin, $pago_rubro); 	
 								?>								
 							</tbody>
 						</table>	
@@ -179,7 +182,6 @@
       </div>
       <!-- /.vista -->
       <?php require_once "app/views/inc/footer.php"; ?>
-
       <!-- Control Sidebar -->
       <aside class="control-sidebar control-sidebar-dark">
         <!-- Control sidebar content goes here -->
@@ -209,77 +211,6 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/main.js" ></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/sweetalert2.all.min.js" ></script>
-    <!-- Page specific script -->
-
-	<script>
-	$(function () {
-		$("#example1").DataTable({
-		"order": [[1, "desc"]], // Ordena la segunda columna ("# de camiseta") por defecto de manera descendente
-		"responsive": true, "lengthChange": false, "autoWidth": false,
-		"language": {
-			"decimal": "",
-			"emptyTable": "No hay datos disponibles en la tabla",
-			"info": "Mostrando _START_ a _END_ de _TOTAL_ entradas",
-			"infoEmpty": "Mostrando 0 a 0 de 0 entradas",
-			"infoFiltered": "(filtrado de _MAX_ entradas totales)",
-			"infoPostFix": "",
-			"thousands": ",",
-			"lengthMenu": "Mostrar _MENU_ entradas",
-			"loadingRecords": "Cargando...",
-			"processing": "Procesando...",
-			"search": "Buscar:",
-			"zeroRecords": "No se encontraron registros coincidentes",
-			"paginate": {
-				"first": "Primero",
-				"last": "Último",
-				"next": "Siguiente",
-				"previous": "Anterior"
-			},
-			"aria": {
-				"sortAscending": ": activar para ordenar la columna ascendente",
-				"sortDescending": ": activar para ordenar la columna descendente"
-			},
-			"buttons": {
-				"copy": "Copiar",
-				"print": "Imprimir",
-                "text": 'Imprimir Tabla',
-                "title": 'Datos de Alumnos',
-                "messageTop": 'Generado por el sistema de gestión de alumnos.',
-                "messageBottom": 'Página generada automáticamente.',
-                customize: function(win) {
-                    $(win.document.body)
-                        .css('font-family', 'Arial')
-                        .css('background-color', '#f3f3f3');
-
-                    // Cambiar el estilo de la tabla impresa
-                    $(win.document.body).find('table')
-                        .addClass('display')  // Añadir una clase CSS a la tabla impresa
-                        .css('font-size', '12pt')
-                        .css('border', '1px solid black');
-
-                    // Agregar logotipo al principio
-                    $(win.document.body).prepend(
-                        '<img src="https://example.com/logo.png" style="position:absolute; top:0; left:0; width:100px;" />'
-                    );
-
-                    // Modificar título y agregar estilos CSS adicionales
-                    $(win.document.body).find('h1')
-                        .css('text-align', 'center')
-                        .css('color', '#4CAF50');
-				}
-			}
-		},
-		//"buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-		}).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-	});
-	</script>
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/datatables.js?v=1.0.1"></script> 
   </body>
 </html>
-
-
-
-
-
-
-
-
