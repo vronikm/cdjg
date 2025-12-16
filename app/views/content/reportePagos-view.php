@@ -54,7 +54,7 @@
     <div class="wrapper">
       <!-- Navbar -->
       <?php require_once "app/views/inc/navbar.php"; ?>
-      <!-- /.navbar -->
+      <!-- /.navbar --> 
       <!-- Main Sidebar Container -->
       <?php require_once "app/views/inc/main-sidebar.php"; ?>
       <!-- /.Main Sidebar Container -->  
