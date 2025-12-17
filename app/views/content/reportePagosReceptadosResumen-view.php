@@ -231,50 +231,7 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>	
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/main.js" ></script>
-    <!-- Page specific script -->
-	<script>
-	$(function () {
-		$("#example1").DataTable({
-			"paging": true,
-			"lengthChange": false,
-			"searching": false,
-			"ordering": false,
-			"info": true,
-			"autoWidth": false,
-			"responsive": true, 
-			"language": {
-				"decimal": "",
-				"emptyTable": "No hay datos disponibles en la tabla",
-				"info": "Mostrando _START_ a _END_ de _TOTAL_ entradas",
-				"infoEmpty": "Mostrando 0 a 0 de 0 entradas",
-				"infoFiltered": "(filtrado de _MAX_ entradas totales)",
-				"infoPostFix": "",
-				"thousands": ",",
-				"lengthMenu": "Mostrar _MENU_ entradas",
-				"loadingRecords": "Cargando...",
-				"processing": "Procesando...",
-				"search": "Buscar:",
-				"zeroRecords": "No se encontraron registros coincidentes",
-				"paginate": {
-					"first": "Primero",
-					"last": "Último",
-					"next": "Siguiente",
-					"previous": "Anterior"
-				},
-				"aria": {
-					"sortAscending": ": activar para ordenar la columna ascendente",
-					"sortDescending": ": activar para ordenar la columna descendente"
-				},
-				"buttons": {
-					"copy": "Copiar",
-					"print": "Imprimir",
-					"colvis": "Visibilidad columnas"
-				}
-			},
-			"buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-			}).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-	});
-	</script>
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/datatables.js?v=1.0.1"></script> 
   </body>
 </html>
 
