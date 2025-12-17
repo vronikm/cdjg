@@ -722,20 +722,7 @@
 									AND alumno_sedeid =".$sede_id."
 									and transaccion_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 									AND alumno_sedeid =1
-								GROUP BY sede_nombre, catalogo_descripcion
-							
-							UNION ALL
-							
-							SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', empleado_nombre) RUBRO, 
-									count(*) TOTAL_INGRESOS, SUM(egreso_valor) MONTO_TOTAL_INGRESO 
-								FROM empleado_egreso
-								INNER JOIN sujeto_empleado on empleado_id = egreso_empleadoid 
-								LEFT JOIN general_tabla_catalogo on egreso_tipoid = catalogo_valor
-								INNER JOIN general_sede on empleado_sedeid = sede_id
-								WHERE egreso_estado <> 'E'
-									AND empleado_sedeid = ".$sede_id."
-									AND egreso_fechaegreso between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
-								GROUP BY sede_nombre, catalogo_descripcion, empleado_nombre
+								GROUP BY sede_nombre, catalogo_descripcion							
 								
 							UNION ALL
 							
@@ -776,6 +763,19 @@
 										AND ingreso_fechapago BETWEEN ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 									GROUP BY sede_nombre, catalogo_descripcion
 
+								UNION ALL
+							
+								SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', empleado_nombre) RUBRO, 
+										count(*) TOTAL_EGRESOS, SUM(egreso_valor) MONTO_TOTAL_EGRESO 
+									FROM empleado_egreso
+									INNER JOIN sujeto_empleado on empleado_id = egreso_empleadoid 
+									LEFT JOIN general_tabla_catalogo on egreso_tipoid = catalogo_valor
+									INNER JOIN general_sede on empleado_sedeid = sede_id
+									WHERE egreso_estado <> 'E'
+										AND empleado_sedeid = ".$sede_id."
+										AND egreso_fechaegreso between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+									GROUP BY sede_nombre, catalogo_descripcion, empleado_nombre
+								
 								UNION ALL
 
 								SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', egreso_empresa) RUBRO, count(*) TOTAL_EGRESOS, SUM(egreso_monto) MONTO_TOTAL_EGRESO 
