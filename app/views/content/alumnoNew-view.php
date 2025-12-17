@@ -276,7 +276,7 @@
 											<div class="col-md-2">
 												<div class="form-group">
 													<label for="Numcarnet">Número de carnet</label>
-													<input type="text" class="form-control" id="alumno_carnet" name="alumno_carnet" placeholder="Número de carnet" inputmode="numeric" pattern="[0-9]*"> 
+													<input type="text" class="form-control" id="alumno_carnet" name="alumno_carnet" placeholder="Número de carnet" inputmode="numeric" pattern="[0-9]*" required="required"> 
 												</div>
 											</div>
 											<div class="col-md-2">
