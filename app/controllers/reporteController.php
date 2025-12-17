@@ -825,50 +825,38 @@
 			$TOTAL_INGRESOS = 0;
 			$MONTO_TOTAL_INGRESO = 0;
 			$consulta_ingresos="SELECT sede_nombre SEDE, catalogo_descripcion RUBRO, count(*) TOTAL_INGRESOS, SUM(pago_valor) MONTO_TOTAL_INGRESO 
-								FROM sujeto_alumno 
-								INNER JOIN alumno_pago ON alumno_id = pago_alumnoid
-								LEFT JOIN general_tabla_catalogo on pago_rubroid = catalogo_valor
-								INNER JOIN general_sede on alumno_sedeid = sede_id
-								WHERE pago_estado <> 'E'
-									and pago_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
-								GROUP BY sede_nombre, catalogo_descripcion
-							
-							UNION ALL
-
-							SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', 'ABONO') RUBRO, 
-									count(*) TOTAL_INGRESOS, SUM(transaccion_valor) MONTO_TOTAL_INGRESO 
-								from sujeto_alumno
-								INNER JOIN alumno_pago ON alumno_id = pago_alumnoid
-								INNER JOIN alumno_pago_transaccion ON pago_id = transaccion_pagoid
-								LEFT JOIN general_tabla_catalogo on pago_rubroid = catalogo_valor
-								INNER JOIN general_sede on alumno_sedeid = sede_id
-								WHERE transaccion_estado <> 'E'
-									and transaccion_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
-									AND alumno_sedeid =1
-								GROUP BY sede_nombre, catalogo_descripcion
-							
-							UNION ALL
-							
-							SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', empleado_nombre) RUBRO, 
-									count(*) TOTAL_INGRESOS, SUM(egreso_valor) MONTO_TOTAL_INGRESO 
-								FROM empleado_egreso
-								INNER JOIN sujeto_empleado on empleado_id = egreso_empleadoid 
-								LEFT JOIN general_tabla_catalogo on egreso_tipoid = catalogo_valor
-								INNER JOIN general_sede on empleado_sedeid = sede_id
-								WHERE egreso_estado <> 'E'
-									AND egreso_fechaegreso between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
-								GROUP BY sede_nombre, catalogo_descripcion, empleado_nombre
+									FROM sujeto_alumno 
+									INNER JOIN alumno_pago ON alumno_id = pago_alumnoid
+									LEFT JOIN general_tabla_catalogo on pago_rubroid = catalogo_valor
+									INNER JOIN general_sede on alumno_sedeid = sede_id
+									WHERE pago_estado <> 'E'
+										and pago_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+									GROUP BY sede_nombre, catalogo_descripcion
 								
-							UNION ALL
-							
-							SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', ingreso_empresa) RUBRO, 
-									count(*) TOTAL_INGRESOS, SUM(ingreso_monto) MONTO_TOTAL_INGRESO 
-								FROM balance_ingreso
-								LEFT JOIN general_tabla_catalogo on ingreso_concepto = catalogo_valor
-								INNER JOIN general_sede on ingreso_sedeid = sede_id
-								WHERE ingreso_estado <> 'E'
-									and ingreso_fecharecepcion between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
-								GROUP BY sede_nombre, catalogo_descripcion, ingreso_empresa";
+								UNION ALL
+
+								SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', 'ABONO') RUBRO, 
+										count(*) TOTAL_INGRESOS, SUM(transaccion_valor) MONTO_TOTAL_INGRESO 
+									from sujeto_alumno
+									INNER JOIN alumno_pago ON alumno_id = pago_alumnoid
+									INNER JOIN alumno_pago_transaccion ON pago_id = transaccion_pagoid
+									LEFT JOIN general_tabla_catalogo on pago_rubroid = catalogo_valor
+									INNER JOIN general_sede on alumno_sedeid = sede_id
+									WHERE transaccion_estado <> 'E'
+										and transaccion_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+										AND alumno_sedeid =1
+									GROUP BY sede_nombre, catalogo_descripcion							
+									
+								UNION ALL
+								
+								SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', ingreso_empresa) RUBRO, 
+										count(*) TOTAL_INGRESOS, SUM(ingreso_monto) MONTO_TOTAL_INGRESO 
+									FROM balance_ingreso
+									LEFT JOIN general_tabla_catalogo on ingreso_concepto = catalogo_valor
+									INNER JOIN general_sede on ingreso_sedeid = sede_id
+									WHERE ingreso_estado <> 'E'
+										and ingreso_fecharecepcion between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+									GROUP BY sede_nombre, catalogo_descripcion, ingreso_empresa";
 
 			$datos = $this->ejecutarConsulta($consulta_ingresos);
 			$datos = $datos->fetchAll();
@@ -896,6 +884,18 @@
 										AND ingreso_fechapago BETWEEN ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 									GROUP BY sede_nombre, catalogo_descripcion
 
+								UNION ALL
+							
+								SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', empleado_nombre) RUBRO, 
+										count(*) TOTAL_EGRESOS, SUM(egreso_valor) MONTO_TOTAL_EGRESO 
+									FROM empleado_egreso
+									INNER JOIN sujeto_empleado on empleado_id = egreso_empleadoid 
+									LEFT JOIN general_tabla_catalogo on egreso_tipoid = catalogo_valor
+									INNER JOIN general_sede on empleado_sedeid = sede_id
+									WHERE egreso_estado <> 'E'
+										AND egreso_fechaegreso between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
+									GROUP BY sede_nombre, catalogo_descripcion, empleado_nombre
+								
 								UNION ALL
 
 								SELECT sede_nombre SEDE, concat_ws(' ', catalogo_descripcion, '-', egreso_empresa) RUBRO, count(*) TOTAL_EGRESOS, SUM(egreso_monto) MONTO_TOTAL_EGRESO 
