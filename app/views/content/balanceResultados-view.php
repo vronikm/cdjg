@@ -117,15 +117,7 @@
 									</div>
 									<!-- /.input group -->
 								</div>
-							</div>	
-							<div class="col-md-3">
-								<div class="form-group">
-									<label for="alumno_sedeid">Sede</label>
-									<select class="form-control select2" id="alumno_sedeid" name="alumno_sedeid" required>																									
-										<?php echo $insResultado->listarSedebusqueda($alumno_sedeid); ?>
-									</select>	
-								</div>
-							</div>
+							</div>								
 							<div class="col-md-3">
 								<div class="form-group">
 									<label for="alumno_sedeid">.</label>
