@@ -1104,7 +1104,7 @@
                     <td>'.$rows['TipoPago'].'</td>
 					<td>'.$ingreso_estado.'</td>
 					<td>
-						<form class="FormularioAjax" action="'.APP_URL.'app/ajax/ingresoAjax.php" method="POST" autocomplete="off" >
+						<form class="FormularioAjax" action="'.APP_URL.'app/ajax/empleadoAjax.php" method="POST" autocomplete="off" >
 							<input type="hidden" name="modulo_ingreso" value="eliminar">
 							<input type="hidden" name="ingreso_id" value="'.$rows['ingreso_id'].'">						
 							<button type="submit" class="btn float-right btn-danger btn-sm " style="margin-right: 5px;" '.$eliminarpago.'>Eliminar</button>
