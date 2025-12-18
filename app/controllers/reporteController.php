@@ -824,11 +824,17 @@
 			$tabla="";
 			$TOTAL_INGRESOS = 0;
 			$MONTO_TOTAL_INGRESO = 0;
-			$consulta_ingresos="SELECT sede_nombre SEDE, catalogo_descripcion RUBRO, count(*) TOTAL_INGRESOS, SUM(pago_valor) MONTO_TOTAL_INGRESO 
+			$consulta_ingresos="SELECT sede_nombre SEDE, catalogo_descripcion RUBRO, count(*) TOTAL_INGRESOS,
+									SUM((P.pago_saldo + P.pago_valor) - (IFNULL(PT.transaccion_valorcalculado, P.pago_saldo))) MONTO_TOTAL_INGRESO
 									FROM sujeto_alumno 
-									INNER JOIN alumno_pago ON alumno_id = pago_alumnoid
+									INNER JOIN alumno_pago P ON alumno_id = pago_alumnoid
 									LEFT JOIN general_tabla_catalogo on pago_rubroid = catalogo_valor
 									INNER JOIN general_sede on alumno_sedeid = sede_id
+									LEFT JOIN(SELECT COUNT(1) total, PT.transaccion_pagoid, MIN(PT.transaccion_id) IDT
+										FROM alumno_pago_transaccion PT
+										WHERE PT.transaccion_estado = 'C'
+										GROUP BY PT.transaccion_pagoid)T ON T.transaccion_pagoid = P.pago_id
+										LEFT JOIN alumno_pago_transaccion PT ON PT.transaccion_id  = T.IDT
 									WHERE pago_estado <> 'E'
 										and pago_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 									GROUP BY sede_nombre, catalogo_descripcion
