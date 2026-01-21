@@ -112,7 +112,7 @@ foreach($carnetsData as $carnet) {
     // Logo de la sede
     $logoPath = "./app/views/imagenes/fotos/sedes/" . $sede['sede_foto'];
     if(file_exists($logoPath)) {
-        $pdf->Image($logoPath, $x + 40, $y + 2, 13, 18);
+        $pdf->Image($logoPath, $x + 40, $y + 2, 12, 17);
     }
     
     // Código QR
@@ -258,7 +258,7 @@ foreach($carnetsData as $carnet) {
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetFont('Arial', 'B', 9);
     $pdf->SetXY($infoX + 18, $infoY - 0.5);
-    $mesNombre = $nombresMeses[$carnet['carnet_mes']] ?? 'N/A';
+    $mesNombre = strtoupper($nombresMeses[$carnet['carnet_mes']]) ?? 'N/A';
     $pdf->Cell(20, 3, 
         mb_convert_encoding($mesNombre, 'ISO-8859-1', 'UTF-8'), 
         0, 0, 'C', true);
