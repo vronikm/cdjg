@@ -191,7 +191,7 @@ foreach($carnetsData as $carnet) {
     
     // Nombre completo
     $infoY += 4;
-    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->SetFont('Arial', 'B', 10);
     $pdf->SetXY($infoX, $infoY);
     $nombreCompleto = mb_convert_encoding(
         strtoupper($carnet['alumno_nombre']), 
@@ -209,19 +209,19 @@ foreach($carnetsData as $carnet) {
     
     // C.I.
     $infoY += 1;
-    $pdf->SetFont('Arial', '', 7.5);
+    $pdf->SetFont('Arial', '', 8);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'C.I.:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 7.5);
+    $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetXY($infoX + 8, $infoY);
     $pdf->Cell(32, 2.5, $carnet['alumno_identificacion'], 0, 0, 'L');
     
     // Horario
     $infoY += 3;
-    $pdf->SetFont('Arial', '', 7.5);
+    $pdf->SetFont('Arial', '', 8);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Horario:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 7.5);
+    $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetXY($infoX + 12, $infoY);
     $pdf->Cell(28, 2.5, 
         mb_convert_encoding($carnet['horario_nombre'], 'ISO-8859-1', 'UTF-8'), 
@@ -240,7 +240,7 @@ foreach($carnetsData as $carnet) {
     }
     
     $infoY += 3;
-    $pdf->SetFont('Arial', '', 7.5);
+    $pdf->SetFont('Arial', '', 8);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Edad:', 0, 0, 'L');
     $pdf->SetFont('Arial', 'B', 7.5);
@@ -249,14 +249,14 @@ foreach($carnetsData as $carnet) {
     
     // Mes vigencia con badge de color
     $infoY += 3;
-    $pdf->SetFont('Arial', '', 7.5);
+    $pdf->SetFont('Arial', '', 8);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Mes vigencia:', 0, 0, 'L');
     
     // Badge con color del mes
     $pdf->SetFillColor($r, $g, $b);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('Arial', 'B', 7.5);
+    $pdf->SetFont('Arial', 'B', 9);
     $pdf->SetXY($infoX + 18, $infoY - 0.5);
     $mesNombre = $nombresMeses[$carnet['carnet_mes']] ?? 'N/A';
     $pdf->Cell(20, 3, 
@@ -266,10 +266,10 @@ foreach($carnetsData as $carnet) {
     // Sede
     $infoY += 3;
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont('Arial', '', 7.5);
+    $pdf->SetFont('Arial', '', 8);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Sede:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 7.5);
+    $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetXY($infoX + 10, $infoY);
     $pdf->Cell(30, 2.5, 
         mb_convert_encoding($sede['sede_nombre'], 'ISO-8859-1', 'UTF-8'), 
@@ -277,7 +277,7 @@ foreach($carnetsData as $carnet) {
     
     // Contacto
     $infoY += 3.5;
-    $pdf->SetFont('Arial', '', 6);
+    $pdf->SetFont('Arial', '', 7);
     $pdf->SetTextColor(100, 100, 100);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(40, 2, 'clubjorgeguzman@gmail.com', 0, 0, 'L');
