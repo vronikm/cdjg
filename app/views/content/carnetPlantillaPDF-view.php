@@ -37,13 +37,26 @@ $pdf->SetMargins(0, 0, 0);
 // Dimensiones del carnet (tamaño tarjeta de crédito estándar)
 $carnetWidth = 85.6;  // 85.6mm = ancho tarjeta estándar
 $carnetHeight = 53.98; // 53.98mm = alto tarjeta estándar
-$margenX = 10;
-$margenY = 10;
-$espacioX = 0;
-$espacioY = 0;
 $carnetsPerRow = 2;
 $carnetsPerCol = 5;
 $carnetsPerPage = 10;
+
+// Dimensiones de la página A4
+$pageWidth = 210;  // mm
+$pageHeight = 297; // mm
+
+// Espaciado entre carnets
+$espacioX = 0; // Espacio horizontal entre carnets
+$espacioY = 0; // Espacio vertical entre carnets
+
+// Calcular el área total ocupada por los carnets
+$totalWidth = ($carnetsPerRow * $carnetWidth) + (($carnetsPerRow - 1) * $espacioX);
+$totalHeight = ($carnetsPerCol * $carnetHeight) + (($carnetsPerCol - 1) * $espacioY);
+
+// Centrar horizontalmente y verticalmente
+$margenX = ($pageWidth - $totalWidth) / 2;
+$margenY = ($pageHeight - $totalHeight) / 2;
+
 $totalCarnets = count($carnetsData);
 $carnetCounter = 0;
 // Nombres de meses

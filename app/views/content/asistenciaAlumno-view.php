@@ -61,7 +61,7 @@
 										<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 									</div>
 									<?php 
-										if($_SESSION['rol']!= 1 && $_SESSION['rol']!= 2){
+										if($_SESSION['rol']!= 1 && $_SESSION['rol']!= 2 && $_SESSION['rol']!= 3){
 											echo '<input class="form-control" value="'.$fechahoy.'" disabled>';
 											echo '<input type="hidden" name="fecha" value="'.$fechahoy.'">';
 										}else{
