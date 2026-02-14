@@ -52,10 +52,10 @@
 								INNER JOIN (        
 									SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(pago_estado) Estado
 									FROM (
-										SELECT MAX(pago_fecha) FechaPension, pago_estado, pago_alumnoid                               
-										FROM alumno_pago 
-										WHERE pago_estado NOT IN ('E', 'J')
-										GROUP BY pago_estado, pago_alumnoid
+										SELECT pago_fecha as FechaPension, pago_estado, pago_alumnoid                               
+											FROM alumno_pago 
+											WHERE pago_fecha >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+												and pago_estado NOT IN ('E', 'J')
 									) AS Pagos
 									GROUP BY pago_alumnoid
 								) EstadoPagos ON pago_alumnoid = alumno_id
@@ -78,14 +78,14 @@
 							<td>' . $rows['Condicion'] . '</td>
 							<td>							
 								<a href="' . APP_URL . 'carnetFoto/' . $rows['alumno_id'] . '/" 
-								class="btn float-right btn-secondary btn-xs" 
+								class="btn float-right btn-success btn-xs" 
 								style="margin-right: 5px;">
 								Ver carnet
 								</a>	
 							</td>
 							<td style="text-align: center;">
 								<div class="custom-control custom-checkbox">
-									<input class="custom-control-input chk-pago" 
+									<input class="custom-control-input chk-reimpresion" 
 										type="checkbox" 
 										id="alumno_' . $rows['alumno_id'] . '" 
 										name="pagos_seleccionados[]" 
@@ -565,11 +565,6 @@
 			return $this->ejecutarConsulta($sql);
 		}
 
-		/**
-		 * Procesar reimpresión de carnets seleccionados
-		 * Genera pago ROT y reimprimir carnets
-		 * @return string JSON con resultado
-		 */
 		public function procesarReimpresion() {
 			// Limpiar y validar datos
 			$alumno_ids = $_POST['pagos_seleccionados'] ?? [];
@@ -653,12 +648,15 @@
 			
 			// Construir respuesta
 			if($exitosos > 0 && empty($errores)) {
+				// ✅ GUARDAR IDS EN SESIÓN en lugar de URL
+				$_SESSION['carnet_reimpresion_ids'] = implode(',', $alumno_ids);
+				
 				return json_encode([
 					"tipo" => "redireccionar",
 					"titulo" => "¡Reimpresión procesada!",
 					"texto" => "Se generaron $exitosos pagos por reimpresión. Redirigiendo a impresión...",
 					"icono" => "success",
-					"url" => APP_URL . "carnetReimpresionPDF/" . implode(',', $alumno_ids)
+					"url" => APP_URL . "carnetPDF/"
 				]);
 			}
 			
@@ -782,5 +780,160 @@
 			
 			$datos = $this->ejecutarConsulta($consulta, $parametros);
 			return $datos->fetchAll();
+		}
+
+		public function obtenerCarnetsTodosUnificados($alumno_ids_reimpresion = '') {
+			$mes_actual = date('n');
+			$anio_actual = date('Y');
+			$fecha_actual = date('Y-m-d');
+			
+			// Obtener color del mes
+			$colorMes = $this->BuscarColorPorMes($mes_actual);
+			$colorData = $colorMes->fetch();
+			$color_hex = $colorData['color_hex'] ?? '#CCCCCC';
+			$mes_nombre = $this->nombreMes($mes_actual);
+			
+			$carnetsFinales = [];
+			
+			// ========================================
+			// PARTE 1: CARNETS NUEVOS (Primera vez)
+			// ========================================
+			$consultaNuevos = "SELECT 
+								a.alumno_id,
+								a.alumno_carnet,
+								a.alumno_identificacion,
+								CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
+									a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
+								a.alumno_imagen,
+								h.horario_nombre,
+								NULL as carnet_id,
+								NULL as carnet_numero,
+								:mes as carnet_mes,
+								:anio as carnet_anio,
+								:fecha_actual as carnet_fecha_emision,
+								0 as es_reimpresion,
+								:color_hex as color_hex,
+								:mes_nombre as mes_nombre
+							FROM sujeto_alumno a
+							INNER JOIN asistencia_asignahorario ah ON ah.asignahorario_alumnoid = a.alumno_id
+							INNER JOIN asistencia_horario h ON h.horario_id = ah.asignahorario_horarioid
+							INNER JOIN alumno_pago ap ON ap.pago_alumnoid = a.alumno_id
+							LEFT JOIN alumno_carnet ac ON ac.carnet_alumnoid = a.alumno_id 
+													AND ac.carnet_mes = :mes 
+													AND ac.carnet_anio = :anio
+							WHERE a.alumno_estado = 'A'
+								AND ap.pago_estado NOT IN ('E', 'J')
+								AND MONTH(ap.pago_fecha) = :mes
+								AND YEAR(ap.pago_fecha) = :anio
+								AND ap.pago_rubroid = 'RPE'
+								AND ac.carnet_alumnoid IS NULL
+							ORDER BY a.alumno_apellidopaterno, a.alumno_apellidomaterno";
+			
+			$parametros = [
+				':fecha_actual' => $fecha_actual,
+				':mes' => $mes_actual,
+				':anio' => $anio_actual,
+				':color_hex' => $color_hex,
+				':mes_nombre' => $mes_nombre
+			];
+			
+			$datos = $this->ejecutarConsulta($consultaNuevos, $parametros);
+			$carnetsNuevos = $datos->fetchAll();
+			
+			// Crear carnets nuevos en BD
+			foreach($carnetsNuevos as &$carnet) {
+				$nuevoCarnet = $this->crearCarnet(
+					$carnet['alumno_id'], 
+					$carnet['alumno_carnet'], 
+					$mes_actual, 
+					$anio_actual
+				);
+				$carnet['carnet_id'] = $nuevoCarnet['carnet_id'];
+				$carnet['carnet_numero'] = $nuevoCarnet['carnet_numero'];
+				$carnetsFinales[] = $carnet;
+			}
+			
+			// ========================================
+			// PARTE 2: REIMPRESIONES
+			// ========================================
+			if(!empty($alumno_ids_reimpresion)) {
+				// ✅ INTENTAR DECODIFICAR BASE64 PRIMERO
+				$ids_decodificados = base64_decode($alumno_ids_reimpresion, true);
+				if($ids_decodificados !== false && strpos($ids_decodificados, ',') !== false) {
+					// Era base64, usar la versión decodificada
+					$alumno_ids_reimpresion = $ids_decodificados;
+				}
+				
+				$alumno_ids = explode(',', $alumno_ids_reimpresion);
+				$alumno_ids = array_map('intval', $alumno_ids);
+				$alumno_ids = array_filter($alumno_ids);
+				
+				if(!empty($alumno_ids)) {
+					$ids_string = implode(',', $alumno_ids);
+					
+					$consultaReimpresion = "SELECT 
+											a.alumno_id,
+											a.alumno_carnet,
+											a.alumno_identificacion,
+											CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
+												a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
+											a.alumno_imagen,
+											h.horario_nombre,
+											ac.carnet_id,
+											ac.carnet_numero,
+											ac.carnet_mes,
+											ac.carnet_anio,
+											ac.carnet_fecha_emision,
+											1 as es_reimpresion,
+											:color_hex as color_hex,
+											:mes_nombre as mes_nombre
+										FROM sujeto_alumno a
+										INNER JOIN asistencia_asignahorario ah ON ah.asignahorario_alumnoid = a.alumno_id
+										INNER JOIN asistencia_horario h ON h.horario_id = ah.asignahorario_horarioid
+										INNER JOIN alumno_carnet ac ON ac.carnet_alumnoid = a.alumno_id
+										WHERE a.alumno_id IN ($ids_string)
+										AND ac.carnet_mes = :mes
+										AND ac.carnet_anio = :anio
+										ORDER BY a.alumno_apellidopaterno, a.alumno_apellidomaterno";
+					
+					$parametrosReimpresion = [
+						':mes' => $mes_actual,
+						':anio' => $anio_actual,
+						':color_hex' => $color_hex,
+						':mes_nombre' => $mes_nombre
+					];
+					
+					$datosReimpresion = $this->ejecutarConsulta($consultaReimpresion, $parametrosReimpresion);
+					$carnetsReimpresion = $datosReimpresion->fetchAll();
+					
+					$carnetsFinales = array_merge($carnetsFinales, $carnetsReimpresion);
+				}
+			}
+			
+			return $carnetsFinales;
+		}
+
+		/**
+		 * Obtener resumen de carnets a imprimir
+		 * @param array $carnets Array de carnets obtenido de obtenerCarnetsTodosUnificados()
+		 * @return array Resumen con totales
+		 */
+		public function obtenerResumenImpresion($carnets) {
+			$nuevos = 0;
+			$reimpresiones = 0;
+			
+			foreach($carnets as $carnet) {
+				if($carnet['es_reimpresion'] == 1) {
+					$reimpresiones++;
+				} else {
+					$nuevos++;
+				}
+			}
+			
+			return [
+				'total' => count($carnets),
+				'nuevos' => $nuevos,
+				'reimpresiones' => $reimpresiones
+			];
 		}
     }

@@ -166,6 +166,12 @@
 
         <button id="descargar">Descargar PDF</button>
 
-        <script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_pdf.js?v=1.2.7"></script>
+        <script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_pdf.js?v=1.0.4"></script>
+        <script>
+            var datosPersona = {
+                nombres: '<?= addslashes($datos["Nombres"]) ?>',
+                apellidos: '<?= addslashes($datos["Apellidos"]) ?>'
+            };
+        </script>
     </body>
 </html>

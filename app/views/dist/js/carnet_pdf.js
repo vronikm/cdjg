@@ -9,5 +9,5 @@ document.getElementById('descargar').addEventListener('click', async () => {
         format: [95, 95] // tamaño tipo carnet
     });
     pdf.addImage(imgData, 'PNG', 0, 0, 95, 95);
-    pdf.save('carnet_<?= $alumno["nombre_completo"] ?>.pdf');
+    pdf.save('carnet_' + datosPersona.nombres + '_' + datosPersona.apellidos + '.pdf');
 });
