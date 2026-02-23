@@ -164,13 +164,20 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
 	<!-- AdminLTE App -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_seleccion.js?v=1.0.1"></script>
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_list.js?v=1.0.5"></script>
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_seleccion.js"></script>
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/carnet_list.js"></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/sweetalert2.all.min.js"></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js"></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/main.js"></script>
 	<script>
 		var APP_URL = '<?php echo APP_URL; ?>';
+		var MES_ACTUAL = '<?php 
+        $formatter = new IntlDateFormatter(
+            "es_ES", IntlDateFormatter::NONE, IntlDateFormatter::NONE, 
+            "America/Guayaquil", IntlDateFormatter::GREGORIAN, "MMMM yyyy"
+        );
+        echo ucfirst($formatter->format(new DateTime()));
+    ?>';
 	</script>
   </body>
 </html>

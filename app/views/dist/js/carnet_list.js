@@ -118,17 +118,9 @@ $(function () {
                         <i class="fas fa-layer-group" style="color: #17a2b8;"></i> 
                         Formato: <strong>10 carnets por hoja A4</strong>
                     </p>
-                    <p style="margin-bottom: 0;">
+                   <p style="margin-bottom: 0;">
                         <i class="fas fa-calendar-alt" style="color: #ffc107;"></i> 
-                        Mes: <strong>
-                            <?php 
-                                $formatter = new IntlDateFormatter(
-                                    'es_ES', IntlDateFormatter::NONE, IntlDateFormatter::NONE, 
-                                    'America/Guayaquil', IntlDateFormatter::GREGORIAN, 'MMMM yyyy'
-                                );
-                                echo ucfirst($formatter->format(new DateTime()));
-                            ?>
-                        </strong>
+                        Mes: <strong>${MES_ACTUAL}</strong>
                     </p>
                 </div>
             `,
@@ -170,7 +162,7 @@ $(function () {
                     });
                     
                     // Abrir PDF en nueva ventana
-                    window.open('<?php echo APP_URL; ?>carnetPDF/', '_blank');
+                    window.open(APP_URL + 'carnetPDF/', '_blank');
                     
                     // Cerrar mensaje y recargar después de 2 segundos
                     setTimeout(function() {
