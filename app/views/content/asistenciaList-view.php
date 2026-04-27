@@ -8,24 +8,10 @@
 		$alumno_sedeid = "";
 	}
 
-	if(isset($_POST['alumno_identificacion'])){
-		$alumno_identificacion = $insVerAsistencia->limpiarCadena($_POST['alumno_identificacion']);
-	} ELSE{
-		$alumno_identificacion = "";
-	}
+	$alumno_identificacion = "";
+	$alumno_primernombre = "";
+	$alumno_apellidopaterno = "";
 
-	if(isset($_POST['alumno_primernombre'])){
-		$alumno_primernombre = $insVerAsistencia->limpiarCadena($_POST['alumno_primernombre']);
-	} ELSE{
-		$alumno_primernombre = "";
-	}
-
-	if(isset($_POST['alumno_apellidopaterno'])){
-		$alumno_apellidopaterno = $insVerAsistencia->limpiarCadena($_POST['alumno_apellidopaterno']);
-	} ELSE{
-		$alumno_apellidopaterno = "";
-	}
-	
 	// Agregar estas variables al inicio
 	if(isset($_POST['asistencia_anio'])){
 		$asistencia_anio = $insVerAsistencia->limpiarCadena($_POST['asistencia_anio']);
@@ -37,6 +23,12 @@
 		$asistencia_mes = $insVerAsistencia->limpiarCadena($_POST['asistencia_mes']);
 	} ELSE{
 		$asistencia_mes = "";
+	}
+
+	if(isset($_POST['horario_id'])){
+		$horario_id = $insVerAsistencia->limpiarCadena($_POST['horario_id']);
+	} ELSE{
+		$horario_id = "";
 	}
 		
 ?>
@@ -117,24 +109,41 @@
 					<!-- card-body -->                
 					<div class="card-body">
 						<div class="row align-items-end">
-							<div class="col-sm-2">
+							<div class="col-sm-2 d-none">
 								<div class="form-group input-group-sm">
 									<label for="alumno_identificacion">Identificación</label>                        
 									<input type="text" class="form-control" id="alumno_identificacion" name="alumno_identificacion" placeholder="Identificación" value="<?php echo $alumno_identificacion; ?>">
 								</div>        
 							</div>
-							<div class="col-sm-2">
+							<div class="col-sm-2 d-none">
 								<div class="form-group input-group-sm">
 									<label for="alumno_apellidopaterno">Apellido paterno</label>
 									<input type="text" class="form-control" id="alumno_apellidopaterno" name="alumno_apellidopaterno" placeholder="Primer apellido" value="<?php echo $alumno_apellidopaterno; ?>">
 								</div>         
 							</div>
-							<div class="col-md-2">
+							<div class="col-md-2 d-none">
 								<div class="form-group input-group-sm">
 									<label for="alumno_primernombre">Primer nombre</label>
 									<input type="text" class="form-control" id="alumno_primernombre" name="alumno_primernombre" placeholder="Primer nombre" value="<?php echo $alumno_primernombre; ?>">
 								</div>
-							</div>  
+							</div> 
+														<div class="col-md-2">
+								<div class="form-group input-group-sm">
+									<label for="alumno_sedeid">Sede</label>
+									<select class="form-control select2" id="alumno_sedeid" name="alumno_sedeid">		
+										<?php
+											if($rolid == 1 || $rolid == 2){
+												if($alumno_sedeid == 0){	
+													echo "<option value='0' selected='selected'>Todas</option>";
+												}else{
+													echo "<option value='0'>Todas</option>";	
+												}
+											}
+										?>																		
+										<?php echo $insVerAsistencia->listarSede($alumno_sedeid, $_SESSION['rol'], $_SESSION['usuario']); ?>
+									</select>	
+								</div>
+							</div> 
 							<!-- Selector de Año -->
 							<div class="col-md-2">
 								<div class="form-group input-group-sm">
@@ -169,21 +178,19 @@
 									</select>
 								</div>
 							</div>
-							<div class="col-md-2">
+							<div class="col-md-4">
 								<div class="form-group input-group-sm">
-									<label for="alumno_sedeid">Sede</label>
-									<select class="form-control select2" id="alumno_sedeid" name="alumno_sedeid">		
+									<label for="horario_id">Horario</label>
+									<select class="form-control select2" id="horario_id" name="horario_id">
 										<?php
-											if($rolid == 1 || $rolid == 2){
-												if($alumno_sedeid == 0){	
-													echo "<option value='0' selected='selected'>Todas</option>";
-												}else{
-													echo "<option value='0'>Todas</option>";	
-												}
+											if($horario_id == ""){
+												echo "<option value='' selected='selected'>Todos</option>";
+											}else{
+												echo "<option value=''>Todos</option>";
 											}
-										?>																		
-										<?php echo $insVerAsistencia->listarSede($alumno_sedeid, $_SESSION['rol'], $_SESSION['usuario']); ?>
-									</select>	
+										?>
+										<?php echo $insVerAsistencia->listarOptionHorarioAsistencia($horario_id, $alumno_sedeid); ?>
+									</select>
 								</div>
 							</div>
 
@@ -256,12 +263,13 @@
 							<tbody>
 								<?php 
 									echo $insVerAsistencia->listarAsistenciaAlumnos(
-										$alumno_identificacion,
-										$alumno_apellidopaterno, 
-										$alumno_primernombre, 
+										"", 
+										"", 
+										"", 
 										$asistencia_anio,
 										$asistencia_mes,
-										$alumno_sedeid
+										$alumno_sedeid,
+										$horario_id
 									); 
 								?>								
 							</tbody>
@@ -311,7 +319,21 @@
 	<!-- Page specific script -->
 	<script>
 		$(function () {
-			$("#example1").DataTable({
+			const anioValor = $("#asistencia_anio").val();
+			const anioTexto = anioValor !== "" ? anioValor : "Todos";
+
+			const mesValor = $("#asistencia_mes").val();
+			const mesTexto = mesValor !== "" ? $("#asistencia_mes option:selected").text().trim() : "Todos";
+
+			const horarioValor = $("#horario_id").val();
+			const horarioTextoCompleto = horarioValor !== "" ? $("#horario_id option:selected").text().trim() : "Todos";
+			const horarioNombre = (horarioTextoCompleto !== "Todos" && horarioTextoCompleto.indexOf("|") > -1)
+				? horarioTextoCompleto.split("|")[0].trim()
+				: horarioTextoCompleto;
+
+			const tituloImpresion = "Reporte de asistencias | Anio: " + anioTexto + " | Mes: " + mesTexto + " | Horario: " + horarioNombre;
+
+			const tabla = $("#example1").DataTable({
 			"responsive": true, "lengthChange": false, "autoWidth": false,
 			"language": {
 				"decimal": "",
@@ -335,9 +357,29 @@
 				"aria": {
 					"sortAscending": ": activar para ordenar la columna ascendente",
 					"sortDescending": ": activar para ordenar la columna descendente"
+				},
+				"buttons": {
+					"print": "Imprimir"
 				}
 			},
-			}).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');			    
+			"buttons": [
+				{
+					"extend": "print",
+					"text": "Imprimir",
+					"title": tituloImpresion,
+					"exportOptions": {
+						"columns": ":visible",
+						"modifier": {
+							"search": "applied",
+							"order": "applied",
+							"page": "all"
+						}
+					}
+				}
+			]
+			});
+
+			tabla.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');			    
 		});
 	</script>
 

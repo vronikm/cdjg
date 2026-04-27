@@ -512,6 +512,34 @@
 			return $option;
 		}
 
+		public function listarOptionHorarioAsistencia($horarioid = "", $sedeid = ""){
+			$option = "";
+
+			$consulta_datos = "SELECT horario_id,
+										CONCAT(horario_nombre, ' | ', horario_detalle) AS HORARIO
+								FROM asistencia_horario
+								WHERE horario_estado <> 'E'";
+
+			if($sedeid != "" && $sedeid != "0"){
+				$consulta_datos .= " AND horario_sedeid = '".$sedeid."'";
+			}
+
+			$consulta_datos .= " ORDER BY horario_nombre, horario_detalle";
+
+			$datos = $this->ejecutarConsulta($consulta_datos);
+			$datos = $datos->fetchAll();
+
+			foreach($datos as $rows){
+				if($horarioid == $rows['horario_id']){
+					$option .= '<option value='.$rows['horario_id'].' selected>'.$rows['HORARIO'].'</option>';
+				}else{
+					$option .= '<option value='.$rows['horario_id'].'>'.$rows['HORARIO'].'</option>';
+				}
+			}
+
+			return $option;
+		}
+
 		public function listarOptionLugar($sedeid, $lugarid){
 			$option="";
 			$consulta_datos="SELECT lugar_id, lugar_sedeid, lugar_nombre 
@@ -1718,7 +1746,7 @@
 			return $dias_habiles;
 		}
 
-		public function listarAsistenciaAlumnos($identificacion = "", $apellido = "", $nombre = "", $anio = "", $mes = "", $sedeid = "") {
+		public function listarAsistenciaAlumnos($identificacion = "", $apellido = "", $nombre = "", $anio = "", $mes = "", $sedeid = "", $horarioid = "") {
 			$tabla = "";
 			
 			// Construir la condición de año-mes
@@ -1765,6 +1793,14 @@
 			}
 			if ($sedeid != "" && $sedeid != "0") {
 				$consulta_datos .= " AND al.alumno_sedeid = '$sedeid'";
+			}
+			if ($horarioid != "" && $horarioid != "0") {
+				$consulta_datos .= " AND EXISTS (
+									SELECT 1
+									FROM asistencia_asignahorario h
+									WHERE h.asignahorario_alumnoid = al.alumno_id
+										AND h.asignahorario_horarioid = '$horarioid'
+								)";
 			}
 			
 			$consulta_datos .= $condicionAnioMes;
