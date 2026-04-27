@@ -929,6 +929,7 @@
 							UNION ALL
 							SELECT 
 								a.alumno_id,
+								a.alumno_carnet,
 								a.alumno_identificacion,
 								CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
 									a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,

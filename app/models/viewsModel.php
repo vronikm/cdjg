@@ -26,7 +26,7 @@
 						  ,"empleadoAsistencias","agenda","empleadoAsistenciasDetalle","cobranzaPensionInactivos"
 						  ,"dashboardAlumnos","reportePensionAlumno","reportePagosReceptados","institucionList"
 						  ,"carnetList","carnetFoto","carnetConf","facturasList","facturasNew","carnetPDF"
-						  ,"carnetReimpresionPDF","asistenciaList","feriadosList"];
+						  ,"carnetReimpresionPDF","asistenciaList","feriadosList","carnetFotoPDF"];
 
 			if(in_array($vista, $listaBlanca)){
 				if(is_file("./app/views/content/".$vista."-view.php")){
