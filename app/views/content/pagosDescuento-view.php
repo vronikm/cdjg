@@ -204,7 +204,7 @@
 												</div>	
 												<div class="col-md-3">
 													<div class="form-group">
-														<label for="descuento_valor">Valor</label>
+														<label for="descuento_valor">Valor a pagar</label>
 														<input type="text" class="pull-right form-control" style="text-align:right;" id="descuento_valor" name="descuento_valor" placeholder="0.00" pattern="^\d+(\.\d{1,2})?$" value="<?php echo $descuento_valor; ?>" required>
 													</div>
 												</div>											
