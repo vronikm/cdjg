@@ -183,11 +183,12 @@
 															AND pago_estado NOT IN ('J','E')
 														GROUP BY pago_estado, pago_fecha) as subquery) AS Total
 							UNION
-							SELECT descuento_alumnoid, DATE_FORMAT(CURDATE(), '%Y-%m-01') FechaPago, 'Al dìa' as Estado
+							SELECT DATE_FORMAT(CURDATE(), '%Y-%m-01') FechaPago, 'C' as Estado, 'Al dìa' as Condicion
                                 from alumno_pago_descuento
                                 where descuento_rubroid = 'DBC'
                                                 and descuento_valor = 0
-                                                and descuento_estado = 'S'";	
+                                                and descuento_estado = 'S'
+												and descuento_alumnoid = $alumnoid";	
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			return $datos;
 		}
