@@ -223,7 +223,7 @@
 						<table id="example1" class="table table-bordered table-striped table-sm">
 							<thead>
 								<tr>
-									<th>Nombres y Apellidos Jugador/a</th>
+									<th>Nombres Apellidos Jugador/a</th>
 									<th>Edad</th>
 									<th>1</th>
 									<th>2</th>
@@ -257,6 +257,27 @@
 									<th>30</th>
 									<th>31</th>
 									<th>% Asistencia</th>
+								</tr>
+								<tr>
+									<th colspan="2"></th>
+									<?php 
+										$diasSemana = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+										$ano = !empty($asistencia_anio) ? $asistencia_anio : date('Y');
+										$mes = !empty($asistencia_mes) ? $asistencia_mes : date('m');
+										
+										for($dia = 1; $dia <= 31; $dia++){
+											$fecha = "$ano-$mes-" . str_pad($dia, 2, '0', STR_PAD_LEFT);
+											$timestamp = @strtotime($fecha);
+											
+											if($timestamp && date('m', $timestamp) == $mes){
+												$diaSemana = date('w', $timestamp);
+												echo "<th style='text-align: center; font-weight: bold;'>" . $diasSemana[$diaSemana] . "</th>";
+											} else {
+												echo "<th></th>";
+											}
+										}
+									?>
+									<th></th>
 								</tr>
 							</thead>
 							<!-- Cambiar la llamada en el tbody -->

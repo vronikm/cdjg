@@ -26,10 +26,10 @@
 		$alumno_apellidopaterno = "";
 	}
 	
-	if(isset($_POST['alumno_ano'])){
-		$alumno_ano = $insPago->limpiarCadena($_POST['alumno_ano']);
+	if(isset($_POST['alumno_estado'])){
+		$alumno_estado = $insPago->limpiarCadena($_POST['alumno_estado']);
 	} ELSE{
-		$alumno_ano = "";
+		$alumno_estado = "";
 	}
 		
 ?>
@@ -40,7 +40,7 @@
     <meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><?php echo APP_NAME; ?>| Alumnos</title>
+	<title><?php echo APP_NAME; ?>| Pagos</title>
 	<link rel="icon" type="image/png" href="<?php echo APP_URL; ?>app/views/dist/img/Logos/LogoCDJG.png">
 	<!-- Google Font: Source Sans Pro -->
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -130,8 +130,12 @@
 
 							<div class="col-md-2">
 								<div class="form-group input-group-sm">
-									<label for="alumno_ano">Año</label>
-									<input type="text" class="form-control" id="alumno_ano" name="alumno_ano" placeholder="año" value="<?php echo $alumno_ano; ?>">
+									<label for="alumno_estado">Estado</label>
+									<select class="form-control" id="alumno_estado" name="alumno_estado">
+										<option value="">Seleccione...</option>
+										<option value="A" <?php echo ($alumno_estado == "A") ? "selected" : ""; ?>>Activo</option>
+										<option value="I" <?php echo ($alumno_estado == "I") ? "selected" : ""; ?>>Inactivo</option>
+									</select>
 								</div>
 							</div>
 							<div class="col-md-2">
@@ -184,13 +188,14 @@
 									<th>Identificación</th>
 									<th>Nombres</th>
 									<th>Apellidos</th>
-									<th>Año</th>									
+									<th>Fecha nacimiento</th>
+									<th>Estado pagos</th>
 									<th>Opciones</th>
 								</tr>
 							</thead>
 							<tbody>
 								<?php 
-									echo $insPago->listarAlumnosPagos($alumno_identificacion,$alumno_apellidopaterno, $alumno_primernombre, $alumno_ano, $alumno_sedeid); 
+									echo $insPago->listarAlumnosPagos($alumno_identificacion,$alumno_apellidopaterno, $alumno_primernombre, $alumno_estado, $alumno_sedeid); 
 								?>								
 							</tbody>
 						</table>	

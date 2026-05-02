@@ -5,6 +5,7 @@
 	$insAlumno = new pagosController();	
 
 	$torneo_id = null;
+	$foto = '';
 
 	$alumno=$insLogin->limpiarCadena($url[1]);
 
@@ -332,7 +333,7 @@
 
 												<div class="col-md-4">
 													<div class="form-group">
-														<label for="pago_saldo">Saldo</label>
+														<label for="pago_saldo">Saldo pendiente</label>
 														<input type="text" class="form-control" style="text-align:right;" id="pago_saldo" name="pago_saldo" placeholder="0.00" <?php echo ' value="'.$saldo.'" '.$disabled; ?>>
 													</div>
 												</div>

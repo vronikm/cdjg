@@ -344,7 +344,7 @@
 													<div class="col-md-4">
 														<div class="form-group">
 															<label for="ingreso_periodo">Periodo(mes/año)</label>															
-															<input type="text" class="form-control" id="ingreso_periodo" name="ingreso_periodo" placeholder="Mes/año" value="<?php echo $ingreso_periodo; ?>" required>															
+															<input type="text" class="form-control" id="ingreso_periodo" name="ingreso_periodo" value="<?php echo $nombreMes; ?>" required>															
 														</div>								
 													</div>
 													<div class="container-fluid">
@@ -495,7 +495,7 @@
 													<div class="col-md-2">
 														<div class="form-group">
 															<label for="egreso_periodo">Periodo(mes/año)</label>															
-															<input type="text" class="form-control" id="egreso_periodo" name="egreso_periodo" placeholder="Mes/año" value="<?php echo $egreso_periodo; ?>" required>															
+															<input type="text" class="form-control" id="egreso_periodo" name="egreso_periodo" value="<?php echo $nombreMes; ?>" required>															
 														</div>								
 													</div>
 													<div class="col-md-2">
@@ -605,26 +605,58 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>		
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>	
 	<!-- fileinput -->
-	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>    
-		
+	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>    		
+
 	<script>
 		$(document).ready(function () {
 			$("#egreso_fechaegreso").keyup(function () {
-				var value = $(this).val();				
-				var fecha = new Date(value);				
-				// Array con los nombres de los meses
-				var nombresMeses = [
-				"Enero","Febrero", "Marzo", "Abril", "Mayo", "Junio",
-				"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-				];
-				// Obtener el mes (los meses van de 0 a 11 en JavaScript)
-				var mesNumero = fecha.getMonth();
-				var mesNombre = nombresMeses[mesNumero];
-				var año = fecha.getFullYear();
-
-				$("#egreso_periodo").val(mesNombre + " / " + año );
+				var value = $(this).val();
+				
+				// Dividir la fecha manualmente para evitar problemas de zona horaria
+				var partes = value.split('-'); // Formato esperado: YYYY-MM-DD
+				
+				if (partes.length === 3) {
+					var año = parseInt(partes[0]);
+					var mesNumero = parseInt(partes[1]) - 1; // Restar 1 porque los meses van de 0 a 11
+					var dia = parseInt(partes[2]);
+					
+					// Array con los nombres de los meses
+					var nombresMeses = [
+						"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+						"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+					];
+					
+					var mesNombre = nombresMeses[mesNumero];
+					$("#egreso_periodo").val(mesNombre + " / " + año);
+				}
 			});
-		});		
+		});
+	</script>
+
+	<script>
+		$(document).ready(function () {
+			$("#ingreso_fechapago").keyup(function () {
+				var value = $(this).val();
+				
+				// Dividir la fecha manualmente para evitar problemas de zona horaria
+				var partes = value.split('-'); // Formato esperado: YYYY-MM-DD
+				
+				if (partes.length === 3) {
+					var año = parseInt(partes[0]);
+					var mesNumero = parseInt(partes[1]) - 1; // Restar 1 porque los meses van de 0 a 11
+					var dia = parseInt(partes[2]);
+					
+					// Array con los nombres de los meses
+					var nombresMeses = [
+						"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+						"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+					];
+					
+					var mesNombre = nombresMeses[mesNumero];
+					$("#ingreso_periodo").val(mesNombre + " / " + año);
+				}
+			});
+		});
 	</script>
   </body>
 </html>

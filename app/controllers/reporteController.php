@@ -996,7 +996,7 @@
 										WHERE alumno_primernombre = ''";
 			}			
 
-			$consulta_datos .= " AND alumno_estado <> 'E'"; 
+			$consulta_datos .= " AND alumno_estado = 'A' ORDER BY alumno_apellidopaterno, alumno_apellidomaterno, alumno_primernombre"; 
 			
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
@@ -1019,9 +1019,9 @@
 			$consulta_datos="SELECT distinct empleado_id, empleado_identificacion, empleado_nombre
 								FROM sujeto_empleado
 								INNER JOIN empleado_asistencia ON asistencia_empleadoid = empleado_id
-								WHERE (empleado_nombre LIKE '%".$empleado_nombre."%')
-									OR asistencia_hora between '".$fecha_inicio."' and '".$fecha_fin."'
-									AND empleado_estado <> 'E'";
+								WHERE (empleado_nombre LIKE '%".$empleado_nombre."%'
+									OR asistencia_hora between '".$fecha_inicio."' and '".$fecha_fin."')
+									AND empleado_estado = 'A'";
 			
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();

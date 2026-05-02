@@ -173,7 +173,7 @@
 									<th>Identificación</th>
 									<th>Nombres</th>
 									<th>Apellidos</th>
-									<th>Año</th>									
+									<th>Fecha nacimiento</th>									
 									<th style="width: 220px;">Reporte de asistencia</<th>
 								</tr>
 							</thead>

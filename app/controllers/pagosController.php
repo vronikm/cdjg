@@ -4,14 +4,12 @@
 	use app\models\mainModel;
 
 	class pagosController extends mainModel{
-		public function listarAlumnosPagos($identificacion, $apellidopaterno, $primernombre, $anio, $sede){		
-			
-
+		public function listarAlumnosPagos($identificacion, $apellidopaterno, $primernombre, $estado, $sede){
 			// Preparar condiciones dinámicas
 			$tabla="";
 			$condiciones = [];
 			$busqueda = [];
-
+			$pendiente = "";
 			// Identificación
 			if ($identificacion != "") {
 				$busqueda[] = "alumno_identificacion LIKE '".$identificacion."%'";
@@ -32,16 +30,18 @@
 				$condiciones[] = "(".implode(" OR ", $busqueda).")";
 			}
 
-			// Filtro por año (usar rango en lugar de YEAR para índices)
-			if ($anio != "") {
-				$condiciones[] = "alumno_fechanacimiento BETWEEN '".$anio."-01-01' AND '".$anio."-12-31'";
-			}
-
 			// Si no hay ningún filtro de identificación, nombre o apellido
 			if ($identificacion == "" && $primernombre == "" && $apellidopaterno == "") {
-				if ($anio == "") {					
+				if ($estado == "") {					
 					$condiciones = ["alumno_primernombre <> ''"];
 				}
+			}
+
+			// Filtro de estado
+			if ($estado == "") {
+				$condiciones[] = "alumno_estado = 'A'";
+			} else {
+				$condiciones[] = "alumno_estado = '".$estado."'";
 			}
 
 			// Filtro de sede
@@ -54,9 +54,6 @@
 			} else {
 				$condiciones = ["alumno_primernombre = ''"]; // sin sede -> nunca traerá resultados
 			}
-
-			// Condición fija
-			$condiciones[] = "alumno_estado <> 'E'";
 
 			// Construir SQL final
 			$consulta_datos = "SELECT * FROM sujeto_alumno WHERE " . implode(" AND ", $condiciones);
@@ -88,13 +85,33 @@
 					$class = 'class="text-primary"';
 				}else{
 					$class = '';
+				}
+				
+				$estadop=$this->BuscarAlumno($rows['alumno_id']);
+				if($estadop->rowCount()==1){
+					$estadop=$estadop->fetch(); 
+					if($estadop['pendiente']==1){
+						$pendiente = 'Pendiente';
+						$clase = '<a class="float-left text-danger">';
+					}else{
+						$pendiente = 'Al día';
+						$clase = '<a class="float-left">';
+					}
 				}				
+
+				$pension = $this->pensionesPendientes($rows['alumno_id']);
+				if($pension != ""){
+					$pendiente = "Pendiente";
+					$clase = '<a class="float-left text-danger">';
+				}
+				
 				$tabla.='
 					<tr '.$class.'>
 						<td>'.$rows['alumno_identificacion'].'</td>
 						<td>'.$rows['alumno_primernombre'].' '.$rows['alumno_segundonombre'].'</td>
 						<td>'.$rows['alumno_apellidopaterno'].' '.$rows['alumno_apellidomaterno'].'</td>
 						<td>'.$rows['alumno_fechanacimiento'].'</td>
+						<td>'.$clase.$pendiente.'</a></td>
 						<td>
 							<a href="'.APP_URL.'pagosNew/'.$rows['alumno_id'].'/" class="btn float-right '.$botonpago.' btn-xs" target="_blank">Registrar pagos</a>
 							<a href="'.APP_URL.'pagosDescuento/'.$rows['alumno_id'].'/" class="btn float-right '.$boton.' btn-xs" style="margin-right: 5px;" target="_blank">Descuentos</a>
