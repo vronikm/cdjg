@@ -861,15 +861,38 @@
 
         private function extraerRucCertificadoSri(array $certInfo){
             $extensions = $certInfo['extensions'] ?? [];
-            $valores = [];
-            if(!empty($extensions['1.3.6.1.4.1.59382.3.11'])){
-                $valores[] = $extensions['1.3.6.1.4.1.59382.3.11'];
+
+            $normalizarValor = static function($valor){
+                $valor = preg_replace('/[^\PC\s]+/u', '', (string)$valor);
+                $valor = preg_replace('/\s+/', ' ', $valor);
+                return trim($valor);
+            };
+
+            $oidsRuc = [
+                '1.3.6.1.4.1.37746.3.11', // Security Data: RUC de la razon social
+                '1.3.6.1.4.1.59382.3.11',
+            ];
+
+            foreach($oidsRuc as $oid){
+                if(!empty($extensions[$oid])){
+                    $valor = $normalizarValor($extensions[$oid]);
+                    if(preg_match('/(?<!\d)\d{13}(?!\d)/', $valor, $match)){
+                        return $match[0];
+                    }
+                }
             }
-            foreach($extensions as $valor){
-                $valores[] = $valor;
+
+            $campos = array_merge($certInfo['subject'] ?? [], $extensions);
+            foreach($campos as $clave=>$valor){
+                $texto = strtoupper((string)$clave).' '.$normalizarValor($valor);
+                if(preg_match('/(?:RUC|REGISTRO UNICO DE CONTRIBUYENTES)[^\d]*(\d{13})(?!\d)/u', $texto, $match)){
+                    return $match[1];
+                }
             }
-            foreach($valores as $valor){
-                if(preg_match('/\d{13}/', (string)$valor, $match)){
+
+            foreach($campos as $valor){
+                $valor = $normalizarValor($valor);
+                if(preg_match('/(?<!\d)\d{13}(?!\d)/', $valor, $match)){
                     return $match[0];
                 }
             }
@@ -1113,35 +1136,42 @@
 				return $this->respuestaJson('simple', 'Acceso restringido', 'Solo un usuario administrador puede cargar la firma electronica.', 'error');
 			}
 
-			if(empty($_FILES['certificado']['tmp_name']) || ($_FILES['certificado']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK){
-				return $this->respuestaJson('simple', 'Archivo requerido', 'Seleccione el archivo .p12 de la firma electronica.', 'warning');
-			}
-
 			$clave = (string)($_POST['clave_certificado'] ?? '');
 			if($clave === ''){
 				return $this->respuestaJson('simple', 'Clave requerida', 'Ingrese la clave de la firma electronica para validarla.', 'warning');
-			}
-
-			$nombre = $_FILES['certificado']['name'] ?? '';
-			$extension = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
-			if(!in_array($extension, ['p12', 'pfx'], true)){
-				return $this->respuestaJson('simple', 'Formato no permitido', 'La firma debe ser un archivo .p12 o .pfx.', 'error');
-			}
-
-			if((int)($_FILES['certificado']['size'] ?? 0) > 5242880){
-				return $this->respuestaJson('simple', 'Archivo muy grande', 'La firma no debe superar 5 MB.', 'error');
 			}
 
 			if(!function_exists('openssl_pkcs12_read')){
 				return $this->respuestaJson('simple', 'OpenSSL no disponible', 'Active la extension OpenSSL de PHP para validar la firma electronica.', 'error');
 			}
 
-			$contenido = file_get_contents($_FILES['certificado']['tmp_name']);
-			if($contenido === false || strlen($contenido) < 10){
-				return $this->respuestaJson('simple', 'Archivo no legible', 'No fue posible leer el archivo de firma electronica subido.', 'error');
+            $config = $this->sriConfig();
+            $destino = $config['firma']['archivo'] ?? (dirname(__DIR__, 2).'/storage/certificados/firma.p12');
+            $archivoSubido = !empty($_FILES['certificado']['tmp_name']) && ($_FILES['certificado']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK;
+            $archivoValidar = $archivoSubido ? $_FILES['certificado']['tmp_name'] : $destino;
+
+            if(!$archivoSubido && !is_file($destino)){
+				return $this->respuestaJson('simple', 'Archivo requerido', 'Seleccione el archivo .p12 de la firma electronica.', 'warning');
 			}
 
-			$lecturaCertificado = $this->leerPkcs12ConVariantes($contenido, $clave, $_FILES['certificado']['tmp_name']);
+            if($archivoSubido){
+                $nombre = $_FILES['certificado']['name'] ?? '';
+                $extension = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
+                if(!in_array($extension, ['p12', 'pfx'], true)){
+                    return $this->respuestaJson('simple', 'Formato no permitido', 'La firma debe ser un archivo .p12 o .pfx.', 'error');
+                }
+
+                if((int)($_FILES['certificado']['size'] ?? 0) > 5242880){
+                    return $this->respuestaJson('simple', 'Archivo muy grande', 'La firma no debe superar 5 MB.', 'error');
+                }
+            }
+
+			$contenido = file_get_contents($archivoValidar);
+			if($contenido === false || strlen($contenido) < 10){
+				return $this->respuestaJson('simple', 'Archivo no legible', 'No fue posible leer el archivo de firma electronica.', 'error');
+			}
+
+			$lecturaCertificado = $this->leerPkcs12ConVariantes($contenido, $clave, $archivoValidar);
 			if(empty($lecturaCertificado['ok'])){
 				return $this->respuestaJson('simple', 'Firma no valida', $lecturaCertificado['mensaje'] ?? 'No fue posible leer el certificado con la clave ingresada.', 'error');
 			}
@@ -1150,7 +1180,6 @@
 			$contenido = $lecturaCertificado['contenido'];
 
 			$certInfo = openssl_x509_parse($certs['cert']);
-            $config = $this->sriConfig();
             $rucEmisor = preg_replace('/\D+/', '', (string)($config['emisor']['ruc'] ?? ''));
             $rucCertificado = is_array($certInfo) ? $this->extraerRucCertificadoSri($certInfo) : '';
             if($rucCertificado !== '' && $rucEmisor !== '' && $rucCertificado !== $rucEmisor){
@@ -1160,12 +1189,13 @@
 				return $this->respuestaJson('simple', 'Firma caducada', 'El certificado seleccionado ya se encuentra caducado.', 'error');
 			}
 
-			$destino = $config['firma']['archivo'] ?? (dirname(__DIR__, 2).'/storage/certificados/firma.p12');
 			$this->protegerDirectorioSri(dirname($destino));
 
-			if(file_put_contents($destino, $contenido, LOCK_EX) === false){
-				return $this->respuestaJson('simple', 'No se pudo guardar', 'Revise permisos de escritura en storage/certificados.', 'error');
-			}
+            if($archivoSubido){
+                if(file_put_contents($destino, $contenido, LOCK_EX) === false){
+                    return $this->respuestaJson('simple', 'No se pudo guardar', 'Revise permisos de escritura en storage/certificados.', 'error');
+                }
+            }
 
 			if(!$this->guardarClaveFirmaSri($clave)){
 				return $this->respuestaJson('simple', 'Clave no guardada', 'La firma fue validada, pero no se pudo proteger la clave localmente.', 'error');
@@ -1991,8 +2021,65 @@
                 'fecha_autorizacion'=>null,
                 'mensaje_error'=>null
             ]);
+            $facturaActualizada = $this->obtenerFacturaElectronicaPorId($conexion, $factura['id']);
+            $this->actualizarRideFacturaSri($conexion, $facturaActualizada, $config);
             return $xmlPath;
         }
+
+		private function actualizarNumeracionFacturaSriConConfig(\PDO $conexion, array $factura, array $config, FacturaElectronicaService $service){
+			$emisor = $config['emisor'] ?? [];
+			$establecimientoConfig = str_pad(substr(preg_replace('/\D+/', '', (string)($emisor['codigo_establecimiento'] ?? '')), 0, 3), 3, '0', STR_PAD_LEFT);
+			$puntoEmisionConfig = str_pad(substr(preg_replace('/\D+/', '', (string)($emisor['punto_emision'] ?? '')), 0, 3), 3, '0', STR_PAD_LEFT);
+
+			if($establecimientoConfig === '000' || $puntoEmisionConfig === '000'){
+				throw new \RuntimeException('Configure un establecimiento y punto de emision validos antes de reenviar.');
+			}
+
+			$mensajeError = strtoupper((string)($factura['mensaje_error'] ?? ''));
+			$requiereNuevoSecuencial = strpos($mensajeError, 'SECUENCIAL REGISTRADO') !== false || preg_match('/(^|\D)45(\D|$)/', $mensajeError);
+
+			if(!$requiereNuevoSecuencial && $establecimientoConfig === (string)$factura['establecimiento'] && $puntoEmisionConfig === (string)$factura['punto_emision']){
+				return $factura;
+			}
+
+			$ruc = preg_replace('/\D+/', '', (string)($emisor['ruc'] ?? ''));
+			if(strlen($ruc) !== 13){
+				throw new \RuntimeException('Configure un RUC emisor valido antes de reenviar.');
+			}
+
+			$tipoComprobante = (string)($factura['tipo_comprobante'] ?? '01');
+			$secuencial = $this->reservarSecuencialFactura($conexion, $tipoComprobante, $establecimientoConfig, $puntoEmisionConfig, (int)($config['secuencial_inicio'] ?? 1));
+			$fechaEmision = !empty($factura['fecha_emision']) ? date('dmY', strtotime($factura['fecha_emision'])) : date('dmY');
+			$claveAcceso = $service->generarClaveAcceso(
+				$fechaEmision,
+				$tipoComprobante,
+				$ruc,
+				(string)($config['ambiente'] ?? '1'),
+				$establecimientoConfig.$puntoEmisionConfig,
+				$secuencial,
+				$service->generarCodigoNumerico(),
+				(string)($config['tipo_emision'] ?? '1')
+			);
+
+			$this->actualizarFacturaSri($conexion, $factura['id'], [
+				'clave_acceso'=>$claveAcceso,
+				'establecimiento'=>$establecimientoConfig,
+				'punto_emision'=>$puntoEmisionConfig,
+				'secuencial'=>$secuencial,
+				'ambiente'=>(string)($config['ambiente'] ?? '1'),
+				'tipo_emision'=>(string)($config['tipo_emision'] ?? '1'),
+				'estado_sri'=>'GENERADA',
+				'xml_generado'=>null,
+				'xml_firmado'=>null,
+				'xml_autorizado'=>null,
+				'ride_html'=>null,
+				'numero_autorizacion'=>null,
+				'fecha_autorizacion'=>null,
+				'mensaje_error'=>null
+			]);
+
+			return $this->obtenerFacturaElectronicaPorId($conexion, $factura['id']);
+		}
 
 		private function actualizarFacturaSri(\PDO $conexion, $facturaId, array $campos){
 			if(empty($campos)){
@@ -2053,21 +2140,25 @@
 			if(!$soloConsulta){
 				$xmlFirmadoPath = $factura['xml_firmado'] ?? '';
                 $estadoRequiereXmlNuevo = in_array((string)$factura['estado_sri'], ['ERROR', 'DEVUELTA', 'NO_AUTORIZADO'], true);
+				$debeFirmar = $xmlFirmadoPath === '' || !is_file($xmlFirmadoPath) || $estadoRequiereXmlNuevo;
+				$claveFirma = '';
+				if($debeFirmar){
+					$claveFirma = $this->leerClaveFirmaSri();
+					if($claveFirma === ''){
+						throw new \RuntimeException('Cargue la firma electronica y su clave antes de emitir.');
+					}
+				}
                 if($estadoRequiereXmlNuevo){
+                    $factura = $this->actualizarNumeracionFacturaSriConConfig($conexion, $factura, $config, $service);
                     $factura['xml_generado'] = $this->regenerarXmlFacturaSri($conexion, $factura, $config, $service);
                     $factura['xml_firmado'] = '';
                     $factura['xml_autorizado'] = '';
                     $xmlFirmadoPath = '';
                 }
-				$debeFirmar = $xmlFirmadoPath === '' || !is_file($xmlFirmadoPath) || in_array((string)$factura['estado_sri'], ['ERROR', 'DEVUELTA', 'NO_AUTORIZADO'], true);
 				if($debeFirmar){
 					$xmlGeneradoPath = $factura['xml_generado'] ?? '';
 					if($xmlGeneradoPath === '' || !is_file($xmlGeneradoPath)){
 						throw new \RuntimeException('No se encontro el XML generado para firmar.');
-					}
-					$claveFirma = $this->leerClaveFirmaSri();
-					if($claveFirma === ''){
-						throw new \RuntimeException('Cargue la firma electronica y su clave antes de emitir.');
 					}
 					$firma = new FirmaElectronicaService($config);
 					$firma->cargarCertificado($config['firma']['archivo'] ?? '', $claveFirma);
@@ -2187,9 +2278,12 @@
 			try{
 				$resultado = $this->emitirFacturaSriLocal($facturaId, false);
 				$factura = $resultado['factura'] ?? [];
+				$numero = !empty($factura) ? (($factura['establecimiento'] ?? '').'-'.($factura['punto_emision'] ?? '').'-'.($factura['secuencial'] ?? '')) : '';
 				$tipo = !empty($resultado['exito']) ? (($resultado['estado'] === 'AUTORIZADO') ? 'factura_autorizada' : 'factura_enviada') : 'factura_error_sri';
 				return $this->respuestaJson($tipo, $resultado['titulo'], $resultado['mensaje'], !empty($resultado['exito']) ? 'success' : 'error', [
 					'factura_id'=>$facturaId,
+					'numero'=>$numero,
+					'clave_acceso'=>$factura['clave_acceso'] ?? '',
 					'estado_sri'=>$resultado['estado'],
 					'numero_autorizacion'=>$factura['numero_autorizacion'] ?? '',
 					'xml_url'=>APP_URL.'app/ajax/facturasAjax.php?modulo_facturas=DESCARGAR_XML&factura_id='.$facturaId,
@@ -2208,9 +2302,12 @@
 			try{
 				$resultado = $this->emitirFacturaSriLocal($facturaId, true);
 				$factura = $resultado['factura'] ?? [];
+				$numero = !empty($factura) ? (($factura['establecimiento'] ?? '').'-'.($factura['punto_emision'] ?? '').'-'.($factura['secuencial'] ?? '')) : '';
 				$tipo = !empty($resultado['exito']) ? (($resultado['estado'] === 'AUTORIZADO') ? 'factura_autorizada' : 'factura_enviada') : 'factura_error_sri';
 				return $this->respuestaJson($tipo, $resultado['titulo'], $resultado['mensaje'], !empty($resultado['exito']) ? 'success' : 'warning', [
 					'factura_id'=>$facturaId,
+					'numero'=>$numero,
+					'clave_acceso'=>$factura['clave_acceso'] ?? '',
 					'estado_sri'=>$resultado['estado'],
 					'numero_autorizacion'=>$factura['numero_autorizacion'] ?? '',
 					'xml_url'=>APP_URL.'app/ajax/facturasAjax.php?modulo_facturas=DESCARGAR_XML&factura_id='.$facturaId,
@@ -2549,6 +2646,9 @@
 			}
 			$config = $this->sriConfig();
 			$emisor = $config['emisor'] ?? [];
+			if($this->leerClaveFirmaSri() === ''){
+				return $this->respuestaJson('simple', 'Firma electronica pendiente', 'Cargue o actualice la clave de la firma electronica antes de generar y emitir facturas.', 'warning');
+			}
 			$alumnoid = (int)($_POST['alumno'] ?? 0);
 			$formasPagoSri = $config['formas_pago'] ?? [];
 			$formaPago = (string)($_POST['forma_pago'] ?? '');

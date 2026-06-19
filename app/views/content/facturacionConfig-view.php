@@ -278,7 +278,8 @@
 								<div class="card-body">
 									<div class="form-group">
 										<label for="certificado">Archivo</label>
-										<input type="file" class="form-control-file" id="certificado" name="certificado" accept=".p12,.pfx" required>
+										<input type="file" class="form-control-file" id="certificado" name="certificado" accept=".p12,.pfx">
+										<small class="form-text text-muted">Si ya hay una firma cargada, puede dejar el archivo vacio y actualizar solo la clave.</small>
 									</div>
 									<div class="form-group mb-0">
 										<label for="clave_certificado">Clave</label>
