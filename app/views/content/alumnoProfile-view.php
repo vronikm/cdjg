@@ -8,6 +8,12 @@
 	$alumno_generoF 	= "";
 	$alumno_hermanosSi	= "";
 	$alumno_hermanosNo	= "";
+	$repre_identificacion = "";
+	$repre_nombre = "Sin representante vinculado";
+	$repre_parentesco = "";
+	$repre_direccion = "";
+	$repre_correo = "";
+	$repre_celular = "";
 
 	$datos=$insAlumno->seleccionarDatos("Unico","sujeto_alumno","alumno_id",$alumnoid);
 	if($datos->rowCount()==1){
@@ -45,12 +51,12 @@
 	$representante=$insAlumno->datosRepresentante($alumnoid);
 	if($representante->rowCount()==1){
 		$representante=$representante->fetch();
-		$repre_identificacion = $representante['IDENTIFICACION'];
-		$repre_nombre 		  = $representante['REPRESENTANTE'];
-		$repre_parentesco	  = $representante['PARENTESCO'];
-		$repre_direccion	  = $representante['repre_direccion'];
-		$repre_correo		  = $representante['repre_correo'];
-		$repre_celular	  	  = $representante['repre_celular'];
+		$repre_identificacion = $representante['IDENTIFICACION'] ?? "";
+		$repre_nombre 		  = trim((string)($representante['REPRESENTANTE'] ?? "")) ?: "Sin representante vinculado";
+		$repre_parentesco	  = $representante['PARENTESCO'] ?? "";
+		$repre_direccion	  = $representante['repre_direccion'] ?? "";
+		$repre_correo		  = $representante['repre_correo'] ?? "";
+		$repre_celular	  	  = $representante['repre_celular'] ?? "";
 	}
 
 	$datosmedic=$insAlumno->seleccionarDatos("Unico","alumno_infomedic","infomedic_alumnoid",$alumnoid);
@@ -135,7 +141,7 @@
 		$horario_detalle	= $datoshorario['horario_detalle'];
 		$horario_estado		= $datoshorario['horario_estado'];
 	}else{
-		$lugar_sedeid = isset($_POST['horario_sedeid']) ? $insHorario->limpiarCadena($_POST['horario_sedeid']) : 0;
+		$lugar_sedeid = isset($_POST['horario_sedeid']) ? $insAlumno->limpiarCadena($_POST['horario_sedeid']) : 0;
 		$horario_nombre 	= "";
 		$horario_detalle	= "";
 		$horario_estado		= "";

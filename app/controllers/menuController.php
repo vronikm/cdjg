@@ -463,9 +463,22 @@
 			return $menus;
 		}
 
-		public function ConstruirMenu($menus){
+		public function ConstruirMenu($menus, $vistaActual = ''){
 			$html = '';
 			$padreActual = null; // Variable para rastrear el padre actual
+			$vistaActual = trim((string) $vistaActual, "/ \t\n\r\0\x0B");
+			$vistaActiva = function ($vista) use ($vistaActual) {
+				return trim((string) $vista, "/ \t\n\r\0\x0B") === $vistaActual;
+			};
+			$grupoActivo = function ($padreId) use ($menus, $vistaActiva) {
+				foreach ($menus as $item) {
+					if ((int) $item['menu_padreid'] === (int) $padreId && $vistaActiva($item['menu_vista'])) {
+						return true;
+					}
+				}
+
+				return false;
+			};
 		
 			if (count($menus) > 0) {
 				foreach ($menus as $menu) {
@@ -479,7 +492,7 @@
 		
 						// Menú principal sin hijos
 						$html .= '<li class="nav-item">';
-						$html .= '<a href="' . APP_URL . $menu['menu_vista'] . '/" class="nav-link">';
+						$html .= '<a href="' . APP_URL . $menu['menu_vista'] . '/" class="nav-link' . ($vistaActiva($menu['menu_vista']) ? ' active' : '') . '">';
 						$html .= '<i class="'.$menu['menu_icono'].'"></i> <p>' . $menu['menu_nombre'] . '</p>';
 						$html .= '</a>';
 						$html .= '</li>';
@@ -494,8 +507,8 @@
 		
 							// Agrega el nuevo padre
 							$html .= '<li class="nav-header">' . $menu['padre'] . '</li>';
-							$html .= '<li class="nav-item">';
-							$html .= '<a href="#" class="nav-link">';
+							$html .= '<li class="nav-item' . ($grupoActivo($menu['menu_padreid']) ? ' menu-open' : '') . '">';
+							$html .= '<a href="#" class="nav-link' . ($grupoActivo($menu['menu_padreid']) ? ' active' : '') . '">';
 							$html .= '<i class="'.$menu['menu_icono'].'"></i>';
 							$html .= '<p>' . $menu['padre'] . '<i class="fas fa-angle-left right"></i></p>';
 							$html .= '</a>';
@@ -505,7 +518,7 @@
 		
 						// Agrega los hijos al menú
 						$html .= '<li class="nav-item">';
-						$html .= '<a href="' . APP_URL . $menu['menu_vista'] . '/" class="nav-link">';
+						$html .= '<a href="' . APP_URL . $menu['menu_vista'] . '/" class="nav-link' . ($vistaActiva($menu['menu_vista']) ? ' active' : '') . '">';
 						$html .= '<i class="nav-icon far fa-circle text-info"></i>';
 						$html .= '<p>' . $menu['menu_nombre'] . '</p>';
 						$html .= '</a>';

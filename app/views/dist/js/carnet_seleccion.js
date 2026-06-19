@@ -61,6 +61,11 @@ function restaurarCheckboxes() {
     var checkboxes = document.querySelectorAll('.chk-reimpresion');
     
     checkboxes.forEach(function(checkbox) {
+        if (checkbox.disabled) {
+            checkbox.checked = false;
+            return;
+        }
+
         var alumnoId = checkbox.value;
         var estaSeleccionado = carnetSeleccionados.indexOf(alumnoId) !== -1;
         checkbox.checked = estaSeleccionado;
@@ -115,6 +120,11 @@ function configurarEventos() {
  * Manejar cambio en checkbox individual
  */
 function manejarCheckbox(checkbox) {
+    if (checkbox.disabled) {
+        checkbox.checked = false;
+        return;
+    }
+
     var alumnoId = checkbox.value;
     
     if (checkbox.checked) {
@@ -141,6 +151,11 @@ function seleccionarTodosPagina(seleccionar) {
     var checkboxes = document.querySelectorAll('.chk-reimpresion');
     
     checkboxes.forEach(function(checkbox) {
+        if (checkbox.disabled) {
+            checkbox.checked = false;
+            return;
+        }
+
         checkbox.checked = seleccionar;
         var alumnoId = checkbox.value;
         
@@ -170,6 +185,11 @@ function verificarSeleccionTodos() {
     var idsEnPagina = [];
 
     checkboxes.forEach(function(checkbox) {
+        if (checkbox.disabled) {
+            checkbox.checked = false;
+            return;
+        }
+
         idsEnPagina.push(checkbox.value);
         if (!checkbox.checked) {
             todosSeleccionados = false;
@@ -183,8 +203,9 @@ function verificarSeleccionTodos() {
     carnetSeleccionados.forEach(function(id) {
         // Solo mantener si existe en la página actual O si no está en la página
         // (puede estar en otra página de la paginación)
-        if (idsEnPagina.indexOf(id) === -1 || 
-            document.querySelector('.chk-reimpresion[value="' + id + '"]')) {
+        var checkboxSeleccionado = document.querySelector('.chk-reimpresion[value="' + id + '"]');
+        if ((idsEnPagina.indexOf(id) === -1 && !checkboxSeleccionado) ||
+            (checkboxSeleccionado && !checkboxSeleccionado.disabled)) {
             idsLimpios.push(id);
         }
     });
@@ -283,12 +304,14 @@ function procesarReimpresion() {
         }
         return;
     }
+    var cobraReimpresion = (typeof COBRAR_REIMPRESION === 'undefined' || COBRAR_REIMPRESION);
+    var textoProcesando = cobraReimpresion ? 'Generando pagos de reimpresion' : 'Preparando reimpresion sin cargo';
     
     // Mostrar loading
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Procesando...',
-            text: 'Generando pagos de reimpresión',
+            text: textoProcesando,
             allowOutsideClick: false,
             didOpen: function() {
                 Swal.showLoading();
@@ -306,9 +329,11 @@ function procesarReimpresion() {
     });
     
     // Enviar petición
-    fetch('../app/ajax/carnetAjax.php', {
+    var ajaxUrl = (typeof APP_URL !== 'undefined' ? APP_URL : '../') + 'app/ajax/carnetAjax.php';
+    fetch(ajaxUrl, {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'same-origin'
     })
     .then(function(response) {
         return response.json();
@@ -407,9 +432,11 @@ function limpiarIdsObsoletos() {
         // Verificar si el ID existe en los checkboxes disponibles
         var checkboxExiste = document.querySelector('.chk-reimpresion[value="' + id + '"]');
         
-        if (checkboxExiste) {
+        if (checkboxExiste && !checkboxExiste.disabled) {
             // El checkbox existe, mantener el ID
             idsActualizados.push(id);
+        } else if (checkboxExiste && checkboxExiste.disabled) {
+            seEliminaron = true;
         } else if (idsDisponibles.indexOf(id) === -1) {
             // El ID no está en la página actual, asumir que está en otra página
             idsActualizados.push(id);

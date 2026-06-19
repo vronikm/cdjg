@@ -1,6 +1,8 @@
 <?php
 	use app\controllers\facturasController;
 	$insFactura = new facturasController();
+	$rolid = (int)($_SESSION['rol'] ?? 0);
+	$usuarioSesion = $_SESSION['usuario'] ?? '';
 
 	if(isset($_POST['alumno_sedeid'])){
 		$alumno_sedeid = $insFactura->limpiarCadena($_POST['alumno_sedeid']);
@@ -41,7 +43,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title><?php echo APP_NAME; ?> | Facturas</title>
-	<link rel="icon" type="image/png" href="<?php echo APP_URL; ?>app/views/dist/img/Logos/1104523691001_2.png">
+	<link rel="icon" type="image/png" href="<?php echo APP_URL; ?>app/views/dist/img/Logos/LogoCDJG.png">
 	<!-- Google Font: Source Sans Pro -->
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
 	<!-- Font Awesome -->
@@ -149,7 +151,7 @@
 												}
 											}
 										?>																		
-										<?php echo $insFactura->listarSedeFacturas($alumno_sedeid, $_SESSION['rol'], $_SESSION['usuario']); ?>
+										<?php echo $insFactura->listarSedeFacturas($alumno_sedeid, $rolid, $usuarioSesion); ?>
 									</select>	
 								</div>
 							</div>
@@ -242,7 +244,11 @@
 	<script>
 		$(function () {
 			$("#example1").DataTable({
-			"responsive": true, "lengthChange": false, "autoWidth": false,
+			"responsive": true,
+			"lengthChange": true,
+			"autoWidth": false,
+			"pageLength": 10,
+			"lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
 			"language": {
 				"decimal": "",
 				"emptyTable": "No hay datos disponibles en la tabla",
@@ -274,6 +280,17 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/main.js" ></script>
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/sweetalert2.all.min.js" ></script>
+	<script>
+		$(document).on("click", ".btn-factura-bloqueada", function(event){
+			event.preventDefault();
+			Swal.fire({
+				title: $(this).data("titulo") || "No se puede facturar",
+				text: $(this).data("mensaje") || "Actualice la ficha del alumno antes de generar la factura.",
+				icon: "warning",
+				confirmButtonText: "Entendido"
+			});
+		});
+	</script>
   </body>
 </html>
 

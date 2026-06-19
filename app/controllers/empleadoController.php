@@ -1540,7 +1540,7 @@
 				],	
 				[
 					"campo_nombre"=>"egreso_descargado",
-					"campo_marcador"=>":Saldo",
+					"campo_marcador"=>":Descargado",
 					"campo_valor"=>$egreso_descargado
 				],	
 				[
@@ -1602,7 +1602,8 @@
 
 		public function listarEgresos($empleadoid){            	
 			$tabla="";
-			$consulta_datos="SELECT ROW_NUMBER() OVER (ORDER BY egreso_id) AS fila_numero, IFNULL(P.PAGOS_PENDIENTES, 0)PAGOS_PENDIENTES, 
+			$empleadoid=(int)$empleadoid;
+			$consulta_datos="SELECT ROW_NUMBER() OVER (ORDER BY E.egreso_id DESC) AS fila_numero, IFNULL(P.PAGOS_PENDIENTES, 0)PAGOS_PENDIENTES, 
                                 F.catalogo_descripcion as FormaEgreso, T.catalogo_descripcion as TipoEgreso, E.* 
                                 FROM empleado_egreso E
                                 LEFT JOIN (
@@ -1612,19 +1613,31 @@
                                 )P ON P.trxegreso_egresoid = E.egreso_id
                                 LEFT JOIN general_tabla_catalogo F on F.catalogo_valor = egreso_formaegresoid 
                                 LEFT JOIN general_tabla_catalogo T on T.catalogo_valor = egreso_tipoid 
-                                WHERE (E.egreso_empleadoid = '".$empleadoid."' AND E.egreso_estado NOT IN ('E')) ORDER BY egreso_id DESC";
+                                WHERE (E.egreso_empleadoid = '".$empleadoid."' AND E.egreso_estado NOT IN ('E')) ORDER BY E.egreso_id DESC";
                 $datos = $this->ejecutarConsulta($consulta_datos);
                 $datos = $datos->fetchAll();
+
+                if(empty($datos)){
+                    $consulta_eliminados=$this->ejecutarConsulta("SELECT COUNT(1) FROM empleado_egreso WHERE egreso_empleadoid = '".$empleadoid."' AND egreso_estado = 'E'");
+                    $egresos_eliminados=(int)$consulta_eliminados->fetchColumn();
+                    $mensaje=$egresos_eliminados>0
+                        ? "No hay egresos activos para este empleado. Existen egresos eliminados que no se muestran."
+                        : "No hay egresos registrados para este empleado.";
+
+                    return '<tr><td colspan="8" class="text-center text-muted">'.$mensaje.'</td></tr>';
+                }
+
                 foreach($datos as $rows){
+                $class = '';
+                $egreso_estado = '<span class="badge bg-secondary">Sin definir</span>';
 
                 if ($rows['egreso_estado'] == 'C'){
-                    $egreso_estado = 'Cancelado';
-                    $class = '';
+                    $egreso_estado = '<span class="badge bg-success">Cancelado</span>';
                 }elseif($rows['egreso_estado'] == 'P'){
-                    $egreso_estado = '<span class="badge bg-danger"> Pendiente';
+                    $egreso_estado = '<span class="badge bg-danger">Pendiente</span>';
                     $class = 'class="text-danger"';
                 }elseif($rows['egreso_estado'] == 'J'){
-                    $egreso_estado = ' Justificado';
+                    $egreso_estado = '<span class="badge bg-primary">Justificado</span>';
                     $class = 'class="text-primary"';
                 }
 
@@ -2100,9 +2113,11 @@
 		}
 
 		public function ConsolidadoAnticipo($empleadoid){		
+			$empleadoid=(int)$empleadoid;
 			$consulta_datos="SELECT SUM(egreso_valor) VALOR_ANTICIPO, SUM(egreso_pendiente) ANTICIPO_PENDIENTE
 						from empleado_egreso 
-						where egreso_empleadoid = ".$empleadoid;
+						where egreso_estado = 'P'
+							AND egreso_empleadoid = ".$empleadoid;
 				
 			$datos = $this->ejecutarConsulta($consulta_datos);				
 			return $datos;

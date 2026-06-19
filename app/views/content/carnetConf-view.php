@@ -46,6 +46,9 @@
 		11 => 'Noviembre',
 		12 => 'Diciembre'
 	];
+
+	$cobrarReimpresion = $insColor->cobrarReimpresionCarnet();
+	$valorReimpresion = $insColor->valorReimpresionCarnet();
 ?>
 
 <html lang="es">
@@ -110,6 +113,9 @@
 				<div class="card card-default">
 					<div class="card-header">
 						<h3 class="card-title">Asigna un color único para cada mes del año</h3>
+						<span class="badge <?php echo $cobrarReimpresion ? 'badge-warning' : 'badge-success'; ?> ml-2">
+							<?php echo $cobrarReimpresion ? 'Reimpresion con cargo' : 'Reimpresion sin cargo'; ?>
+						</span>
 						<div class="card-tools">
 							<button type="button" class="btn btn-tool" data-card-widget="collapse">
 								<i class="fas fa-minus"></i>
@@ -123,6 +129,53 @@
 								<form class="FormularioAjax" id="quickForm" action="<?php echo APP_URL; ?>app/ajax/carnetAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data">
 									
 									<input type="hidden" name="modulo_carnet" value="actualizar_colores">
+
+									<div class="alert alert-warning border border-warning shadow-sm mb-4">
+										<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+											<div class="mb-3 mb-md-0">
+												<h5 class="mb-1">
+													<i class="fas fa-money-check-alt"></i> Politica de reimpresion de carnets
+												</h5>
+												<small class="text-muted">
+													Activa esta opcion si la reimpresion por carnet extraviado debe generar el cobro configurado.
+												</small>
+											</div>
+
+											<div class="text-md-right">
+												<input type="hidden" name="cobrar_reimpresion" value="0">
+												<div class="custom-control custom-switch custom-switch-off-secondary custom-switch-on-warning">
+													<input type="checkbox"
+														   class="custom-control-input"
+														   id="cobrar_reimpresion"
+														   name="cobrar_reimpresion"
+														   value="1"
+														   <?php echo $cobrarReimpresion ? 'checked' : ''; ?>>
+													<label class="custom-control-label font-weight-bold" for="cobrar_reimpresion">
+														Cobrar reimpresion
+													</label>
+												</div>
+												<small class="d-block mt-1 <?php echo $cobrarReimpresion ? 'text-warning' : 'text-success'; ?>">
+													<?php echo $cobrarReimpresion ? 'Activo: se genera cobro ROT.' : 'Inactivo: la reimpresion no genera cobro.'; ?>
+												</small>
+												<label class="d-block mt-3 mb-1" for="valor_reimpresion">
+													Valor del rubro
+												</label>
+												<div class="input-group input-group-sm">
+													<div class="input-group-prepend">
+														<span class="input-group-text">$</span>
+													</div>
+													<input type="number"
+														   class="form-control text-right"
+														   id="valor_reimpresion"
+														   name="valor_reimpresion"
+														   value="<?php echo number_format($valorReimpresion, 2, '.', ''); ?>"
+														   min="0.01"
+														   step="0.01"
+														   required>
+												</div>
+											</div>
+										</div>
+									</div>
 									
 									<div class="table-responsive">
 										<table class="table table-hover">

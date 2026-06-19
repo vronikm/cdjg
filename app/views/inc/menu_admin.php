@@ -27,6 +27,13 @@
               </li>
 
               <li class="nav-item">
+                <a href="<?php echo APP_URL."facturasList/" ?>" class="nav-link <?php if ($url[0]=='facturasList' || $url[0]=='facturasNew') echo 'active'; else echo ''; ?>">
+                  <i class="nav-icon fa fa-money-check text-info"></i>
+                  <p>Facturación</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
                 <a href="<?php echo APP_URL."carnetList/" ?>" class="nav-link <?php if ($url[0]=='carnetList') echo 'active'; else echo ''; ?>">
                   <i class="nav-icon far fa-address-card text-info"></i>
                   <p>Carnets</p>
@@ -44,13 +51,6 @@
                 <a href="<?php echo APP_URL."agenda/" ?>" class="nav-link <?php if ($url[0]=='agenda') echo 'active'; else echo ''; ?>">
                   <i class="nav-icon fa fa-sticky-note text-info"></i>
                   <p>Agenda</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="<?php echo APP_URL."facturasList/" ?>" class="nav-link <?php if ($url[0]=='facturasList') echo 'active'; else echo ''; ?>">
-                  <i class="nav-icon fa fa-money-check text-info"></i>
-                  <p>Facturación</p>
                 </a>
               </li>
 
@@ -286,8 +286,8 @@
               </li>
 
               <li class="nav-header">Configuración</li>
-              <li class="nav-item <?php if ($url[0]=='escuelaNew' || $url[0]=='sedeList' || $url[0]=='tablasNew' || $url[0]=='catalogosNew') echo 'menu-open'; else echo ''; ?>">
-                <a href="#" class="nav-link <?php if ($url[0]=='escuelaNew' || $url[0]=='sedeList' || $url[0]=='tablasNew' || $url[0]=='catalogosNew') echo 'active'; else echo ''; ?>">
+              <li class="nav-item <?php if ($url[0]=='escuelaNew' || $url[0]=='sedeList' || $url[0]=='tablasNew' || $url[0]=='catalogosNew' || $url[0]=='institucionList' || $url[0]=='carnetConf' || $url[0]=='feriadosList' || $url[0]=='facturacionConfig') echo 'menu-open'; else echo ''; ?>">
+                <a href="#" class="nav-link <?php if ($url[0]=='escuelaNew' || $url[0]=='sedeList' || $url[0]=='tablasNew' || $url[0]=='catalogosNew' || $url[0]=='institucionList' || $url[0]=='carnetConf' || $url[0]=='feriadosList' || $url[0]=='facturacionConfig') echo 'active'; else echo ''; ?>">
                   <i class="nav-icon far fa-edit"></i>
                   <p>Configuración<i class="fas fa-angle-left right"></i></p>
                 </a>
@@ -338,6 +338,12 @@
                     <a href="<?php echo APP_URL."feriadosList/" ?>" class="nav-link <?php if ($url[0]=='feriadosList') echo 'active'; else echo ''; ?>">
                       <i class="nav-icon far fa-calendar-alt text-info"></i>
                       <p>Feriados</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="<?php echo APP_URL."facturacionConfig/" ?>" class="nav-link <?php if ($url[0]=='facturacionConfig') echo 'active'; else echo ''; ?>">
+                      <i class="nav-icon fas fa-cog text-info"></i>
+                      <p>Config. facturación</p>
                     </a>
                   </li>
                 </ul>

@@ -147,8 +147,7 @@
 		}
 		else{
 			$textoegreso = 'Sin egresos pendientes';
-			$clase = '<a class="float-right">';
-			$clase = '<a class="float-right text-danger">';
+			$clase = '<a class="float-right text-success">';
 			$alerta = "N";
 		}
 	}
@@ -440,7 +439,7 @@
 												<p class="lead mb-0">Pagos realizados</p>
 											</div>
 											<div class="tab-content" id="custom-content-above-tabContent">
-												<table id="example1" class="table table-bordered table-striped table-sm">
+												<table id="tabla-ingresos-empleado" class="table table-bordered table-striped table-sm">
 													<thead>
 														<tr>
 															<th>No</th>
@@ -538,7 +537,7 @@
 												<p class="lead mb-0">Egresos registrados</p>
 											</div>
 											<div class="tab-content" id="custom-content-above-tabContent">
-												<table id="example1" class="table table-bordered table-striped table-sm">
+												<table id="tabla-egresos-empleado" class="table table-bordered table-striped table-sm">
 													<thead>
 														<tr>
 															<th>No</th>

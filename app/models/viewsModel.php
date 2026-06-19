@@ -25,7 +25,7 @@
 						  ,"formularioLPPDF","empleadoEntrada", "userMenu", "permisoList", "permisoNew"
 						  ,"empleadoAsistencias","agenda","empleadoAsistenciasDetalle","cobranzaPensionInactivos"
 						  ,"dashboardAlumnos","reportePensionAlumno","reportePagosReceptados","institucionList"
-						  ,"carnetList","carnetFoto","carnetConf","facturasList","facturasNew","carnetPDF"
+						  ,"carnetList","carnetFoto","carnetConf","facturasList","facturasNew","facturacionConfig","carnetPDF"
 						  ,"carnetReimpresionPDF","asistenciaList","feriadosList","carnetFotoPDF"];
 
 			if(in_array($vista, $listaBlanca)){

@@ -43,6 +43,10 @@ if(isset($_POST['modulo_carnet'])) {
             }
             break;
 
+        case 'preparar_impresion_mensual':
+            echo $insCarnet->prepararImpresionMensual();
+            break;
+
         case 'procesar_reimpresion':
             echo $insCarnet->procesarReimpresion();
             break;

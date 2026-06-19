@@ -2,26 +2,34 @@
 	date_default_timezone_set("America/Guayaquil");
 
 	use app\controllers\facturasController;
-	include 'app/lib/barcode.php';
-	
-	$insFactura = new facturasController();	
-	$generator = new barcode_generator();
 
+	include 'app/lib/barcode.php';
+
+	$generator = new barcode_generator();
 	$symbology = "code128"; // Cambiar tipo de código
 	$options = array('sx'=>1,'sy'=>0.5,'p'=>1); // Ajustar tamaño y padding
-	$claveAcceso = "1607202501110326917900120030040000128821234567814";
-	
+	$insAlumno = new facturasController();
+	$sriConfig = $insAlumno->obtenerConfiguracionSri();
+	$sriEmisor = $sriConfig['emisor'] ?? [];
+	$sriAmbiente = ((string)($sriConfig['ambiente'] ?? '1') === '2') ? 'Produccion' : 'Pruebas';
+	$sriIvaDefault = (float)($sriConfig['iva_tarifa_default'] ?? 0);
+	$sriFormaPago = (string)($sriConfig['forma_pago_default'] ?? '20');
+	$sriFormaPagoTexto = $sriConfig['formas_pago'][$sriFormaPago] ?? $sriFormaPago;
+	$h = static function($valor){ return htmlspecialchars((string)$valor, ENT_QUOTES, 'UTF-8'); };
 
-	$alumno=$insFactura->limpiarCadena($url[1]);
+	$alumno=$insLogin->limpiarCadena($url[1]);
 
 	$fecha_inicio= date('Y-m-d');
 	$fecha_fin= date('Y-m-d');
 
-	$datos=$insFactura->BuscarAlumnoFactura($alumno, $fecha_inicio,$fecha_fin);	
+	$datos=$insAlumno->BuscarAlumnoFactura($alumno, $fecha_inicio,$fecha_fin);
+	$facturacionBloqueada = false;
+	$facturacionBloqueadaTitulo = '';
+	$facturacionBloqueadaTexto = '';
 
 	if($datos->rowCount()==1){
-		$datos=$datos->fetch(); 
-		
+		$datos=$datos->fetch();
+
 		/* validar correo */
 		$error='N';
 		$disabled='';
@@ -36,28 +44,50 @@
 			$correo = '<strong><i class="fas fa-envelope mr-1"></i> Correo</strong>';
 		}
 
-		/* validar cedula */
-		if ($datos['repre_tipoidentificacion'] == 'CED') {
-			if (!$insFactura->validarCedula($datos['repre_identificacion'])) {
-				$identificacion = '<p class="text-danger">'.$datos['repre_identificacion'].'</p>';
-				$cedula = '<strong class="text-danger"><i class="fas fa-address-card mr-1"></i> Cédula no válida</strong>';
-				$error='S';
-				$disabled='disabled';
-			}else {
-				$identificacion = '<p class="text-muted">'.$datos['repre_identificacion'].'</p>';
-				$cedula = '<strong><i class="fas fa-address-card mr-1"></i> Identificación</strong>';
-			}
-		}else{
-			$cedula = '<p class="text-muted">'.$datos['repre_identificacion'].'</p>';
+		/* validar identificacion SRI */
+		if (!$insAlumno->validarIdentificacionSri($datos['repre_identificacion'], $datos['repre_tipoidentificacion'])) {
+			$identificacion = '<p class="text-danger">'.$datos['repre_identificacion'].'</p>';
+			$cedula = '<strong class="text-danger"><i class="fas fa-address-card mr-1"></i> Identificacion no valida SRI</strong>';
+			$error='S';
+			$disabled='disabled';
+		}else {
+			$identificacion = '<p class="text-muted">'.$datos['repre_identificacion'].'</p>';
+			$cedula = '<strong><i class="fas fa-address-card mr-1"></i> Identificacion</strong>';
 		}
 
 	}else{
-		include "<?php echo APP_URL; ?>/app/views/inc/error_alert.php";
-	}
+		$alumnoBasico = $insAlumno->obtenerAlumnoFacturaBasico($alumno);
+		$facturacionBloqueada = true;
+		$facturacionBloqueadaTitulo = 'No se puede facturar';
+		$facturacionBloqueadaTexto = 'No se pudo cargar la informacion del alumno para facturacion.';
 
-	$datosEscuela=$insFactura->informacionEscuela();
-	if($datosEscuela->rowCount()==1){
-		$datosEscuela=$datosEscuela->fetch(); 
+		if($alumnoBasico){
+			$nombreAlumno = trim((string)($alumnoBasico['alumno'] ?? ''));
+			$nombreAlumno = $nombreAlumno !== '' ? $nombreAlumno : 'ID '.$alumno;
+
+			if((int)($alumnoBasico['alumno_repreid'] ?? 0) <= 0){
+				$facturacionBloqueadaTexto = 'El alumno '.$nombreAlumno.' no tiene representante vinculado. Actualice la ficha del alumno y asigne un representante antes de generar la factura.';
+			}elseif(empty($alumnoBasico['repre_id'])){
+				$facturacionBloqueadaTexto = 'El representante vinculado al alumno '.$nombreAlumno.' no existe o fue eliminado. Revise la ficha del alumno antes de generar la factura.';
+			}
+		}
+
+		$datos = [
+			'repre_identificacion' => '',
+			'repre_direccion' => '',
+			'repre_correo' => '',
+			'repre_celular' => '',
+			'repre_tipoidentificacion' => '',
+			'repre_id' => '',
+			'representante' => 'Sin representante vinculado',
+			'pagos' => 0
+		];
+		$error='S';
+		$disabled='disabled';
+		$mail = '<p class="text-danger">Sin correo</p>';
+		$correo = '<strong class="text-danger"><i class="fas fa-envelope mr-1"></i> Correo</strong>';
+		$identificacion = '<p class="text-danger">Sin identificacion</p>';
+		$cedula = '<strong class="text-danger"><i class="fas fa-address-card mr-1"></i> Identificacion</strong>';
 	}
 ?>
 
@@ -73,7 +103,7 @@
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
 	<!-- Font Awesome -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/fontawesome-free/css/all.min.css">
-	
+
 	<!-- daterange picker -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/daterangepicker/daterangepicker.css">
 	<!-- iCheck for checkboxes and radio inputs -->
@@ -89,7 +119,7 @@
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css">
 	<!-- BS Stepper -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/plugins/bs-stepper/css/bs-stepper.min.css">
-	
+
 	<!-- Theme style -->
 	<link rel="stylesheet" href="<?php echo APP_URL; ?>app/views/dist/css/adminlte.css">
 
@@ -117,7 +147,7 @@
 
 		<!-- Main Sidebar Container -->
 		<?php require_once "app/views/inc/main-sidebar.php"; ?>
-		<!-- /.Main Sidebar Container -->  
+		<!-- /.Main Sidebar Container -->
 
 		<!-- vista -->
 		<div class="content-wrapper">
@@ -141,29 +171,29 @@
 			<!-- /.content-header -->
 
 			<!-- Main content -->
-			<section class="content">				
+			<section class="content">
 				<!-- /.container-fluid información alumno -->
 				<div class="container-fluid">
 
 					<div class="row">
-						<div class="col-md-3">	
+						<div class="col-md-3">
 							<div class="card card-olive">
 								<div class="card-header">
 									<h3 class="card-title">Representante</h3>
 								</div>
-								
+
 								<!-- Bloque Representante -->
 								<div class="card-body">
 									<strong><i class="fas fa-user mr-1"></i> Nombres</strong>
 									<p class="text-muted" id="representante_nombre"><?php echo $datos['representante']?></p>
 
-									<hr>									
+									<hr>
 									<div id="representante_identificacion">
-										<?php echo $cedula.$identificacion?>									
+										<?php echo $cedula.$identificacion?>
 									</div>
 
 									<hr>
-									<strong><i class="fas fa-map-marker-alt mr-1"></i> Dirección</strong>									
+									<strong><i class="fas fa-map-marker-alt mr-1"></i> Dirección</strong>
 									<p class="text-muted" id="representante_direccion"><?php echo $datos['repre_direccion']; ?></p>
 
 									<hr>
@@ -181,18 +211,18 @@
 
 									<hr>
 									<strong><i class="fas fa-print mr-1"></i> Facturas generadas</strong>
-									<p class="text-muted" id="representante_facturas"><?php echo $datos['pagos']; ?></p>
+									<p class="text-muted" id="representante_facturas"><?php echo $insAlumno->contarFacturasGeneradas($alumno,'',''); ?></p>
 								</div>
-								
-								
+
+
 								<div class="card-footer">
-									<div class="text-right">													
-										<a href="#" class="btn btn-sm bg-olive" data-target="#modal-representante" data-toggle="modal">
+									<div class="text-right">
+										<a href="#" class="btn btn-sm <?php echo $facturacionBloqueada ? 'bg-gray disabled' : 'bg-olive'; ?>" <?php echo $facturacionBloqueada ? 'aria-disabled="true" tabindex="-1"' : 'data-target="#modal-representante" data-toggle="modal"'; ?>>
 											<i class="fas fa-pen"></i> Actualizar
 										</a>
 									</div>
 								</div>
-								
+
 								<!-- /.card-body -->
 							</div>
 						</div>
@@ -200,7 +230,7 @@
 						<div class="col-md-9">
 							<div class="card">
 								<div class="card-header p-2">
-									<div class="row align-items-end">											
+									<div class="row align-items-end">
 										<!-- Fecha inicio -->
 										<div class="col-md-4">
 											<div class="form-group mb-0">
@@ -209,7 +239,7 @@
 													<div class="input-group-prepend">
 														<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 													</div>
-													<input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" value="<?php echo $fecha_inicio; ?>">
+													<input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" value="<?php echo $fecha_inicio; ?>" <?php echo $facturacionBloqueada ? 'disabled' : ''; ?>>
 												</div>
 											</div>
 										</div>
@@ -222,7 +252,7 @@
 													<div class="input-group-prepend">
 														<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
 													</div>
-													<input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" value="<?php echo $fecha_fin; ?>">
+													<input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" value="<?php echo $fecha_fin; ?>" <?php echo $facturacionBloqueada ? 'disabled' : ''; ?>>
 												</div>
 											</div>
 										</div>
@@ -230,45 +260,49 @@
 										<!-- Botón -->
 										<div class="col-md-4">
 											<div class="form-group mb-0 d-flex justify-content-center">
-												<a href="#" id="btn-generar-factura" 
-													class="btn btn-sm bg-lightblue btn-ctrl-sm <?php echo $disabled; ?>" 
-													data-toggle="modal" data-target="#modal-factura">
+												<a href="#" id="btn-generar-factura"
+													class="btn btn-sm bg-lightblue btn-ctrl-sm <?php echo $disabled; ?>"
+													<?php echo $facturacionBloqueada ? 'aria-disabled="true"' : 'data-toggle="modal" data-target="#modal-factura"'; ?>>
 													<i class="fas fa-print"></i> Generar Factura
 												</a>
 											</div>
 										</div>
 									</div>
 								</div><!-- /.card-header -->
-							
+
 								<div class="card-body">
 									<div class="tab-content">
 										<!-- /.tab-pane -->
-										<div class="active tab-pane" id="pension"> 
-											
-											<p class="lead mb-0">Pagos receptados</p>											
-											
+										<div class="active tab-pane" id="pension">
+
+											<p class="lead mb-0">Pagos receptados</p>
+
 											<div class="tab-content" id="custom-content-above-tabContent">
 												<table class="table table-bordered table-striped table-sm">
 													<thead>
 														<tr>
-															<th>No</th>															
-															<th>Fecha</th>														
+															<th>No</th>
+															<th>Fecha</th>
 															<th>Pago</th>
-															<th>Detalle</th>																											
+															<th>Forma de pago</th>
+															<th>Detalle</th>
 															<th>Alumno</th>
-															<th>IVA</th>		
-															<th>Selección</th>																
+															<th>Selección</th>
 														</tr>
 													</thead>
 													<tbody id="tabla_pagos" >
-														<?php 
-															echo $insFactura->listarPagosFactura($alumno,$fecha_inicio, $fecha_fin); 
-														?>								
+														<?php
+															if($facturacionBloqueada){
+																echo '<tr><td colspan="7" class="text-center text-muted">Asigne un representante al alumno para consultar pagos facturables.</td></tr>';
+															}else{
+																echo $insAlumno->listarPagosFactura($alumno,$fecha_inicio, $fecha_fin);
+															}
+														?>
 													</tbody>
 												</table>
 											</div>
-											
-											<div class="card-footer">												
+
+											<div class="card-footer">
 											</div>
 
 											<div class="tab-custom-content">
@@ -278,24 +312,23 @@
 												<table class="table table-bordered table-striped table-sm">
 													<thead>
 														<tr>
-															<th>No</th>															
-															<th>Fecha</th>														
+															<th>No</th>
+															<th>Fecha</th>
 															<th>Pago</th>
-															<th>Detalle</th>																										
-															<th>Alumno</th>	
-															<th>IVA</th>	
-															<th style="width:280px;">Opciones</th>															
+															<th>Detalle</th>
+															<th>Estado</th>
+															<th style="width:280px;">Opciones</th>
 														</tr>
 													</thead>
 													<tbody id="tabla_facturas" >
-														<?php 
-															echo $insFactura->listarPagosFactura($alumno,$fecha_inicio,$fecha_fin); 
-														?>								
+														<?php
+															echo $insAlumno->listarFacturasGeneradas($alumno,'','');
+														?>
 													</tbody>
 												</table>
 											</div>
-											
-										</div>										
+
+										</div>
 									</div>
 									<!-- /.tab-content -->
 								</div><!-- /.card-body -->
@@ -303,9 +336,9 @@
 							<!-- /.card -->
 						</div>
 					</div>
-				</div>				
+				</div>
 			</section>
-			<!-- /.content -->      
+			<!-- /.content -->
 		</div>
 		<!-- /.vista -->
 
@@ -324,8 +357,8 @@
 			<div class="modal-content">
 				<form class="FormularioAjax" id="quickForm" action="<?php echo APP_URL; ?>app/ajax/facturasAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data" >
 					<input type="hidden" name="modulo_facturas" value="ACTUALIZAR_REPRESENTANTE">
-					<input type="hidden" name="usuario" value="<?php echo $_SESSION['usuario']; ?>">	
-					<input type="hidden" name="repre_id" value="<?php echo $datos['repre_id']; ?>">	
+					<input type="hidden" name="usuario" value="<?php echo $_SESSION['usuario']; ?>">
+					<input type="hidden" name="repre_id" value="<?php echo $datos['repre_id']; ?>">
 
 					<div class="modal-header bg-olive py-2 px-3">
 						<h6 class="modal-title mb-0"><?php echo $datos['representante']; ?></h6>
@@ -335,25 +368,26 @@
 					</div>
 
 					<div class="modal-body">
+
 						<div class="form-group form-group-sm">
 							<label for="identificacion">Identificación</label>
-							<input type="text" class="form-control form-control-sm" id="identificacion" name="identificacion" required utocomplete="off" value="<?php echo $datos['repre_identificacion']; ?>">	
+							<input type="text" class="form-control form-control-sm" id="identificacion" name="identificacion" required utocomplete="off" value="<?php echo $datos['repre_identificacion']; ?>">
 						</div>
 						<div class="form-group form-group-sm">
 							<label for="direccion">Dirección</label>
-							<input type="text" class="form-control form-control-sm" id="direccion" name="direccion" required utocomplete="off" value="<?php echo $datos['repre_direccion']; ?>">	
+							<input type="text" class="form-control form-control-sm" id="direccion" name="direccion" required utocomplete="off" value="<?php echo $datos['repre_direccion']; ?>">
 						</div>
 						<div class="form-group form-group-sm">
 							<label for="correo">Correo</label>
-							<input type="email" class="form-control form-control-sm" id="correo" name="correo" required utocomplete="off" value="<?php echo $datos['repre_correo']; ?>">	
+							<input type="email" class="form-control form-control-sm" id="correo" name="correo" required utocomplete="off" value="<?php echo $datos['repre_correo']; ?>">
 						</div>
 						<div class="form-group form-group-sm">
 							<label for="celular">Teléfono</label>
-							<input type="text" class="form-control form-control-sm" id="celular" name="celular" required utocomplete="off" value="<?php echo $datos['repre_celular']; ?>">	
+							<input type="text" class="form-control form-control-sm" id="celular" name="celular" required utocomplete="off" value="<?php echo $datos['repre_celular']; ?>">
 						</div>
 					</div>
 					<div class="modal-footer justify-content-between py-2 px-3">
-						<button type="button" class="btn bg-gray btn-sm" data-dismiss="modal">Cerrar</button>                 
+						<button type="button" class="btn bg-gray btn-sm" data-dismiss="modal">Cerrar</button>
 						<button type="submit" class="btn bg-olive btn-sm">Guardar</button>
 					</div>
 				</form>
@@ -363,161 +397,159 @@
 	<!-- /.modal-dialog -->
 	</div>
 
-	<form id="form-factura" method="post">
-		
-		<input type="hidden" name="representante_id" value="<?php echo $datos['repre_id']; ?>">
-		<input type="hidden" name="identificacion" value="<?php echo $datos['repre_identificacion']; ?>">
-		<input type="hidden" name="nombre" value="<?php echo $datos['representante']; ?>">
-		<input type="hidden" name="correo" value="<?php echo $datos['repre_correo']; ?>">
-		<input type="hidden" name="direccion" value="<?php echo $datos['repre_direccion']; ?>">
+	<div class="modal fade" id="modal-factura" tabindex="-1">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content border">
 
-		<input type="hidden" name="establecimiento" value="003">
-		<input type="hidden" name="puntoemision" value="004">
-		<input type="hidden" name="secuencial" value="000012882">
-		<input type="hidden" name="fecha" value="<?php echo date('Y-m-d'); ?>">
+			<!-- HEADER -->
+			<div class="modal-header bg-lightblue py-2 px-3">
+				<h5 class="modal-title"><i class="fas fa-file-invoice-dollar mr-2"></i> Factura Electrónica</h5>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
 
-		<div class="modal fade" id="modal-factura" tabindex="-1">
-			<div class="modal-dialog modal-xl">
-				<div class="modal-content border">
+			<!-- BODY -->
+			<div class="modal-body">
+				<div class="alert alert-warning py-2">
+					<i class="fas fa-exclamation-triangle mr-1"></i>
+					Vista previa. La validez tributaria requiere firma electronica y autorizacion del SRI.
+				</div>
 
-					<!-- HEADER -->
-					<div class="modal-header bg-lightblue py-2 px-3">
-						<h5 class="modal-title"><i class="fas fa-file-invoice-dollar mr-2"></i> Factura Electrónica</h5>
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-					</div>
+				<!-- LOGO Y DATOS EMISOR -->
+				<div class="row mb-3">
+				<div class="col-md-4 text-center">
+					<img src="<?php echo APP_URL; ?>app/views/dist/img/Logos/LogoCDJG.png" alt="Logo CDJG" class="img-fluid mb-2" style="max-height:80px;">
+				</div>
+				<div class="col-md-8">
+					<h5 class="font-weight-bold mb-1"><?php echo $h($sriEmisor['razon_social'] ?? ''); ?></h5>
+					<p class="mb-1"><strong>R.U.C.:</strong> <?php echo $h($sriEmisor['ruc'] ?? ''); ?></p>
+					<p class="mb-1"><strong>Direccion Matriz:</strong> <?php echo $h($sriEmisor['direccion_matriz'] ?? ''); ?></p>
+					<p class="mb-1"><strong>Direccion Sucursal:</strong> <?php echo $h($sriEmisor['direccion_establecimiento'] ?? ''); ?></p>
+					<p class="mb-1"><strong>Teléfonos:</strong> 0995762732</p>
+					<p class="mb-0"><strong>Obligado a llevar contabilidad:</strong> <?php echo $h($sriEmisor['obligado_contabilidad'] ?? 'NO'); ?></p>
+				</div>
+				</div>
 
-					<!-- BODY -->
-					<div class="modal-body">
+				<!-- DATOS FACTURA Y CLIENTE -->
+				<div class="row mb-3">
+				<!-- FACTURA -->
+				<div class="col-md-6 border p-2">
+					<h6 class="font-weight-bold">Factura</h6>
+					<p class="mb-1"><strong>No.:</strong> Se asigna al guardar</p>
+					<div class="border rounded p-2 mb-2 text-muted small">La clave de acceso y el XML se generan al guardar la factura.</div>
+					<p class="mb-1"><strong>Clave de Acceso:</strong> Pendiente</p>
+					<p class="mb-1"><strong>Numero de Autorizacion:</strong> Pendiente de autorizacion SRI</p>
+					<p class="mb-1"><strong>Fecha Autorizacion:</strong> Pendiente</p>
+					<p class="mb-1"><strong>Ambiente:</strong> <?php echo $sriAmbiente; ?></p>
+					<p class="mb-1"><strong>Emision:</strong> Normal</p>
+					<p class="mb-0"><strong>Esquema:</strong> Offline</p>
+				</div>
+				<!-- CLIENTE -->
+				<div class="col-md-6 border p-2">
+					<h6 class="font-weight-bold">Datos del Cliente</h6>
+					<p class="mb-1"><strong>Cliente:</strong> <?php echo $datos['representante']; ?></p>
+					<p class="mb-1"><strong>Identificación:</strong> <?php echo $datos['repre_identificacion']; ?></p>
+					<p class="mb-1"><strong>Dirección:</strong> <?php echo $datos['repre_direccion']; ?></p>
+					<p class="mb-1"><strong>Teléfono:</strong> <?php echo $datos['repre_celular']; ?></p>
+					<p class="mb-0"><strong>Email:</strong> <?php echo $datos['repre_correo']; ?></p>
+				</div>
+				</div>
 
-						<!-- LOGO Y DATOS EMISOR -->
-						<div class="row mb-3">
-							<div class="col-md-4 text-center">
-								<img src="<?php echo APP_URL.'app/views/dist/img/logos/'.$datosEscuela['escuela_logo'] ?>" style="width: 220px; height: 130px;"/>
-								
-							</div>
-							<div class="col-md-8">
-								<h5 class="font-weight-bold mb-1"><?php echo $datosEscuela['escuela_nombre']; ?></h5>
-								<p class="mb-1"><strong>R.U.C.:</strong> <?php echo $datosEscuela['escuela_ruc']; ?></p>
-								<p class="mb-1"><strong>Dirección Matriz:</strong> <?php echo $datosEscuela['escuela_direccion']; ?></p>
-								<p class="mb-1"><strong>Dirección Sucursal:</strong> <?php echo $datosEscuela['escuela_direccion']; ?></p>
-								<p class="mb-1"><strong>Teléfonos:</strong> <?php echo $datosEscuela['escuela_telefono']; ?></p>
-								<p class="mb-0"><strong>Obligado a llevar contabilidad:</strong> NO</p>
-							</div>
-						</div>
+				<!-- DETALLE FACTURA -->
+				<div class="table-responsive mb-3">
+				<table class="table table-sm table-bordered">
+					<thead class="thead-light">
+					<tr>
+						<th>Código</th>
+						<th class="text-right">Cantidad</th>
+						<th>Detalle</th>
+						<th class="text-right">Precio Unitario</th>
+						<th class="text-right">Descuento</th>
+						<th class="text-right">Precio Total</th>
+					</tr>
+					</thead>
+					<tbody id="detalle-factura">
+					<!-- Aquí se cargan los pagos seleccionados -->
+					</tbody>
+					<tfoot>
+					<tr>
+						<th colspan="5" class="text-right">Total</th>
+						<th class="text-right" id="total-factura">0.00</th>
+					</tr>
+					</tfoot>
+				</table>
+				</div>
 
-						<!-- DATOS FACTURA Y CLIENTE -->
-						<div class="row mb-3">
-							<!-- FACTURA -->
-							<div class="col-md-6 border p-2">
-								<h6 class="font-weight-bold">Factura</h6>
-								<p class="mb-1"><strong>No.:</strong> 003-004-000012882</p>
-								<p class="mb-1">
-									<?php												
-										$svg = $generator->render_svg($symbology, $claveAcceso, $options); 
-										echo $svg;
-									?>
-								</p>
-								<p class="mb-1"><strong>Clave de Acceso:</strong> 1607202501110326917900120030040000128821234567814</p>
-								<p class="mb-1"><strong>Número de Autorización:</strong> 1607202501110326917900120030040000128821234567814</p>
-								<p class="mb-1"><strong>Fecha Autorización:</strong> 16/07/2025 13:03</p>
-								<p class="mb-1"><strong>Ambiente:</strong> Producción</p>
-								<p class="mb-1"><strong>Emisión:</strong> Normal</p>
-								<p class="mb-0"><strong>Esquema:</strong> Offline</p>
-							</div>
-
-							<!-- CLIENTE -->
-							<div class="col-md-6 border p-2">
-								<h6 class="font-weight-bold">Datos del Cliente</h6>
-								<p class="mb-1"><strong>Cliente:</strong> <?php echo $datos['representante']; ?></p>
-								<p class="mb-1"><strong>Identificación:</strong> <?php echo $datos['repre_identificacion']; ?></p>
-								<p class="mb-1"><strong>Dirección:</strong> <?php echo $datos['repre_direccion']; ?></p>
-								<p class="mb-1"><strong>Teléfono:</strong> <?php echo $datos['repre_celular']; ?></p>
-								<p class="mb-0"><strong>Email:</strong> <?php echo $datos['repre_correo']; ?></p>
-							</div>
-						</div>
-
-						<!-- DETALLE FACTURA -->
-						<div class="table-responsive mb-3">
-							<table class="table table-sm table-bordered">
-								<thead class="thead-light">
-									<tr>
-										<th>Código</th>
-										<th class="text-right">Cantidad</th>
-										<th>Detalle</th>
-										<th class="text-right">Precio Unitario</th>
-										<th class="text-right">Descuento</th>
-										<th class="text-right">Precio Total</th>
-									</tr>
-									</thead>
-									<tbody id="detalle-factura">
-									<!-- Aquí se cargan los pagos seleccionados -->
-									</tbody>
-									<tfoot>
-									<tr>
-										<th colspan="5" class="text-right">Total</th>
-										<th class="text-right" id="total-factura">0.00</th>
-									</tr>
-								</tfoot>
-							</table>
-						</div>
-
-						<!-- INFORMACIÓN ADICIONAL Y TOTALES -->
-						<div class="row">
-							<div class="col-md-6">
-								<h6 class="font-weight-bold">Información Adicional</h6>
-								<p><strong>Vendedor:</strong> CHRISTIAN GUTIERREZ</p>
-								<p><strong>Forma de Pago:</strong> TARJETA DE CRÉDITO</p>
-							</div>
-							<div class="col-md-6">
-								<table class="table table-sm">
-									<tr>
-										<td class="text-right"><b>SUBTOTAL No objeto IVA</b>:</td>
-										<td class="text-right">0.00</td>
-									</tr>
-									<tr>
-										<td class="text-right"><b>SUBTOTAL Exento IVA</b>:</td>
-										<td class="text-right">0.00</td>
-									</tr>
-									<tr>
-										<td class="text-right"><b>SUBTOTAL 0%</b>:</td>
-										<td class="text-right" id="subtotal0">0.00</td>
-									</tr>
-									<tr>
-										<td class="text-right"><b>SUBTOTAL 15%</b>:</td>
-										<td class="text-right" id="subtotal15">0.00</td>
-									</tr>
-									<tr>
-										<td class="text-right"><b>IVA 15%</b>:</td>
-										<td class="text-right" id="iva15">0.00</td>
-									</tr>					
-									<tr class="bg-light">
-										<td class="text-right"><b>VALOR TOTAL</b>:</td>
-										<td class="text-right font-weight-bold" id="total">0.00</td>
-									</tr>
-								</table>
-							</div>
+				<!-- INFORMACIÓN ADICIONAL Y TOTALES -->
+				<div class="row">
+					<div class="col-md-6">
+						<h6 class="font-weight-bold">Información Adicional</h6>
+						<p><strong>Usuario:</strong> <?php echo $h($_SESSION['usuario'] ?? 'Sistema'); ?></p>
+						<div class="form-group mb-2">
+							<label class="font-weight-bold mb-1" for="factura_forma_pago">Forma de Pago:</label>
+							<select class="form-control form-control-sm" id="factura_forma_pago" name="forma_pago">
+								<?php foreach(($sriConfig['formas_pago'] ?? []) as $codigo => $nombre){ ?>
+									<option value="<?php echo $h($codigo); ?>" <?php echo ((string)$codigo === $sriFormaPago) ? 'selected' : ''; ?>><?php echo $h($codigo.' - '.$nombre); ?></option>
+								<?php } ?>
+							</select>
 						</div>
 					</div>
-
-					<!-- FOOTER -->
-					<div class="modal-footer justify-content-between py-2 px-3">
-						<button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
-							<i class="fas fa-times mr-1"></i> Cerrar
-						</button>
-						<button type="submit" class="btn bg-lightblue btn-sm">
-							<i class="fas fa-save mr-1"></i> Guardar Factura
-						</button>
+					<div class="col-md-6">
+						<table class="table table-sm">
+						<tr>
+							<td class="text-right"><b>SUBTOTAL No objeto IVA</b>:</td>
+							<td class="text-right">0.00</td>
+						</tr>
+						<tr>
+							<td class="text-right"><b>SUBTOTAL Exento IVA</b>:</td>
+							<td class="text-right">0.00</td>
+						</tr>
+						<tr>
+							<td class="text-right"><b>SUBTOTAL 0%</b>:</td>
+							<td class="text-right" id="subtotal0">0.00</td>
+						</tr>
+						<tr>
+							<td class="text-right"><b>SUBTOTAL <?php echo number_format($sriIvaDefault, 0); ?>%</b>:</td>
+							<td class="text-right" id="subtotalIva">0.00</td>
+						</tr>
+						<tr>
+							<td class="text-right"><b>IVA <?php echo number_format($sriIvaDefault, 0); ?>%</b>:</td>
+							<td class="text-right" id="ivaValor">0.00</td>
+						</tr>
+						<tr class="bg-light">
+							<td class="text-right"><b>VALOR TOTAL</b>:</td>
+							<td class="text-right font-weight-bold" id="total">0.00</td>
+						</tr>
+						</table>
 					</div>
 				</div>
 			</div>
+
+			<!-- FOOTER -->
+			<div class="modal-footer justify-content-between py-2 px-3">
+				<button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+				<i class="fas fa-times mr-1"></i> Cerrar
+				</button>
+				<button type="button" id="btn-guardar-factura" class="btn bg-lightblue btn-sm">
+				<i class="fas fa-paper-plane mr-1"></i> Emitir Factura
+				</button>
+			</div>
+			</div>
 		</div>
-	</form>
-	
-    
+	</div>
+
+
+
+
+
+
+
+
+
+
 	<!-- jQuery -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/jquery/jquery.min.js"></script>
 	<!-- Bootstrap 4 -->
-	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>	
+	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 	<!-- Select2 -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/select2/js/select2.full.min.js"></script>
 	<!-- Bootstrap4 Duallistbox -->
@@ -536,15 +568,30 @@
 	<!-- BS-Stepper -->
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/bs-stepper/js/bs-stepper.min.js"></script>
 	<!-- AdminLTE App -->
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>		
-	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>	
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/adminlte.min.js"></script>
+	<script src="<?php echo APP_URL; ?>app/views/dist/js/ajax.js" ></script>
 	<!-- fileinput -->
-	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>    
+	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/fileinput/fileinput.js"></script>
 
 	<script src="<?php echo APP_URL; ?>app/views/dist/plugins/ekko-lightbox/ekko-lightbox.min.js"></script>
-	
+
+	<script>
+		const facturacionBloqueada = <?php echo $facturacionBloqueada ? 'true' : 'false'; ?>;
+		const facturacionBloqueadaTitulo = <?php echo json_encode($facturacionBloqueadaTitulo, JSON_UNESCAPED_UNICODE); ?>;
+		const facturacionBloqueadaTexto = <?php echo json_encode($facturacionBloqueadaTexto, JSON_UNESCAPED_UNICODE); ?>;
+	</script>
+
 	<script>
 		$(document).ready(function(){
+			if(facturacionBloqueada){
+				Swal.fire({
+					title: facturacionBloqueadaTitulo,
+					text: facturacionBloqueadaTexto,
+					icon: "warning",
+					confirmButtonText: "Entendido"
+				});
+				return;
+			}
 
 		$("#fecha_inicio, #fecha_fin").on("change", function(){
 			let fecha_inicio = $("#fecha_inicio").val();
@@ -565,7 +612,7 @@
 					$("#tabla_facturas").html("<tr><td colspan='8'>Cargando...</td></tr>");
 				},
 				success: function(respuesta){
-					let datos = JSON.parse(respuesta);
+					let datos = typeof respuesta === "string" ? JSON.parse(respuesta) : respuesta;
 
 					// Actualizar tablas
 					$("#tabla_pagos").html(datos.pagos);
@@ -589,55 +636,189 @@
 		});
 
 	});
-	</script>	
+	</script>
 
 	<script>
-		document.getElementById("btn-generar-factura").addEventListener("click", function() {
+		const valoresIncluyenIva = <?php echo !empty($sriConfig['valores_incluyen_iva']) ? 'true' : 'false'; ?>;
+		const alumnoFactura = "<?php echo $alumno; ?>";
+
+		document.getElementById("btn-generar-factura").addEventListener("click", function(event) {
+			if(facturacionBloqueada){
+				event.preventDefault();
+				event.stopPropagation();
+				Swal.fire({
+					title: facturacionBloqueadaTitulo,
+					text: facturacionBloqueadaTexto,
+					icon: "warning",
+					confirmButtonText: "Entendido"
+				});
+				return false;
+			}
+
 			let pagosSeleccionados = document.querySelectorAll(".chk-pago:checked");
+			if(pagosSeleccionados.length === 0){
+				event.preventDefault();
+				event.stopPropagation();
+				Swal.fire({title: "Seleccione pagos", text: "Debe seleccionar al menos un pago pendiente para generar la factura.", icon: "warning"});
+				return false;
+			}
+
 			let tbody = document.getElementById("detalle-factura");
 			let total = 0;
 			let subtotal0 = 0;
-			let subtotal15 = 0;
-			let iva15 = 0;
+			let subtotalIva = 0;
+			let ivaValor = 0;
 
-			tbody.innerHTML = ""; // limpiar antes de cargar
+			tbody.innerHTML = "";
 
 			pagosSeleccionados.forEach(pago => {
-				let pagoId  = pago.getAttribute("data-id");
-				let fecha   = pago.getAttribute("data-fecha");
-				let codigo  = pago.getAttribute("data-codigo");
+				let codigo = pago.getAttribute("data-codigo");
 				let detalle = pago.getAttribute("data-detalle");
-				let valor   = parseFloat(pago.getAttribute("data-valor"));
-				let iva     = parseFloat(pago.getAttribute("data-iva")) || 0;
+				let valor = parseFloat(pago.getAttribute("data-valor")) || 0;
+				let tarifa = parseFloat(pago.getAttribute("data-tarifa")) || 0;
+				let base = valor;
+				let ivaLinea = 0;
+				let totalLinea = valor;
 
-				total += valor;
-				if (iva === 0) {
-					subtotal0 += valor;
-				} else if (iva === 15) {
-					subtotal15 += valor;
-					iva15 += valor * 0.15;
+				if(tarifa > 0){
+					if(valoresIncluyenIva){
+						base = valor / (1 + (tarifa / 100));
+						ivaLinea = valor - base;
+						totalLinea = valor;
+					}else{
+						ivaLinea = base * (tarifa / 100);
+						totalLinea = base + ivaLinea;
+					}
+					subtotalIva += base;
+				}else{
+					subtotal0 += base;
 				}
 
+				total += totalLinea;
+				ivaValor += ivaLinea;
+
 				let row = `
-					<tr data-id="${pagoId}">
+					<tr>
 						<td>${codigo}</td>
 						<td class="text-right">1.00</td>
-						<td class="detalle-concepto">${detalle}</td>
-						<td class="text-right">${valor.toFixed(2)}</td>
+						<td>${detalle}</td>
+						<td class="text-right">${base.toFixed(2)}</td>
 						<td class="text-right">0.00</td>
-						<td class="text-right detalle-total">${valor.toFixed(2)}</td>
+						<td class="text-right">${base.toFixed(2)}</td>
 					</tr>
 				`;
 				tbody.insertAdjacentHTML("beforeend", row);
 			});
 
-			document.getElementById("total-factura").innerText = total.toFixed(2);
-			document.getElementById("subtotal0").innerText    = subtotal0.toFixed(2);
-			document.getElementById("subtotal15").innerText   = subtotal15.toFixed(2);
-			document.getElementById("iva15").innerText        = iva15.toFixed(2);
-			document.getElementById("total").innerText        = (total + iva15).toFixed(2);
+			document.getElementById("total-factura").innerText = (subtotal0 + subtotalIva).toFixed(2);
+			document.getElementById("subtotal0").innerText = subtotal0.toFixed(2);
+			document.getElementById("subtotalIva").innerText = subtotalIva.toFixed(2);
+			document.getElementById("ivaValor").innerText = ivaValor.toFixed(2);
+			document.getElementById("total").innerText = total.toFixed(2);
 		});
 
+		$("#btn-guardar-factura").on("click", function(){
+			const pagos = $(".chk-pago:checked").map(function(){ return this.value; }).get();
+			if(pagos.length === 0){
+				Swal.fire({title: "Seleccione pagos", text: "Debe seleccionar al menos un pago pendiente para generar la factura.", icon: "warning"});
+				return;
+			}
+
+			const formData = new FormData();
+			formData.append("modulo_facturas", "GENERAR_FACTURA_ELECTRONICA");
+			formData.append("alumno", alumnoFactura);
+			formData.append("forma_pago", $("#factura_forma_pago").val() || "");
+			pagos.forEach(id => formData.append("pagos[]", id));
+
+			const boton = $(this);
+			boton.prop("disabled", true);
+
+			$.ajax({
+				url: "<?php echo APP_URL; ?>app/ajax/facturasAjax.php",
+				type: "POST",
+				data: formData,
+				processData: false,
+				contentType: false,
+				dataType: "json",
+				success: function(respuesta){
+					if(["factura_generada", "factura_autorizada", "factura_enviada", "factura_error_sri"].includes(respuesta.tipo)){
+						$("#modal-factura").modal("hide");
+						Swal.fire({
+							title: respuesta.titulo,
+							html: `<p>${respuesta.texto}</p><p><strong>No.:</strong> ${respuesta.numero || ""}</p><p class="small"><strong>Clave:</strong> ${respuesta.clave_acceso || ""}</p><p><strong>Estado:</strong> ${respuesta.estado_sri || ""}</p><p><a href="${respuesta.ride_url}" target="_blank">Ver RIDE</a> | <a href="${respuesta.xml_url}">Descargar XML</a></p>`,
+							icon: respuesta.icono
+						});
+						$("#fecha_inicio").trigger("change");
+					}else{
+						Swal.fire({title: respuesta.titulo || "Atencion", text: respuesta.texto || "No fue posible completar la accion.", icon: respuesta.icono || "warning"});
+					}
+				},
+				error: function(){
+					Swal.fire({title: "Error", text: "No fue posible comunicarse con el servidor.", icon: "error"});
+				},
+				complete: function(){
+					boton.prop("disabled", false);
+				}
+			});
+		});
+
+		function ejecutarAccionSri(facturaId, modulo, cargando, textoEspera){
+			const formData = new FormData();
+			formData.append("modulo_facturas", modulo);
+			formData.append("factura_id", facturaId);
+
+			Swal.fire({
+				title: cargando,
+				text: textoEspera || "Espere un momento mientras se comunica con el SRI.",
+				allowOutsideClick: false,
+				didOpen: () => Swal.showLoading()
+			});
+
+			$.ajax({
+				url: "<?php echo APP_URL; ?>app/ajax/facturasAjax.php",
+				type: "POST",
+				data: formData,
+				processData: false,
+				contentType: false,
+				dataType: "json",
+				success: function(respuesta){
+					Swal.fire({
+						title: respuesta.titulo || "Resultado SRI",
+						text: respuesta.texto || "Proceso finalizado.",
+						icon: respuesta.icono || "info"
+					});
+					$("#fecha_inicio").trigger("change");
+				},
+				error: function(){
+					Swal.fire({title: "Error", text: "No fue posible comunicarse con el servidor.", icon: "error"});
+				}
+			});
+		}
+
+		$(document).on("click", ".btn-emitir-sri", function(){
+			ejecutarAccionSri($(this).data("id"), "EMITIR_FACTURA_SRI", "Emitiendo factura");
+		});
+
+		$(document).on("click", ".btn-consultar-sri", function(){
+			ejecutarAccionSri($(this).data("id"), "CONSULTAR_FACTURA_SRI", "Consultando autorizacion");
+		});
+
+		$(document).on("click", ".btn-enviar-factura", function(){
+			const facturaId = $(this).data("id");
+			const email = $(this).data("email") || "";
+			Swal.fire({
+				title: "Enviar factura",
+				text: "Se enviara el RIDE y XML autorizado a " + email + ".",
+				icon: "question",
+				showCancelButton: true,
+				confirmButtonText: "Enviar",
+				cancelButtonText: "Cancelar"
+			}).then((result) => {
+				if(result.isConfirmed){
+					ejecutarAccionSri(facturaId, "ENVIAR_FACTURA_CORREO", "Enviando factura", "Espere un momento mientras se prepara y envia el correo.");
+				}
+			});
+		});
 	</script>
 
   </body>
