@@ -8,12 +8,13 @@
 		public function registrarHoraControlador(){							
 			
 			# Almacenando datos#
+			$hora_sedeid 	= $this->limpiarCadena($_POST['hora_sedeid']);
 			$hora_inicio 	= $this->limpiarCadena($_POST['hora_inicio']);
 			$hora_fin		= $this->limpiarCadena($_POST['hora_fin']);
 			$hora_detalle	= $this->limpiarCadena($_POST['detalle']);
 			
 			# Verificando campos obligatorios #
-		    if($hora_inicio=="" || $hora_fin=="" ){
+		    if($hora_sedeid=="" || $hora_sedeid==0 || $hora_inicio=="" || $hora_fin=="" ){
 		    	$alerta=[
 					"tipo"=>"simple",
 					"titulo"=>"Error",
@@ -24,6 +25,11 @@
 		    }		
 
 			$hora_datos_reg=[
+				[
+					"campo_nombre"=>"hora_sedeid",
+					"campo_marcador"=>":Sedeid",
+					"campo_valor"=>$hora_sedeid
+				],
 				[
 					"campo_nombre"=>"hora_inicio",
 					"campo_marcador"=>":Horainicio",
@@ -72,8 +78,10 @@
 			$tabla="";		
 			$consulta_datos="SELECT ROW_NUMBER() OVER (ORDER BY hora_id) AS fila_numero
 								,CASE WHEN H.hora_estado = 'A' THEN 'Activo' ELSE 'Inactivo' END ESTADO 
-								,H.* 
+								,H.*
+								,COALESCE(S.sede_nombre, 'Sin sede') AS sede_nombre
 				FROM asistencia_hora H  
+				LEFT JOIN general_sede S ON S.sede_id = H.hora_sedeid
 				where H.hora_estado != 'E'
 				ORDER BY hora_id ASC";		
 
@@ -83,6 +91,7 @@
 				$tabla.='
 					<tr>
 						<td>'.$rows['fila_numero'].'</td>
+						<td>'.$rows['sede_nombre'].'</td>
 						<td>'.$rows['hora_inicio'].'</td>
 						<td>'.$rows['hora_fin'].'</td>
 						<td>'.$rows['hora_detalle'].'</td>
@@ -118,13 +127,14 @@
 		    }				
 
 			# Almacenando datos#
+			$hora_sedeid 	= $this->limpiarCadena($_POST['hora_sedeid']);
 			$hora_inicio 	= $this->limpiarCadena($_POST['hora_inicio']);
 			$hora_fin		= $this->limpiarCadena($_POST['hora_fin']);
 			$hora_detalle	= $this->limpiarCadena($_POST['detalle']);
 			$estado			= $this->limpiarCadena($_POST['estado']);
 			
 			# Verificando campos obligatorios #
-		    if($hora_inicio=="" || $hora_fin=="" ){
+		    if($hora_sedeid=="" || $hora_sedeid==0 || $hora_inicio=="" || $hora_fin=="" ){
 		    	$alerta=[
 					"tipo"=>"simple",
 					"titulo"=>"Error",
@@ -134,6 +144,11 @@
 				return json_encode($alerta);		        
 		    }
 			$hora_datos_reg=[
+				[
+					"campo_nombre"=>"hora_sedeid",
+					"campo_marcador"=>":Sedeid",
+					"campo_valor"=>$hora_sedeid
+				],
 				[
 					"campo_nombre"=>"hora_inicio",
 					"campo_marcador"=>":Horainicio",
@@ -361,7 +376,7 @@
 				$column2 = "<select class='form-control' id='lugar' name='lugar[]'>".$this->listarOptionLugar($rows['lugar_sedeid'], $rows['lugar_id'])."</select>";
 				
 				// Columna 3: Horarios con PHP
-				$column3 = "<select class='form-control' id='hora' name='hora[]'>".$this->listarOptionHora($rows['detalle_horaid'])."</select>";
+				$column3 = "<select class='form-control' id='hora' name='hora[]'>".$this->listarOptionHora($rows['detalle_horaid'], $rows['lugar_sedeid'])."</select>";
 				
 				// Columna 4: Profesores con PHP
 				$column4 = "<select class='form-control' id='profesor' name='profesor[]'>".$this->listarOptionProfesor($rows['lugar_sedeid'], $rows['empleado_id'])."</select>";
@@ -567,9 +582,25 @@
 			return $option;
 		}
 
-		public function listarOptionHora($horaid){
+		public function listarOptionHora($horaid, $sedeid = 0){
 			$option="";
-			$consulta_datos="SELECT hora_id, CONCAT(hora_detalle, ' | ', hora_inicio, ' - ', hora_fin) AS HORA FROM asistencia_hora WHERE hora_estado = 'A'";						
+			$horaid = (int)$horaid;
+			$sedeid = (int)$sedeid;
+			$consulta_datos="SELECT H.hora_id,
+									CONCAT(H.hora_detalle, ' | ', H.hora_inicio, ' - ', H.hora_fin) AS HORA
+								FROM asistencia_hora H
+								WHERE H.hora_estado = 'A'";
+
+			if($sedeid > 0){
+				$consulta_datos .= " AND (H.hora_sedeid = ".$sedeid." OR H.hora_sedeid IS NULL";
+				if($horaid > 0){
+					$consulta_datos .= " OR H.hora_id = ".$horaid;
+				}
+				$consulta_datos .= ")";
+			}
+
+			$consulta_datos .= " ORDER BY H.hora_inicio, H.hora_fin";
+
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
 			foreach($datos as $rows){				

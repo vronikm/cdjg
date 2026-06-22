@@ -15,6 +15,56 @@ if(!is_dir($tempDir)) {
     @mkdir($tempDir, 0775, true);
 }
 
+if(!function_exists('carnetTipoImagenPDF')){
+    function carnetTipoImagenPDF($ruta){
+        if(!is_file($ruta)){
+            return '';
+        }
+
+        $info = @getimagesize($ruta);
+        if(!$info){
+            return '';
+        }
+
+        switch($info[2]){
+            case IMAGETYPE_JPEG:
+                return 'JPG';
+            case IMAGETYPE_PNG:
+                return 'PNG';
+            case IMAGETYPE_GIF:
+                return 'GIF';
+            default:
+                return '';
+        }
+    }
+}
+
+if(!function_exists('carnetCellAjustadaPDF')){
+    function carnetCellAjustadaPDF($pdf, $x, $y, $w, $h, $texto, $font = 'Arial', $style = 'B', $maxSize = 8, $minSize = 5){
+        $texto = (string)$texto;
+        $size = $maxSize;
+
+        do {
+            $pdf->SetFont($font, $style, $size);
+            if($pdf->GetStringWidth($texto) <= $w){
+                break;
+            }
+            $size -= 0.25;
+        } while($size >= $minSize);
+
+        if($pdf->GetStringWidth($texto) > $w){
+            $suffix = '...';
+            while($texto !== '' && $pdf->GetStringWidth($texto.$suffix) > $w){
+                $texto = substr($texto, 0, -1);
+            }
+            $texto = rtrim($texto).$suffix;
+        }
+
+        $pdf->SetXY($x, $y);
+        $pdf->Cell($w, $h, $texto, 0, 0, 'L');
+    }
+}
+
 $alumno_ids_reimpresion = $alumno_ids_reimpresion ?? '';
 $carnet_ids_mensual = '';
 $modo_reimpresion = false;
@@ -146,9 +196,9 @@ if(empty($carnetsData)) {
 $resumen = $insCarnet->obtenerResumenImpresion($carnetsData);
 
 // Obtener información de la escuela
-$sede = $insCarnet->informacionSede(1);
-if($sede->rowCount() == 1) {
-    $sede = $sede->fetch();
+$sedeDefault = $insCarnet->informacionSede(1);
+if($sedeDefault->rowCount() == 1) {
+    $sedeDefault = $sedeDefault->fetch();
 } else {
     echo "<script>
         alert('Error: No se encontró información de la escuela');
@@ -156,6 +206,7 @@ if($sede->rowCount() == 1) {
     </script>";
     exit;
 }
+$sedesCarnetCache = [1 => $sedeDefault];
 
 // ============================================
 // CONFIGURACIÓN PDF
@@ -235,6 +286,21 @@ foreach($carnetsData as $carnet) {
     
     // Determinar si es reimpresión
     $esReimpresion = ($carnet['es_reimpresion'] == 1);
+
+    $sede = $sedeDefault;
+    $sedeIdCarnet = (int)($carnet['alumno_sedeid'] ?? 0);
+    if($sedeIdCarnet > 0) {
+        if(!isset($sedesCarnetCache[$sedeIdCarnet])) {
+            $sedeAlumno = $insCarnet->informacionSede($sedeIdCarnet);
+            $sedesCarnetCache[$sedeIdCarnet] = ($sedeAlumno->rowCount() == 1)
+                ? $sedeAlumno->fetch()
+                : null;
+        }
+
+        if(!empty($sedesCarnetCache[$sedeIdCarnet])) {
+            $sede = $sedesCarnetCache[$sedeIdCarnet];
+        }
+    }
     
     // Color del mes
     $colorHex = $carnet['color_hex'];
@@ -253,9 +319,10 @@ foreach($carnetsData as $carnet) {
     // ====================
     // IMÁGENES DECORATIVAS
     // ====================
-    $imgFondo = "./app/views/imagenes/carnet/" . $sede['escuela_verticalfondo'];
-    if(file_exists($imgFondo)) {
-        $pdf->Image($imgFondo, $x, $y, 20, $carnetHeight);
+    $imgFondo = "./app/views/imagenes/carnet/" . trim((string)$sede['escuela_verticalfondo']);
+    $imgFondoTipo = carnetTipoImagenPDF($imgFondo);
+    if($imgFondoTipo !== '') {
+        $pdf->Image($imgFondo, $x, $y, 20, $carnetHeight, $imgFondoTipo);
     }
     
     $pdf->SetAlpha(0.5);
@@ -263,17 +330,23 @@ foreach($carnetsData as $carnet) {
     $pdf->Rect($x, $y, 20, $carnetHeight, 'F');
     $pdf->SetAlpha(1);
 
-    $imgDerecha = "./app/views/imagenes/carnet/" . $sede['escuela_verticalprincipal'];
-    if(file_exists($imgDerecha)) {
-        $pdf->Image($imgDerecha, $x + $carnetWidth - 65, $y, 1, $carnetHeight);
+    $imgDerecha = "./app/views/imagenes/carnet/" . trim((string)$sede['escuela_verticalprincipal']);
+    $imgDerechaTipo = carnetTipoImagenPDF($imgDerecha);
+    if($imgDerechaTipo !== '') {
+        $pdf->Image($imgDerecha, $x + $carnetWidth - 65, $y, 1, $carnetHeight, $imgDerechaTipo);
     }
     
     // ====================
     // HEADER: LOGO Y QR
     // ====================
-    $logoPath = "./app/views/imagenes/fotos/sedes/" . $sede['sede_foto'];
-    if(file_exists($logoPath)) {
-        $pdf->Image($logoPath, $x + 40, $y + 2, 12, 17);
+    $logoBasePath = "./app/views/imagenes/fotos/sedes/";
+    $logoPath = $logoBasePath . trim((string)$sede['sede_foto']);
+    if(!is_file($logoPath)) {
+        $logoPath = $logoBasePath . "default_sede.jpg";
+    }
+    $logoTipo = carnetTipoImagenPDF($logoPath);
+    if($logoTipo !== '') {
+        $pdf->Image($logoPath, $x + 40, $y + 2, 12, 17, $logoTipo);
     }
     
     // Código QR
@@ -298,8 +371,9 @@ foreach($carnetsData as $carnet) {
     imagejpeg($image, $qrFile);
     imagedestroy($image);
 
-    if(file_exists($qrFile)) {
-        $pdf->Image($qrFile, $x + $carnetWidth - 15, $y + 2, 12, 12);
+    $qrTipo = carnetTipoImagenPDF($qrFile);
+    if($qrTipo !== '') {
+        $pdf->Image($qrFile, $x + $carnetWidth - 15, $y + 2, 12, 12, $qrTipo);
         @unlink($qrFile);
     }
     
@@ -312,7 +386,7 @@ foreach($carnetsData as $carnet) {
     // FOTO DEL ALUMNO
     // ====================
     $fotoPath = "./app/views/imagenes/fotos/alumno/" . $carnet['alumno_imagen'];
-    if(!file_exists($fotoPath) || empty($carnet['alumno_imagen'])) {
+    if(!is_file($fotoPath) || empty($carnet['alumno_imagen'])) {
         $fotoPath = "./app/views/imagenes/fotos/alumno/koki.jpg";
     }
     
@@ -321,8 +395,9 @@ foreach($carnetsData as $carnet) {
     $fotoWidth = 20;
     $fotoHeight = 25;
     
-    if(file_exists($fotoPath)) {
-        $pdf->Image($fotoPath, $fotoX, $fotoY, $fotoWidth, $fotoHeight);
+    $fotoTipo = carnetTipoImagenPDF($fotoPath);
+    if($fotoTipo !== '') {
+        $pdf->Image($fotoPath, $fotoX, $fotoY, $fotoWidth, $fotoHeight, $fotoTipo);
     }
 
     $pdf->SetLineWidth(0.3);
@@ -412,11 +487,20 @@ foreach($carnetsData as $carnet) {
     $pdf->SetFont('Arial', '', 8);
     $pdf->SetXY($infoX, $infoY);
     $pdf->Cell(15, 2.5, 'Sede:', 0, 0, 'L');
-    $pdf->SetFont('Arial', 'B', 8);
-    $pdf->SetXY($infoX + 10, $infoY);
-    $pdf->Cell(30, 2.5, 
-        mb_convert_encoding($sede['sede_nombre'], 'ISO-8859-1', 'UTF-8'), 
-        0, 0, 'L');
+    $sedeTextoX = $infoX + 10;
+    $sedeTextoW = max(18, $fotoX - $sedeTextoX - 1.5);
+    carnetCellAjustadaPDF(
+        $pdf,
+        $sedeTextoX,
+        $infoY,
+        $sedeTextoW,
+        2.5,
+        mb_convert_encoding($sede['sede_nombre'], 'ISO-8859-1', 'UTF-8'),
+        'Arial',
+        'B',
+        7.2,
+        4.8
+    );
     
     $infoY += 3.5;
     $pdf->SetFont('Arial', '', 7);

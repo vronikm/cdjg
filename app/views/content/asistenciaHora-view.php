@@ -14,6 +14,7 @@
 			$hora_inicio = $datos['hora_inicio'];
 			$hora_fin = $datos['hora_fin'];
 			$detalle = $datos['hora_detalle'];
+			$hora_sedeid = $datos['hora_sedeid'];
 			$estado = $datos['hora_estado'];
 		}
 	}else{
@@ -21,6 +22,7 @@
 		$hora_inicio = '';
 		$hora_fin = '';
 		$detalle = '';
+		$hora_sedeid = 0;
 		$estado = 'A';
 	}	
 ?>
@@ -116,6 +118,15 @@
 									<input type="hidden" name="hora_id" value="<?php echo $horaid; ?>">
 									<div class="row" style='font-size: 14px;'>
 										<div class="col-md-2">
+											<div class="form-group" style='font-size: 13px;'>
+												<label for="hora_sedeid">Sede</label>
+												<select class="form-control" style='font-size: 13px; height: 30px;' id="hora_sedeid" name="hora_sedeid">
+													<option value="">Seleccione</option>
+													<?php echo $insHora->listarOptionSedebusqueda($hora_sedeid); ?>
+												</select>
+											</div>
+										</div>
+										<div class="col-md-2">
 											<div class="form-group" style='font-size: 13px; height: 15px;'>
 												<label for="hora_inicio">Hora inicio</label>
 
@@ -140,7 +151,7 @@
 												<!-- /.input group -->
 											</div>	
 										</div>
-										<div class="col-md-6">
+										<div class="col-md-4">
 											<div class="form-group">
 												<label for="detalle">Detalle</label>
 												<input type="text" class="form-control" style='font-size: 15px; height: 30px;' id="detalle" name="detalle" value="<?php echo $detalle; ?>">
@@ -178,6 +189,7 @@
 											<thead>
 												<tr>
 													<th>N.</th>
+													<th>Sede</th>
 													<th>Hora inicio</th>
 													<th>hora fin</th>
 													<th>Detalle</th>
@@ -261,6 +273,9 @@
 			
 			$('#quickForm').validate({
 				rules: {
+				hora_sedeid: {
+					required: true
+				},
 				hora_inicio: {
 					required: true       
 				},
@@ -269,6 +284,9 @@
 				},
 				},
 				messages: {
+				hora_sedeid: {
+					required: "Por favor seleccione una sede"
+				},
 				hora_inicio: {
 					required: "Por favor ingrese una hora"
 				},
