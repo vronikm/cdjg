@@ -103,6 +103,7 @@
 									<th>Año</th>		
 									<th>Posición</th>							
 									<th>Tipo</th>
+									<th>Inscripcion</th>
 									<th></th>	
 								</tr>
 							</thead>
@@ -161,7 +162,9 @@
 	<script>
 		$(function () {
 			$("#example1").DataTable({
-			"responsive": true, "lengthChange": false, "autoWidth": false,
+			"responsive": true, "lengthChange": true, "autoWidth": false,
+			"pageLength": 10,
+			"lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
 			"language": {
 				"decimal": "",
 				"emptyTable": "No hay datos disponibles en la tabla",

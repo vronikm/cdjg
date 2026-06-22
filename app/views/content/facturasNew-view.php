@@ -29,29 +29,44 @@
 
 	if($datos->rowCount()==1){
 		$datos=$datos->fetch();
+		$clienteFacturaNombre = $datos['cliente_factura_nombre'] ?? $datos['representante'];
+		$clienteFacturaIdentificacion = $datos['cliente_factura_identificacion'] ?? $datos['repre_identificacion'];
+		$clienteFacturaDireccion = $datos['cliente_factura_direccion'] ?? $datos['repre_direccion'];
+		$clienteFacturaCorreo = $datos['cliente_factura_correo'] ?? $datos['repre_correo'];
+		$clienteFacturaCelular = $datos['cliente_factura_celular'] ?? $datos['repre_celular'];
+		$clienteFacturaTipoIdentificacion = $datos['cliente_factura_tipoidentificacion'] ?? $datos['repre_tipoidentificacion'];
+		$clienteFacturaOrigen = (($datos['repre_factura_a_nombre'] ?? 'REPRESENTANTE') === 'CONYUGE') ? 'Conyuge' : 'Representante';
 
 		/* validar correo */
 		$error='N';
 		$disabled='';
 
-		if (!filter_var($datos['repre_correo'], FILTER_VALIDATE_EMAIL)) {
-			$mail = '<p class="text-danger">'.$datos['repre_correo'].'</p>';
+		if(($datos['repre_requiere_factura'] ?? 'S') === 'N'){
+			$facturacionBloqueada = true;
+			$facturacionBloqueadaTitulo = 'No se puede facturar';
+			$facturacionBloqueadaTexto = 'El representante esta configurado como no requiere factura.';
+			$error='S';
+			$disabled='disabled';
+		}
+
+		if (!filter_var($clienteFacturaCorreo, FILTER_VALIDATE_EMAIL)) {
+			$mail = '<p class="text-danger">'.$h($clienteFacturaCorreo).'</p>';
 			$correo = '<strong class="text-danger"><i class="fas fa-envelope mr-1"></i> Correo no válido</strong>';
 			$error='S';
 			$disabled='disabled';
 		}else {
-			$mail = '<p class="text-muted">'.$datos['repre_correo'].'</p>';
+			$mail = '<p class="text-muted">'.$h($clienteFacturaCorreo).'</p>';
 			$correo = '<strong><i class="fas fa-envelope mr-1"></i> Correo</strong>';
 		}
 
 		/* validar identificacion SRI */
-		if (!$insAlumno->validarIdentificacionSri($datos['repre_identificacion'], $datos['repre_tipoidentificacion'])) {
-			$identificacion = '<p class="text-danger">'.$datos['repre_identificacion'].'</p>';
+		if (!$insAlumno->validarIdentificacionSri($clienteFacturaIdentificacion, $clienteFacturaTipoIdentificacion)) {
+			$identificacion = '<p class="text-danger">'.$h($clienteFacturaIdentificacion).'</p>';
 			$cedula = '<strong class="text-danger"><i class="fas fa-address-card mr-1"></i> Identificacion no valida SRI</strong>';
 			$error='S';
 			$disabled='disabled';
 		}else {
-			$identificacion = '<p class="text-muted">'.$datos['repre_identificacion'].'</p>';
+			$identificacion = '<p class="text-muted">'.$h($clienteFacturaIdentificacion).'</p>';
 			$cedula = '<strong><i class="fas fa-address-card mr-1"></i> Identificacion</strong>';
 		}
 
@@ -80,8 +95,23 @@
 			'repre_tipoidentificacion' => '',
 			'repre_id' => '',
 			'representante' => 'Sin representante vinculado',
+			'repre_requiere_factura' => 'N',
+			'repre_factura_a_nombre' => 'REPRESENTANTE',
+			'cliente_factura_nombre' => 'Sin representante vinculado',
+			'cliente_factura_identificacion' => '',
+			'cliente_factura_direccion' => '',
+			'cliente_factura_correo' => '',
+			'cliente_factura_celular' => '',
+			'cliente_factura_tipoidentificacion' => '',
 			'pagos' => 0
 		];
+		$clienteFacturaNombre = $datos['cliente_factura_nombre'];
+		$clienteFacturaIdentificacion = $datos['cliente_factura_identificacion'];
+		$clienteFacturaDireccion = $datos['cliente_factura_direccion'];
+		$clienteFacturaCorreo = $datos['cliente_factura_correo'];
+		$clienteFacturaCelular = $datos['cliente_factura_celular'];
+		$clienteFacturaTipoIdentificacion = $datos['cliente_factura_tipoidentificacion'];
+		$clienteFacturaOrigen = 'Representante';
 		$error='S';
 		$disabled='disabled';
 		$mail = '<p class="text-danger">Sin correo</p>';
@@ -179,13 +209,17 @@
 						<div class="col-md-3">
 							<div class="card card-olive">
 								<div class="card-header">
-									<h3 class="card-title">Representante</h3>
+									<h3 class="card-title">Cliente facturacion</h3>
 								</div>
 
 								<!-- Bloque Representante -->
 								<div class="card-body">
 									<strong><i class="fas fa-user mr-1"></i> Nombres</strong>
-									<p class="text-muted" id="representante_nombre"><?php echo $datos['representante']?></p>
+									<p class="text-muted" id="representante_nombre"><?php echo $h($clienteFacturaNombre); ?></p>
+
+									<hr>
+									<strong><i class="fas fa-file-invoice mr-1"></i> Factura</strong>
+									<p class="text-muted" id="representante_factura_a_nombre"><?php echo $h($clienteFacturaOrigen); ?></p>
 
 									<hr>
 									<div id="representante_identificacion">
@@ -194,7 +228,7 @@
 
 									<hr>
 									<strong><i class="fas fa-map-marker-alt mr-1"></i> Dirección</strong>
-									<p class="text-muted" id="representante_direccion"><?php echo $datos['repre_direccion']; ?></p>
+									<p class="text-muted" id="representante_direccion"><?php echo $h($clienteFacturaDireccion); ?></p>
 
 									<hr>
 									<div id="representante_correo">
@@ -203,7 +237,7 @@
 
 									<hr>
 									<strong><i class="fas fa-phone mr-1"></i> Teléfono</strong>
-									<p class="text-muted" id="representante_celular"><?php echo $datos['repre_celular']; ?></p>
+									<p class="text-muted" id="representante_celular"><?php echo $h($clienteFacturaCelular); ?></p>
 
 									<hr>
 									<strong><i class="fas fa-print mr-1"></i> Pagos receptados</strong>
@@ -359,9 +393,10 @@
 					<input type="hidden" name="modulo_facturas" value="ACTUALIZAR_REPRESENTANTE">
 					<input type="hidden" name="usuario" value="<?php echo $_SESSION['usuario']; ?>">
 					<input type="hidden" name="repre_id" value="<?php echo $datos['repre_id']; ?>">
+					<input type="hidden" name="factura_a_nombre" value="<?php echo $h($datos['repre_factura_a_nombre'] ?? 'REPRESENTANTE'); ?>">
 
 					<div class="modal-header bg-olive py-2 px-3">
-						<h6 class="modal-title mb-0"><?php echo $datos['representante']; ?></h6>
+						<h6 class="modal-title mb-0"><?php echo $h($clienteFacturaOrigen.' - '.$clienteFacturaNombre); ?></h6>
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 						</button>
@@ -371,19 +406,19 @@
 
 						<div class="form-group form-group-sm">
 							<label for="identificacion">Identificación</label>
-							<input type="text" class="form-control form-control-sm" id="identificacion" name="identificacion" required utocomplete="off" value="<?php echo $datos['repre_identificacion']; ?>">
+							<input type="text" class="form-control form-control-sm" id="identificacion" name="identificacion" required utocomplete="off" value="<?php echo $h($clienteFacturaIdentificacion); ?>">
 						</div>
 						<div class="form-group form-group-sm">
 							<label for="direccion">Dirección</label>
-							<input type="text" class="form-control form-control-sm" id="direccion" name="direccion" required utocomplete="off" value="<?php echo $datos['repre_direccion']; ?>">
+							<input type="text" class="form-control form-control-sm" id="direccion" name="direccion" required utocomplete="off" value="<?php echo $h($clienteFacturaDireccion); ?>">
 						</div>
 						<div class="form-group form-group-sm">
 							<label for="correo">Correo</label>
-							<input type="email" class="form-control form-control-sm" id="correo" name="correo" required utocomplete="off" value="<?php echo $datos['repre_correo']; ?>">
+							<input type="email" class="form-control form-control-sm" id="correo" name="correo" required utocomplete="off" value="<?php echo $h($clienteFacturaCorreo); ?>">
 						</div>
 						<div class="form-group form-group-sm">
 							<label for="celular">Teléfono</label>
-							<input type="text" class="form-control form-control-sm" id="celular" name="celular" required utocomplete="off" value="<?php echo $datos['repre_celular']; ?>">
+							<input type="text" class="form-control form-control-sm" id="celular" name="celular" required utocomplete="off" value="<?php echo $h($clienteFacturaCelular); ?>">
 						</div>
 					</div>
 					<div class="modal-footer justify-content-between py-2 px-3">
@@ -446,11 +481,12 @@
 				<!-- CLIENTE -->
 				<div class="col-md-6 border p-2">
 					<h6 class="font-weight-bold">Datos del Cliente</h6>
-					<p class="mb-1"><strong>Cliente:</strong> <?php echo $datos['representante']; ?></p>
-					<p class="mb-1"><strong>Identificación:</strong> <?php echo $datos['repre_identificacion']; ?></p>
-					<p class="mb-1"><strong>Dirección:</strong> <?php echo $datos['repre_direccion']; ?></p>
-					<p class="mb-1"><strong>Teléfono:</strong> <?php echo $datos['repre_celular']; ?></p>
-					<p class="mb-0"><strong>Email:</strong> <?php echo $datos['repre_correo']; ?></p>
+					<p class="mb-1"><strong>Cliente:</strong> <?php echo $h($clienteFacturaNombre); ?></p>
+					<p class="mb-1"><strong>Factura:</strong> <?php echo $h($clienteFacturaOrigen); ?></p>
+					<p class="mb-1"><strong>Identificación:</strong> <?php echo $h($clienteFacturaIdentificacion); ?></p>
+					<p class="mb-1"><strong>Dirección:</strong> <?php echo $h($clienteFacturaDireccion); ?></p>
+					<p class="mb-1"><strong>Teléfono:</strong> <?php echo $h($clienteFacturaCelular); ?></p>
+					<p class="mb-0"><strong>Email:</strong> <?php echo $h($clienteFacturaCorreo); ?></p>
 				</div>
 				</div>
 
@@ -625,6 +661,7 @@
 						$("#representante_direccion").text(datos.representante.direccion);
 						$("#representante_correo").text(datos.representante.correo);
 						$("#representante_celular").text(datos.representante.celular);
+						$("#representante_factura_a_nombre").text(datos.representante.factura_a_nombre);
 						$("#representante_pagos").text(datos.representante.pagos);
 						$("#representante_facturas").text(datos.representante.facturas);
 					}

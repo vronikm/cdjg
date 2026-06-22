@@ -4,6 +4,15 @@
 
 	class representanteController extends mainModel{
 
+		private function normalizarRequiereFactura($valor){
+			return strtoupper(trim((string)$valor)) === 'N' ? 'N' : 'S';
+		}
+
+		private function normalizarFacturaANombre($valor){
+			$valor = strtoupper(trim((string)$valor));
+			return $valor === 'CONYUGE' ? 'CONYUGE' : 'REPRESENTANTE';
+		}
+
 		/*----------  Matriz de representantes con opciones Ver, Actualizar, Eliminar  ----------*/
 		public function listarRepresentantes(){			
 			$texto = "";
@@ -71,6 +80,8 @@
 			$repre_correo 			  	= $this->limpiarCadena($_POST['repre_correo']);
 			$repre_celular 			  	= $this->limpiarCadena($_POST['repre_celular']);
 			$repre_parentesco 		  	= $this->limpiarCadena($_POST['repre_parentesco']);
+			$repre_requiere_factura 	= $this->normalizarRequiereFactura($_POST['repre_requiere_factura'] ?? 'S');
+			$repre_factura_a_nombre 	= $this->normalizarFacturaANombre($_POST['repre_factura_a_nombre'] ?? 'REPRESENTANTE');
 			$repre_sexo 			  	= "";
 
 			if (isset($_POST['repre_sexo'])){$repre_sexo = $_POST['repre_sexo'];}
@@ -153,6 +164,16 @@
 					"campo_nombre"=>"repre_parentesco",
 					"campo_marcador"=>":ParentescoRep",
 					"campo_valor"=>$repre_parentesco
+				],
+				[
+					"campo_nombre"=>"repre_requiere_factura",
+					"campo_marcador"=>":RequiereFacturaRep",
+					"campo_valor"=>$repre_requiere_factura
+				],
+				[
+					"campo_nombre"=>"repre_factura_a_nombre",
+					"campo_marcador"=>":FacturaANombreRep",
+					"campo_valor"=>$repre_factura_a_nombre
 				]
 			];
 
@@ -396,6 +417,8 @@
 			$repre_correo 			  	= $this->limpiarCadena($_POST['repre_correo']);
 			$repre_celular 			  	= $this->limpiarCadena($_POST['repre_celular']);
 			$repre_parentesco 		  	= $this->limpiarCadena($_POST['repre_parentesco']);
+			$repre_requiere_factura 	= $this->normalizarRequiereFactura($_POST['repre_requiere_factura'] ?? ($representante['repre_requiere_factura'] ?? 'S'));
+			$repre_factura_a_nombre 	= $this->normalizarFacturaANombre($_POST['repre_factura_a_nombre'] ?? ($representante['repre_factura_a_nombre'] ?? 'REPRESENTANTE'));
 			$repre_sexo 			  	= "";
 
 			# Verificando campos obligatorios #
@@ -488,6 +511,16 @@
 						"campo_nombre"=>"repre_parentesco",
 						"campo_marcador"=>":ParentescoRep",
 						"campo_valor"=>$repre_parentesco
+					],
+					[
+						"campo_nombre"=>"repre_requiere_factura",
+						"campo_marcador"=>":RequiereFacturaRep",
+						"campo_valor"=>$repre_requiere_factura
+					],
+					[
+						"campo_nombre"=>"repre_factura_a_nombre",
+						"campo_marcador"=>":FacturaANombreRep",
+						"campo_valor"=>$repre_factura_a_nombre
 					]
 				];
 				$condicion=[

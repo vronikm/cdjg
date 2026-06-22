@@ -188,7 +188,8 @@
 									<th>Identificación</th>
 									<th>Nombres</th>
 									<th>Apellidos</th>
-									<th>Fecha nacimiento</th>
+									<th>Fecha ultimo pago</th>
+									<th>Asistencia mes</th>
 									<th>Estado pagos</th>
 									<th>Opciones</th>
 								</tr>

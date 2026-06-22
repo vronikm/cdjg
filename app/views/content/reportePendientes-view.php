@@ -4,20 +4,17 @@
 	
 	$sede_id 	= ($url[1] != "") ? $url[1] : 0;
 
-	$datos=$insPendientes->seleccionarDatos("Unico","general_sede","sede_id",$sede_id);
-	if($datos->rowCount()==1){
-		$datos=$datos->fetch();
-		$sedeid = $datos["sede_id"];
-		
-		if($sedeid==1){
-			$sede_nombre = "CANCHA SINTÉTICA JIPIRO";	
-		}
-		else{
-			$sede_nombre = $datos["sede_nombre"];
-		}
-	}else{
-		$sede_nombre = "";
-	}
+    $datos=$insPendientes->seleccionarDatos("Unico","general_sede","sede_id",$sede_id);
+    if($datos->rowCount()==1){
+        $datos=$datos->fetch();
+        $sede_nombre = $datos["sede_nombre"];
+    }else{
+        $sede_nombre = "";
+    }
+
+    $h = static function($valor){
+        return htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8');
+    };
 ?>
 
 
@@ -67,7 +64,7 @@
 				<div class="container-fluid">
 				<div class="row mb-2">
 					<div class="col-sm-6">
-					<h4 class="m-0">PAGOS PENDIENTES <?php echo $sede_nombre; ?></h4>
+                <h4 class="m-0">PAGOS PENDIENTES <?php echo $h($sede_nombre); ?></h4>
 					</div><!-- /.col -->
 					<div class="col-sm-6">
 					<ol class="breadcrumb float-sm-right">

@@ -101,17 +101,32 @@
 									alumno_identificacion, CONCAT(alumno_primernombre, ' ',alumno_segundonombre) AS NOMBRES,  
 									CONCAT(alumno_apellidopaterno, ' ',alumno_apellidomaterno) AS APELLIDOS,
 									YEAR(alumno_fechanacimiento) AS CATEGORIA,
-										P.catalogo_descripcion AS POSICION, T.catalogo_descripcion AS TIPO
+									P.catalogo_descripcion AS POSICION, T.catalogo_descripcion AS TIPO,
+									IFNULL(PG.total_pagos, 0) AS total_pagos_campeonato,
+									IFNULL(PG.valor_pagado, 0) AS valor_pagado_campeonato,
+									IFNULL(PG.saldo_pendiente, 0) AS saldo_pendiente_campeonato
 								FROM torneo_jugador 
 									INNER JOIN sujeto_alumno ON alumno_id = jugador_alumnoid
 									INNER JOIN torneo_equipo ON equipo_id = jugador_equipoid
 									INNER JOIN general_tabla_catalogo P ON P.catalogo_valor = jugador_posicioncod
 									INNER JOIN general_tabla_catalogo T ON T.catalogo_valor = jugador_tipocod
+									LEFT JOIN (
+										SELECT pago_alumnoid, pago_campeonatoid,
+											COUNT(pago_id) AS total_pagos,
+											SUM(pago_valor) AS valor_pagado,
+											SUM(IFNULL(pago_saldo, 0)) AS saldo_pendiente
+										FROM alumno_pago
+										WHERE pago_rubroid = 'RPC'
+											AND pago_estado <> 'E'
+										GROUP BY pago_alumnoid, pago_campeonatoid
+									) PG ON PG.pago_alumnoid = alumno_id
+										AND PG.pago_campeonatoid = equipo_torneoid
 								WHERE jugador_equipoid = $equipo_id";
 			
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
 			foreach($datos as $rows){
+				$estadoInscripcion = $this->estadoPagoInscripcionCampeonato($rows);
 				$tabla.='					
 					<tr>
 						<form class="FormularioAjax" action="'.APP_URL.'app/ajax/jugadorAjax.php" method="POST" autocomplete="off" >
@@ -121,6 +136,7 @@
 						<td>'.$rows['CATEGORIA'].'</td>
                       	<td>'.$rows['POSICION'].'</td>
 					  	<td>'.$rows['TIPO'].'</td>
+						<td>'.$estadoInscripcion.'</td>
 						<td>												
 							<input type="hidden" name="modulo_jugador" value="eliminar">												
 							<button type="submit" class="btn float-right btn-danger btn-xs" style="margin-right: 5px;">Eliminar</button>					
@@ -130,6 +146,22 @@
 					';
 			}
 			return $tabla;			
+		}
+
+		private function estadoPagoInscripcionCampeonato($rows){
+			$totalPagos = (int)($rows['total_pagos_campeonato'] ?? 0);
+			$valorPagado = (float)($rows['valor_pagado_campeonato'] ?? 0);
+			$saldoPendiente = (float)($rows['saldo_pendiente_campeonato'] ?? 0);
+
+			if($totalPagos <= 0){
+				return '<span class="badge badge-secondary">No paga aun</span>';
+			}
+
+			if($saldoPendiente > 0){
+				return '<span class="badge badge-warning" title="Pagado: $'.number_format($valorPagado, 2, '.', ',').'">Saldo $'.number_format($saldoPendiente, 2, '.', ',').'</span>';
+			}
+
+			return '<span class="badge badge-success" title="Pagado: $'.number_format($valorPagado, 2, '.', ',').'">Pagado</span>';
 		}
 
 		public function agregarJugador(){	

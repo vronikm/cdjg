@@ -106,20 +106,25 @@
 							) AS facturas,
 							(SELECT COUNT(*) FROM alumno_representante R
 								WHERE R.repre_id = ".(int)($rows['alumno_repreid'] ?? 0)."
-							) AS representante_valido"
+							) AS representante_valido,
+							(SELECT COALESCE(MAX(R.repre_requiere_factura), 'N') FROM alumno_representante R
+								WHERE R.repre_id = ".(int)($rows['alumno_repreid'] ?? 0)."
+							) AS requiere_factura"
 					)->fetch();
 					$pagosPendientes = (int)($estado['pagos_pendientes'] ?? 0);
 					$tieneFacturas   = (int)($estado['facturas'] ?? 0);
 					$representanteValido = (int)($estado['representante_valido'] ?? 0) > 0;
+					$requiereFactura = (($estado['requiere_factura'] ?? 'S') !== 'N');
 				}catch(\Throwable $e){
 					$pagosPendientes = 0;
 					$tieneFacturas   = 0;
 					$representanteValido = (int)($rows['alumno_repreid'] ?? 0) > 0;
+					$requiereFactura = true;
 				}
 
 				$nombreAlumno = trim($rows['alumno_primernombre'].' '.$rows['alumno_segundonombre'].' '.$rows['alumno_apellidopaterno'].' '.$rows['alumno_apellidomaterno']);
 				$nombreAlumno = $nombreAlumno !== '' ? $nombreAlumno : 'ID '.$alumnoId;
-				$bloquearFactura = !$representanteValido;
+				$bloquearFactura = !$representanteValido || !$requiereFactura;
 
 				if($bloquearFactura){
 					$botonpago = "btn-danger";
@@ -137,8 +142,11 @@
 				}
 
 				if($bloquearFactura){
+					$textoBloqueo = !$representanteValido
+						? 'El alumno '.$nombreAlumno.' no tiene representante vinculado. Actualice la ficha del alumno y asigne un representante antes de generar la factura.'
+						: 'El representante del alumno '.$nombreAlumno.' esta configurado como no requiere factura.';
 					$mensajeBloqueo = htmlspecialchars(
-						'El alumno '.$nombreAlumno.' no tiene representante vinculado. Actualice la ficha del alumno y asigne un representante antes de generar la factura.',
+						$textoBloqueo,
 						ENT_QUOTES,
 						'UTF-8'
 					);
@@ -170,6 +178,14 @@
 								RE.repre_tipoidentificacion,
 								RE.repre_id,
 								RE.representante,
+								RE.repre_requiere_factura,
+								RE.repre_factura_a_nombre,
+								RE.cliente_factura_identificacion,
+								RE.cliente_factura_direccion,
+								RE.cliente_factura_correo,
+								RE.cliente_factura_celular,
+								RE.cliente_factura_tipoidentificacion,
+								RE.cliente_factura_nombre,
 								IFNULL(RP.pagos, 0) AS pagos   -- devuelve 0 si no hay pagos
 							FROM (
 								SELECT
@@ -179,9 +195,18 @@
 									R.repre_celular,
 									R.repre_tipoidentificacion,
 									R.repre_id,
-									CONCAT(R.repre_primernombre, ' ', R.repre_segundonombre, ' ', R.repre_apellidopaterno, ' ', R.repre_apellidomaterno) AS representante
+									TRIM(CONCAT_WS(' ', R.repre_primernombre, R.repre_segundonombre, R.repre_apellidopaterno, R.repre_apellidomaterno)) AS representante,
+									R.repre_requiere_factura,
+									R.repre_factura_a_nombre,
+									CASE WHEN R.repre_factura_a_nombre = 'CONYUGE' THEN COALESCE(C.conyuge_identificacion, '') ELSE R.repre_identificacion END AS cliente_factura_identificacion,
+									CASE WHEN R.repre_factura_a_nombre = 'CONYUGE' THEN COALESCE(C.conyuge_direccion, '') ELSE R.repre_direccion END AS cliente_factura_direccion,
+									CASE WHEN R.repre_factura_a_nombre = 'CONYUGE' THEN COALESCE(C.conyuge_correo, '') ELSE R.repre_correo END AS cliente_factura_correo,
+									CASE WHEN R.repre_factura_a_nombre = 'CONYUGE' THEN COALESCE(C.conyuge_celular, '') ELSE R.repre_celular END AS cliente_factura_celular,
+									CASE WHEN R.repre_factura_a_nombre = 'CONYUGE' THEN COALESCE(C.conyuge_tipoidentificacion, '') ELSE R.repre_tipoidentificacion END AS cliente_factura_tipoidentificacion,
+									CASE WHEN R.repre_factura_a_nombre = 'CONYUGE' THEN TRIM(CONCAT_WS(' ', C.conyuge_primernombre, C.conyuge_segundonombre, C.conyuge_apellidopaterno, C.conyuge_apellidomaterno)) ELSE TRIM(CONCAT_WS(' ', R.repre_primernombre, R.repre_segundonombre, R.repre_apellidopaterno, R.repre_apellidomaterno)) END AS cliente_factura_nombre
 								FROM sujeto_alumno A
 								INNER JOIN alumno_representante R ON R.repre_id = A.alumno_repreid
+								LEFT JOIN alumno_representanteconyuge C ON C.conyuge_repid = R.repre_id
 								WHERE A.alumno_id = ".$alumnoid."
 							) RE
 								LEFT JOIN (
@@ -320,7 +345,7 @@
 			$repreid=$this->limpiarCadena($_POST['repre_id']);
 
 			# Verificando existencia de representante #
-			$representante=$this->ejecutarConsulta("SELECT repre_id, repre_tipoidentificacion FROM alumno_representante WHERE repre_id='$repreid'");
+			$representante=$this->ejecutarConsulta("SELECT R.repre_id, R.repre_tipoidentificacion, R.repre_factura_a_nombre, C.conyuge_id, C.conyuge_tipoidentificacion FROM alumno_representante R LEFT JOIN alumno_representanteconyuge C ON C.conyuge_repid = R.repre_id WHERE R.repre_id='$repreid'");
 			if($representante->rowCount()<=0){
 		        $alerta=[
 					"tipo"=>"simple",
@@ -332,6 +357,20 @@
 		    }else{
 			$representante=$representante->fetch();
 		    }
+			$facturaANombre = strtoupper(trim((string)($representante['repre_factura_a_nombre'] ?? 'REPRESENTANTE')));
+			$actualizarConyuge = ($facturaANombre === 'CONYUGE');
+			$clienteTexto = $actualizarConyuge ? 'conyuge' : 'representante';
+			$tipoIdentificacion = $actualizarConyuge ? ($representante['conyuge_tipoidentificacion'] ?? 'CED') : ($representante['repre_tipoidentificacion'] ?? 'CED');
+
+			if($actualizarConyuge && empty($representante['conyuge_id'])){
+				$alerta=[
+					"tipo"=>"simple",
+					"titulo"=>"Conyuge no registrado",
+					"texto"=>"El representante esta configurado para facturar a nombre del conyuge, pero no tiene datos de conyuge registrados.",
+					"icono"=>"error"
+				];
+				return json_encode($alerta);
+			}
 
 			/*---------------Variables para el registro del tab Representante del alumno----------------*/
 			$repre_identificacion 	  	= $this->limpiarCadena($_POST['identificacion']);
@@ -344,13 +383,13 @@
 				$alerta=[
 					"tipo"=>"simple",
 					"titulo"=>"OcurriÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³ un error",
-					"texto"=>"No ha completado los campos obligatorios del representante",
+					"texto"=>"No ha completado los campos obligatorios del ".$clienteTexto,
 					"icono"=>"error"
 				];
 				return json_encode($alerta);
 			}
 
-			if (!$this->validarIdentificacionSri($repre_identificacion, $representante['repre_tipoidentificacion'] ?? 'CED')) {
+			if (!$this->validarIdentificacionSri($repre_identificacion, $tipoIdentificacion)) {
 				$alerta=[
 					"tipo"=>"simple",
 					"titulo"=>"Error",
@@ -367,6 +406,53 @@
 					"texto"=>"El correo ingresado no es vÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡lido",
 					"icono"=>"error"
 				];
+				return json_encode($alerta);
+			}
+
+			if($actualizarConyuge){
+				$conyuge_reg=[
+					[
+						"campo_nombre"=>"conyuge_identificacion",
+						"campo_marcador"=>":Identificacion",
+						"campo_valor"=>$repre_identificacion
+					],
+					[
+						"campo_nombre"=>"conyuge_direccion",
+						"campo_marcador"=>":Direccion",
+						"campo_valor"=>$repre_direccion
+					],
+					[
+						"campo_nombre"=>"conyuge_correo",
+						"campo_marcador"=>":Correo",
+						"campo_valor"=>$repre_correo
+					],
+					[
+						"campo_nombre"=>"conyuge_celular",
+						"campo_marcador"=>":Celular",
+						"campo_valor"=>$repre_celular
+					]
+				];
+				$condicion=[
+					"condicion_campo"=>"conyuge_repid",
+					"condicion_marcador"=>":Repreid",
+					"condicion_valor"=>$repreid
+				];
+
+				if($this->actualizarDatos("alumno_representanteconyuge",$conyuge_reg,$condicion)){
+					$alerta=[
+						"tipo"=>"recargar",
+						"titulo"=>"Informacion actualizada",
+						"texto"=>"El conyuge de facturacion se actualizo correctamente",
+						"icono"=>"success"
+					];
+				}else{
+					$alerta=[
+						"tipo"=>"simple",
+						"titulo"=>"Informacion no actualizada",
+						"texto"=>"Por favor intente nuevamente",
+						"icono"=>"alert"
+					];
+				}
 				return json_encode($alerta);
 			}
 
@@ -403,7 +489,7 @@
 				$alerta=[
 					"tipo"=>"recargar",
 					"titulo"=>"Informacion actualizada",
-					"texto"=>"El representante se actualizo correctamente",
+					"texto"=>"El representante de facturacion se actualizo correctamente",
 					"icono"=>"success"
 				];
 			}else{
@@ -1555,10 +1641,32 @@
 		}
 
 		private function obtenerRepresentanteFactura(\PDO $conexion, $alumnoid){
-			$stmt = $conexion->prepare("SELECT A.alumno_id, A.alumno_repreid, R.repre_id, R.repre_identificacion, R.repre_direccion, R.repre_correo, R.repre_celular, R.repre_tipoidentificacion, CONCAT(R.repre_primernombre, ' ', R.repre_segundonombre, ' ', R.repre_apellidopaterno, ' ', R.repre_apellidomaterno) AS representante FROM sujeto_alumno A INNER JOIN alumno_representante R ON R.repre_id = A.alumno_repreid WHERE A.alumno_id = :alumno");
+			$stmt = $conexion->prepare("SELECT A.alumno_id, A.alumno_repreid, R.repre_id, R.repre_identificacion, R.repre_direccion, R.repre_correo, R.repre_celular, R.repre_tipoidentificacion, R.repre_requiere_factura, R.repre_factura_a_nombre, TRIM(CONCAT_WS(' ', R.repre_primernombre, R.repre_segundonombre, R.repre_apellidopaterno, R.repre_apellidomaterno)) AS representante, C.conyuge_tipoidentificacion, C.conyuge_identificacion, C.conyuge_direccion, C.conyuge_correo, C.conyuge_celular, TRIM(CONCAT_WS(' ', C.conyuge_primernombre, C.conyuge_segundonombre, C.conyuge_apellidopaterno, C.conyuge_apellidomaterno)) AS conyuge FROM sujeto_alumno A INNER JOIN alumno_representante R ON R.repre_id = A.alumno_repreid LEFT JOIN alumno_representanteconyuge C ON C.conyuge_repid = R.repre_id WHERE A.alumno_id = :alumno");
 			$stmt->execute([':alumno'=>(int)$alumnoid]);
 			$representante = $stmt->fetch(\PDO::FETCH_ASSOC);
 			if(!$representante){ throw new \RuntimeException('No se encontro el representante del alumno.'); }
+			$requiereFactura = strtoupper(trim((string)($representante['repre_requiere_factura'] ?? 'S')));
+			if($requiereFactura === 'N'){
+				throw new \RuntimeException('El representante esta configurado como no requiere factura.');
+			}
+			$facturaANombre = strtoupper(trim((string)($representante['repre_factura_a_nombre'] ?? 'REPRESENTANTE')));
+			if($facturaANombre === 'CONYUGE'){
+				$representante['cliente_tipoidentificacion'] = (string)($representante['conyuge_tipoidentificacion'] ?? '');
+				$representante['cliente_identificacion'] = (string)($representante['conyuge_identificacion'] ?? '');
+				$representante['cliente_razon_social'] = (string)($representante['conyuge'] ?? '');
+				$representante['cliente_direccion'] = (string)($representante['conyuge_direccion'] ?? '');
+				$representante['cliente_correo'] = (string)($representante['conyuge_correo'] ?? '');
+				$representante['cliente_celular'] = (string)($representante['conyuge_celular'] ?? '');
+				$representante['cliente_origen'] = 'CONYUGE';
+			}else{
+				$representante['cliente_tipoidentificacion'] = (string)($representante['repre_tipoidentificacion'] ?? '');
+				$representante['cliente_identificacion'] = (string)($representante['repre_identificacion'] ?? '');
+				$representante['cliente_razon_social'] = (string)($representante['representante'] ?? '');
+				$representante['cliente_direccion'] = (string)($representante['repre_direccion'] ?? '');
+				$representante['cliente_correo'] = (string)($representante['repre_correo'] ?? '');
+				$representante['cliente_celular'] = (string)($representante['repre_celular'] ?? '');
+				$representante['cliente_origen'] = 'REPRESENTANTE';
+			}
 			return $representante;
 		}
 
@@ -1578,6 +1686,78 @@
 			$pagos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 			if(count($pagos) !== count($pagosIds)){ throw new \RuntimeException('Uno o mas pagos ya fueron facturados o no pertenecen al representante seleccionado.'); }
 			return $pagos;
+		}
+
+		private function normalizarNombreArchivoLogo($valor){
+			$valor = pathinfo((string)$valor, PATHINFO_FILENAME);
+			$valor = preg_replace('/_\d+$/', '', $valor);
+			$ascii = @iconv('UTF-8', 'ASCII//TRANSLIT', $valor);
+			if($ascii !== false){ $valor = $ascii; }
+			$valor = strtoupper((string)$valor);
+			$valor = preg_replace('/[^A-Z0-9]+/', '_', $valor);
+			return trim((string)$valor, '_');
+		}
+
+		private function resolverLogoSedeAlumno($alumnoId){
+			$raiz = dirname(__DIR__, 2);
+			$dirSedes = $raiz.'/app/views/imagenes/fotos/sedes';
+			$urlSedes = APP_URL.'app/views/imagenes/fotos/sedes/';
+			$dirLogos = $raiz.'/app/views/dist/img/Logos';
+			$urlLogos = APP_URL.'app/views/dist/img/Logos/';
+			$extensiones = ['jpg', 'jpeg', 'png', 'gif'];
+
+			$candidatos = [];
+			$patrones = [];
+			$alumnoId = (int)$alumnoId;
+			if($alumnoId > 0){
+				try{
+					$row = $this->ejecutarConsulta("SELECT S.sede_foto, S.sede_nombre FROM sujeto_alumno A INNER JOIN general_sede S ON S.sede_id = A.alumno_sedeid WHERE A.alumno_id = ".$alumnoId." LIMIT 1")->fetch();
+					$sedeFoto = trim((string)($row['sede_foto'] ?? ''));
+					$sedeNombre = trim((string)($row['sede_nombre'] ?? ''));
+					if($sedeFoto !== ''){
+						$candidatos[] = ['path'=>$dirSedes.'/'.$sedeFoto, 'url'=>$urlSedes.rawurlencode($sedeFoto)];
+						$patrones[] = $this->normalizarNombreArchivoLogo($sedeFoto);
+					}
+					if($sedeNombre !== ''){
+						$patrones[] = $this->normalizarNombreArchivoLogo($sedeNombre);
+					}
+				}catch(\Throwable $e){ /* fallback abajo */ }
+			}
+
+			foreach($candidatos as $candidato){
+				$path = $candidato['path'];
+				$ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+				if(is_file($path) && in_array($ext, $extensiones, true)){
+					return $candidato;
+				}
+			}
+
+			$patrones = array_values(array_unique(array_filter($patrones)));
+			if(is_dir($dirSedes) && !empty($patrones)){
+				foreach(glob($dirSedes.'/*') ?: [] as $archivo){
+					if(!is_file($archivo)){ continue; }
+					$ext = strtolower(pathinfo($archivo, PATHINFO_EXTENSION));
+					if(!in_array($ext, $extensiones, true)){ continue; }
+					$nombreNormalizado = $this->normalizarNombreArchivoLogo(basename($archivo));
+					foreach($patrones as $patron){
+						if($patron !== '' && ($nombreNormalizado === $patron || strpos($nombreNormalizado, $patron) === 0 || strpos($patron, $nombreNormalizado) === 0)){
+							return ['path'=>$archivo, 'url'=>$urlSedes.rawurlencode(basename($archivo))];
+						}
+					}
+				}
+			}
+
+			$defaultSede = $dirSedes.'/default_sede.jpg';
+			if(is_file($defaultSede)){
+				return ['path'=>$defaultSede, 'url'=>$urlSedes.'default_sede.jpg'];
+			}
+
+			$defaultLogo = $dirLogos.'/LogoCDJG.png';
+			if(is_file($defaultLogo)){
+				return ['path'=>$defaultLogo, 'url'=>$urlLogos.'LogoCDJG.png'];
+			}
+
+			return ['path'=>'', 'url'=>''];
 		}
 
 		private function crearRideHtml(array $factura, array $detalles, array $config, $archivo){
@@ -1600,13 +1780,10 @@
 			$logoHtml = '';
 			$alumnoId = (int)($factura['alumno_id'] ?? 0);
 			if($alumnoId > 0){
-				try{
-					$sedeRow = $this->ejecutarConsulta("SELECT S.sede_foto FROM sujeto_alumno A INNER JOIN general_sede S ON S.sede_id = A.alumno_sedeid WHERE A.alumno_id = ".$alumnoId." LIMIT 1")->fetch();
-					$sedeFoto = trim((string)($sedeRow['sede_foto'] ?? ''));
-					if($sedeFoto !== ''){
-						$logoHtml = '<img src="'.$h(APP_URL.'app/views/imagenes/fotos/sedes/'.$sedeFoto).'" alt="Logo sede" style="max-height:80px;max-width:220px;display:block;margin-bottom:8px">';
-					}
-				}catch(\Throwable $e){ /* sin logo si no se puede resolver la sede */ }
+				$logo = $this->resolverLogoSedeAlumno($alumnoId);
+				if(!empty($logo['url'])){
+					$logoHtml = '<img src="'.$h($logo['url']).'" alt="Logo sede" style="max-height:80px;max-width:220px;display:block;margin-bottom:8px">';
+				}
 			}
 
 			$html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>RIDE '.$h($factura['numero']).'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222}.wrap{max-width:920px;margin:24px auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #555;padding:10px}h1,h2,h3{margin:0 0 8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #999;padding:6px}th{background:#eee}.right{text-align:right}.warn{background:#fff3cd;border:1px solid #ffeeba;padding:8px;margin:10px 0}.ok{background:#d4edda;border:1px solid #c3e6cb;padding:8px;margin:10px 0}</style></head><body><div class="wrap"><div class="'.$bannerClase.'">'.$bannerTexto.'</div><div class="grid"><div class="box">'.$logoHtml.'<h2>'.$h($emisor['razon_social'] ?? '').'</h2><p><strong>RUC:</strong> '.$h($emisor['ruc'] ?? '').'</p><p><strong>Nombre comercial:</strong> '.$h($emisor['nombre_comercial'] ?? '').'</p><p><strong>Direccion matriz:</strong> '.$h($emisor['direccion_matriz'] ?? '').'</p><p><strong>Direccion establecimiento:</strong> '.$h($emisor['direccion_establecimiento'] ?? '').'</p><p><strong>Obligado contabilidad:</strong> '.$h($emisor['obligado_contabilidad'] ?? 'NO').'</p></div><div class="box"><h1>Factura</h1><p><strong>No.:</strong> '.$h($factura['numero']).'</p><p><strong>Clave de acceso:</strong> '.$h($factura['clave_acceso']).'</p><p><strong>Numero autorizacion:</strong> '.$h($numeroAutorizacion !== '' ? $numeroAutorizacion : 'Pendiente').'</p><p><strong>Fecha autorizacion:</strong> '.$h($fechaAutorizacion !== '' ? $fechaAutorizacion : 'Pendiente').'</p><p><strong>Estado:</strong> '.$h($estadoSri).'</p><p><strong>Ambiente:</strong> '.$h($ambiente).'</p><p><strong>Emision:</strong> NORMAL</p></div></div><div class="box" style="margin-top:16px"><h3>Datos del cliente</h3><p><strong>Cliente:</strong> '.$h($factura['cliente_razon_social']).'</p><p><strong>Identificacion:</strong> '.$h($factura['cliente_identificacion']).'</p><p><strong>Direccion:</strong> '.$h($factura['cliente_direccion']).'</p><p><strong>Email:</strong> '.$h($factura['cliente_email']).'</p></div><table><thead><tr><th>Codigo</th><th>Cantidad</th><th>Detalle</th><th>Precio unitario</th><th>Descuento</th><th>Total sin impuesto</th></tr></thead><tbody>'.$filas.'</tbody></table><table><tr><td class="right"><strong>Subtotal IVA</strong></td><td class="right">'.number_format((float)$factura['subtotal_iva'], 2, '.', '').'</td></tr><tr><td class="right"><strong>Subtotal 0%</strong></td><td class="right">'.number_format((float)$factura['subtotal_0'], 2, '.', '').'</td></tr><tr><td class="right"><strong>IVA</strong></td><td class="right">'.number_format((float)$factura['iva'], 2, '.', '').'</td></tr><tr><td class="right"><strong>Valor total</strong></td><td class="right"><strong>'.number_format((float)$factura['total'], 2, '.', '').'</strong></td></tr></table></div></body></html>';
@@ -1661,14 +1838,8 @@
 			$logoPath = '';
 			$alumnoId = (int)($factura['alumno_id'] ?? 0);
 			if($alumnoId > 0){
-				try{
-					$row = $this->ejecutarConsulta("SELECT S.sede_foto FROM sujeto_alumno A INNER JOIN general_sede S ON S.sede_id = A.alumno_sedeid WHERE A.alumno_id = ".$alumnoId." LIMIT 1")->fetch();
-					$foto = trim((string)($row['sede_foto'] ?? ''));
-					if($foto !== ''){
-						$cand = dirname(__DIR__, 2).'/app/views/imagenes/fotos/sedes/'.$foto;
-						if(is_file($cand)){ $logoPath = $cand; }
-					}
-				}catch(\Throwable $e){ /* sin logo */ }
+				$logo = $this->resolverLogoSedeAlumno($alumnoId);
+				$logoPath = (string)($logo['path'] ?? '');
 			}
 
 			$t = static function($s){ $c = @iconv('UTF-8', 'ISO-8859-1//TRANSLIT', (string)$s); return $c !== false ? $c : utf8_decode((string)$s); };
@@ -2665,9 +2836,20 @@
 			try{
 				$conexion->beginTransaction();
 				$representante = $this->obtenerRepresentanteFactura($conexion, $alumnoid);
-				$tipoIdentificacion = $this->codigoSriTipoIdentificacion($representante['repre_tipoidentificacion'], $representante['repre_identificacion']);
-				if(!$this->validarIdentificacionSri($representante['repre_identificacion'], $representante['repre_tipoidentificacion'])){ throw new \RuntimeException('La identificacion del representante no es valida para facturacion SRI.'); }
-				if(!filter_var($representante['repre_correo'], FILTER_VALIDATE_EMAIL)){ throw new \RuntimeException('El correo del representante no es valido.'); }
+				$clienteOrigen = (string)($representante['cliente_origen'] ?? 'REPRESENTANTE');
+				$clienteTexto = $clienteOrigen === 'CONYUGE' ? 'conyuge' : 'representante';
+				$clienteTipoIdentificacion = (string)($representante['cliente_tipoidentificacion'] ?? '');
+				$clienteIdentificacion = trim((string)($representante['cliente_identificacion'] ?? ''));
+				$clienteRazonSocial = trim((string)($representante['cliente_razon_social'] ?? ''));
+				$clienteDireccion = trim((string)($representante['cliente_direccion'] ?? ''));
+				$clienteCorreo = trim((string)($representante['cliente_correo'] ?? ''));
+				$clienteCelular = trim((string)($representante['cliente_celular'] ?? ''));
+				if($clienteIdentificacion === '' || $clienteRazonSocial === '' || $clienteDireccion === '' || $clienteCorreo === '' || $clienteCelular === ''){
+					throw new \RuntimeException('Complete identificacion, nombres, direccion, correo y telefono del '.$clienteTexto.' antes de facturar.');
+				}
+				$tipoIdentificacion = $this->codigoSriTipoIdentificacion($clienteTipoIdentificacion, $clienteIdentificacion);
+				if(!$this->validarIdentificacionSri($clienteIdentificacion, $clienteTipoIdentificacion)){ throw new \RuntimeException('La identificacion del '.$clienteTexto.' no es valida para facturacion SRI.'); }
+				if(!filter_var($clienteCorreo, FILTER_VALIDATE_EMAIL)){ throw new \RuntimeException('El correo del '.$clienteTexto.' no es valido.'); }
 				$pagos = $this->obtenerPagosFacturaElectronica($conexion, $representante['repre_id'], $pagosIds);
 				$service = new FacturaElectronicaService($config);
 				$tipoComprobante = '01';
@@ -2703,10 +2885,10 @@
 				$subtotal = round($subtotalIva + $subtotal0, 2); $ivaTotal = round($ivaTotal, 2); $total = round($total, 2);
 				$datosFactura = [
 					'clave_acceso'=>$claveAcceso, 'establecimiento'=>$establecimiento, 'punto_emision'=>$puntoEmision, 'secuencial'=>$secuencial, 'fecha_emision'=>date('d/m/Y'),
-					'cliente'=>['tipo_identificacion'=>$tipoIdentificacion, 'identificacion'=>$this->normalizarTextoSri($representante['repre_identificacion'], 20), 'razon_social'=>$this->normalizarTextoSri($representante['representante'], 300), 'direccion'=>$this->normalizarTextoSri($representante['repre_direccion'], 300)],
+					'cliente'=>['tipo_identificacion'=>$tipoIdentificacion, 'identificacion'=>$this->normalizarTextoSri($clienteIdentificacion, 20), 'razon_social'=>$this->normalizarTextoSri($clienteRazonSocial, 300), 'direccion'=>$this->normalizarTextoSri($clienteDireccion, 300)],
 					'totales'=>['subtotal'=>$subtotal, 'descuento'=>0.00, 'total'=>$total, 'impuestos'=>[['codigo'=>$ivaInfo['codigo'], 'codigo_porcentaje'=>$ivaInfo['codigo_porcentaje'], 'base_imponible'=>$subtotal, 'tarifa'=>$ivaInfo['porcentaje'], 'valor'=>$ivaTotal]]],
 					'detalles'=>$detalles, 'pagos'=>[['forma_pago'=>$formaPago, 'total'=>$total]],
-					'info_adicional'=>['Email'=>$representante['repre_correo'], 'Telefono'=>$representante['repre_celular'], 'Generado por'=>$_SESSION['usuario'] ?? 'Sistema']
+					'info_adicional'=>['Email'=>$clienteCorreo, 'Telefono'=>$clienteCelular, 'Generado por'=>$_SESSION['usuario'] ?? 'Sistema']
 				];
 				$xml = $service->generarXMLFactura($datosFactura);
 				$validacionXml = $service->validarXML($xml);
@@ -2714,7 +2896,7 @@
 				$xmlPath = $service->guardarXML($xml, $claveAcceso, 'generados');
 				$numero = $establecimiento.'-'.$puntoEmision.'-'.$secuencial;
 				$insertFactura = $conexion->prepare("INSERT INTO facturas_electronicas (alumno_id, representante_id, clave_acceso, tipo_comprobante, establecimiento, punto_emision, secuencial, fecha_emision, ambiente, tipo_emision, cliente_tipo_identificacion, cliente_identificacion, cliente_razon_social, cliente_direccion, cliente_email, cliente_telefono, subtotal_iva, subtotal_0, subtotal_no_objeto, subtotal_exento, subtotal, descuento, iva, total, estado_sri, xml_generado, created_by) VALUES (:alumno_id, :representante_id, :clave_acceso, :tipo_comprobante, :establecimiento, :punto_emision, :secuencial, :fecha_emision, :ambiente, :tipo_emision, :cliente_tipo_identificacion, :cliente_identificacion, :cliente_razon_social, :cliente_direccion, :cliente_email, :cliente_telefono, :subtotal_iva, :subtotal_0, 0, 0, :subtotal, 0, :iva, :total, 'GENERADA', :xml_generado, :created_by)");
-				$insertFactura->execute([':alumno_id'=>$alumnoid, ':representante_id'=>(int)$representante['repre_id'], ':clave_acceso'=>$claveAcceso, ':tipo_comprobante'=>$tipoComprobante, ':establecimiento'=>$establecimiento, ':punto_emision'=>$puntoEmision, ':secuencial'=>$secuencial, ':fecha_emision'=>$fechaEmision, ':ambiente'=>(string)($config['ambiente'] ?? '1'), ':tipo_emision'=>(string)($config['tipo_emision'] ?? '1'), ':cliente_tipo_identificacion'=>$tipoIdentificacion, ':cliente_identificacion'=>$this->normalizarTextoSri($representante['repre_identificacion'], 20), ':cliente_razon_social'=>$this->normalizarTextoSri($representante['representante'], 300), ':cliente_direccion'=>$this->normalizarTextoSri($representante['repre_direccion'], 300), ':cliente_email'=>$representante['repre_correo'], ':cliente_telefono'=>$representante['repre_celular'], ':subtotal_iva'=>round($subtotalIva, 2), ':subtotal_0'=>round($subtotal0, 2), ':subtotal'=>$subtotal, ':iva'=>$ivaTotal, ':total'=>$total, ':xml_generado'=>$xmlPath, ':created_by'=>$_SESSION['id'] ?? null]);
+				$insertFactura->execute([':alumno_id'=>$alumnoid, ':representante_id'=>(int)$representante['repre_id'], ':clave_acceso'=>$claveAcceso, ':tipo_comprobante'=>$tipoComprobante, ':establecimiento'=>$establecimiento, ':punto_emision'=>$puntoEmision, ':secuencial'=>$secuencial, ':fecha_emision'=>$fechaEmision, ':ambiente'=>(string)($config['ambiente'] ?? '1'), ':tipo_emision'=>(string)($config['tipo_emision'] ?? '1'), ':cliente_tipo_identificacion'=>$tipoIdentificacion, ':cliente_identificacion'=>$this->normalizarTextoSri($clienteIdentificacion, 20), ':cliente_razon_social'=>$this->normalizarTextoSri($clienteRazonSocial, 300), ':cliente_direccion'=>$this->normalizarTextoSri($clienteDireccion, 300), ':cliente_email'=>$clienteCorreo, ':cliente_telefono'=>$clienteCelular, ':subtotal_iva'=>round($subtotalIva, 2), ':subtotal_0'=>round($subtotal0, 2), ':subtotal'=>$subtotal, ':iva'=>$ivaTotal, ':total'=>$total, ':xml_generado'=>$xmlPath, ':created_by'=>$_SESSION['id'] ?? null]);
 				$facturaId = (int)$conexion->lastInsertId();
 				$insertDetalle = $conexion->prepare("INSERT INTO facturas_electronicas_detalle (factura_electronica_id, pago_id, codigo_principal, descripcion, cantidad, precio_unitario, descuento, precio_total_sin_impuesto, iva_tarifa, iva_codigo_porcentaje, iva_valor) VALUES (:factura_id, :pago_id, :codigo, :descripcion, :cantidad, :precio_unitario, :descuento, :precio_total_sin_impuesto, :iva_tarifa, :iva_codigo_porcentaje, :iva_valor)");
 				foreach($detalles as $detalle){
@@ -2723,7 +2905,7 @@
 				$insertPago = $conexion->prepare("INSERT INTO facturas_electronicas_pagos (factura_electronica_id, forma_pago, total) VALUES (:factura_id, :forma_pago, :total)");
 				$insertPago->execute([':factura_id'=>$facturaId, ':forma_pago'=>$formaPago, ':total'=>$total]);
 				$ridePath = rtrim($config['storage']['ride'], '/\\').DIRECTORY_SEPARATOR.$claveAcceso.'.html';
-				$ridePath = $this->crearRideHtml(['numero'=>$numero, 'alumno_id'=>$alumnoid, 'clave_acceso'=>$claveAcceso, 'estado_sri'=>'GENERADA', 'ambiente'=>(string)($config['ambiente'] ?? '1'), 'cliente_razon_social'=>$this->normalizarTextoSri($representante['representante'], 300), 'cliente_identificacion'=>$this->normalizarTextoSri($representante['repre_identificacion'], 20), 'cliente_direccion'=>$this->normalizarTextoSri($representante['repre_direccion'], 300), 'cliente_email'=>$representante['repre_correo'], 'subtotal_iva'=>round($subtotalIva, 2), 'subtotal_0'=>round($subtotal0, 2), 'iva'=>$ivaTotal, 'total'=>$total], $detalles, $config, $ridePath);
+				$ridePath = $this->crearRideHtml(['numero'=>$numero, 'alumno_id'=>$alumnoid, 'clave_acceso'=>$claveAcceso, 'estado_sri'=>'GENERADA', 'ambiente'=>(string)($config['ambiente'] ?? '1'), 'cliente_razon_social'=>$this->normalizarTextoSri($clienteRazonSocial, 300), 'cliente_identificacion'=>$this->normalizarTextoSri($clienteIdentificacion, 20), 'cliente_direccion'=>$this->normalizarTextoSri($clienteDireccion, 300), 'cliente_email'=>$clienteCorreo, 'subtotal_iva'=>round($subtotalIva, 2), 'subtotal_0'=>round($subtotal0, 2), 'iva'=>$ivaTotal, 'total'=>$total], $detalles, $config, $ridePath);
 				$updateRide = $conexion->prepare("UPDATE facturas_electronicas SET ride_html = :ride WHERE id = :id");
 				$updateRide->execute([':ride'=>$ridePath, ':id'=>$facturaId]);
 				$conexion->commit();

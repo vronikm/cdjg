@@ -12,17 +12,17 @@
 			$pendiente = "";
 			// Identificación
 			if ($identificacion != "") {
-				$busqueda[] = "alumno_identificacion LIKE '".$identificacion."%'";
+				$busqueda[] = "A.alumno_identificacion LIKE '".$identificacion."%'";
 			}
 
 			// Nombre
 			if ($primernombre != "") {
-				$busqueda[] = "alumno_primernombre LIKE '".$primernombre."%'";
+				$busqueda[] = "A.alumno_primernombre LIKE '".$primernombre."%'";
 			}
 
 			// Apellido
 			if ($apellidopaterno != "") {
-				$busqueda[] = "alumno_apellidopaterno LIKE '".$apellidopaterno."%'";
+				$busqueda[] = "A.alumno_apellidopaterno LIKE '".$apellidopaterno."%'";
 			}
 
 			// Agrupar búsqueda por nombre/identificación/apellido
@@ -33,30 +33,47 @@
 			// Si no hay ningún filtro de identificación, nombre o apellido
 			if ($identificacion == "" && $primernombre == "" && $apellidopaterno == "") {
 				if ($estado == "") {					
-					$condiciones = ["alumno_primernombre <> ''"];
+					$condiciones = ["A.alumno_primernombre <> ''"];
 				}
 			}
 
 			// Filtro de estado
 			if ($estado == "") {
-				$condiciones[] = "alumno_estado = 'A'";
+				$condiciones[] = "A.alumno_estado = 'A'";
 			} else {
-				$condiciones[] = "alumno_estado = '".$estado."'";
+				$condiciones[] = "A.alumno_estado = '".$estado."'";
 			}
 
 			// Filtro de sede
 			if ($sede != "") {
 				if ($sede == 0) {
-					$condiciones[] = "alumno_sedeid <> 0";
+					$condiciones[] = "A.alumno_sedeid <> 0";
 				} else {
-					$condiciones[] = "alumno_sedeid = '".$sede."'";
+					$condiciones[] = "A.alumno_sedeid = '".$sede."'";
 				}
 			} else {
-				$condiciones = ["alumno_primernombre = ''"]; // sin sede -> nunca traerá resultados
+				$condiciones = ["A.alumno_primernombre = ''"];
 			}
 
 			// Construir SQL final
-			$consulta_datos = "SELECT * FROM sujeto_alumno WHERE " . implode(" AND ", $condiciones);
+			$anioMesActual = date('Ym');
+			$camposAsistencia = [];
+			for($i = 1; $i <= 31; $i++){
+				$campo = 'asistencia_D'.str_pad($i, 2, '0', STR_PAD_LEFT);
+				$camposAsistencia[] = "AA.$campo";
+			}
+			$consulta_datos = "SELECT A.*,
+								(
+									SELECT MAX(P.pago_fecha)
+									FROM alumno_pago P
+									WHERE P.pago_alumnoid = A.alumno_id
+										AND P.pago_estado = 'C'
+								) AS fecha_ultimo_pago,
+								".implode(", ", $camposAsistencia)."
+							FROM sujeto_alumno A
+							LEFT JOIN asistencia_asistencia AA ON AA.asistencia_alumnoid = A.alumno_id
+								AND AA.asistencia_aniomes = '".$anioMesActual."'
+							WHERE " . implode(" AND ", $condiciones);
 
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
@@ -104,13 +121,20 @@
 					$pendiente = "Pendiente";
 					$clase = '<a class="float-left text-danger">';
 				}
+
+				$fechaUltimoPago = $this->formatearFechaUltimoPago($rows['fecha_ultimo_pago'] ?? null);
+				$asistenciaMes = $this->calcularAsistenciaMesActual($rows);
+				$asistenciaBadge = $this->claseAsistenciaMesActual($asistenciaMes);
+				$asistenciaTexto = number_format($asistenciaMes['porcentaje'], 1, '.', '').'%';
+				$asistenciaTitle = 'Mes actual: '.$asistenciaMes['presentes'].' presentes de '.$asistenciaMes['registrados'].' registros';
 				
 				$tabla.='
 					<tr '.$class.'>
 						<td>'.$rows['alumno_identificacion'].'</td>
 						<td>'.$rows['alumno_primernombre'].' '.$rows['alumno_segundonombre'].'</td>
 						<td>'.$rows['alumno_apellidopaterno'].' '.$rows['alumno_apellidomaterno'].'</td>
-						<td>'.$rows['alumno_fechanacimiento'].'</td>
+						<td>'.$fechaUltimoPago.'</td>
+						<td><span class="badge badge-'.$asistenciaBadge.'" title="'.htmlspecialchars($asistenciaTitle, ENT_QUOTES, 'UTF-8').'">'.$asistenciaTexto.'</span></td>
 						<td>'.$clase.$pendiente.'</a></td>
 						<td>
 							<a href="'.APP_URL.'pagosNew/'.$rows['alumno_id'].'/" class="btn float-right '.$botonpago.' btn-xs" target="_blank">Registrar pagos</a>
@@ -119,6 +143,60 @@
 					</tr>';	
 			}
 			return $tabla;			
+		}
+
+		private function formatearFechaUltimoPago($fecha){
+			if(empty($fecha) || $fecha == '0000-00-00'){
+				return '<span class="text-muted">Sin pagos</span>';
+			}
+
+			$timestamp = strtotime($fecha);
+			if($timestamp === false){
+				return '<span class="text-muted">Sin pagos</span>';
+			}
+
+			return date('Y-m-d', $timestamp);
+		}
+
+		private function calcularAsistenciaMesActual($rows){
+			$presentes = 0;
+			$registrados = 0;
+
+			for($i = 1; $i <= 31; $i++){
+				$campo = 'asistencia_D'.str_pad($i, 2, '0', STR_PAD_LEFT);
+				$valor = strtoupper(trim((string)($rows[$campo] ?? '')));
+
+				if($valor == 'P'){
+					$presentes++;
+					$registrados++;
+				}elseif($valor == 'F'){
+					$registrados++;
+				}
+			}
+
+			$porcentaje = $registrados > 0 ? round(($presentes / $registrados) * 100, 1) : 0;
+
+			return [
+				'porcentaje' => $porcentaje,
+				'presentes' => $presentes,
+				'registrados' => $registrados
+			];
+		}
+
+		private function claseAsistenciaMesActual($asistencia){
+			if((int)$asistencia['registrados'] === 0){
+				return 'secondary';
+			}
+
+			if((float)$asistencia['porcentaje'] >= 80){
+				return 'success';
+			}
+
+			if((float)$asistencia['porcentaje'] >= 60){
+				return 'warning';
+			}
+
+			return 'danger';
 		}
 
 		public function listarOptionSede($sedeid, $rolid = null, $usuario = null){
@@ -2839,4 +2917,3 @@
 			return json_encode($alerta);
 		}
 	}
-			

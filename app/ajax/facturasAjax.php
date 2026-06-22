@@ -92,12 +92,14 @@
 			$representante = [];
 			if($datos && $datos->rowCount()>0){
 				$fila = $datos->fetch();
+				$facturaANombre = (($fila['repre_factura_a_nombre'] ?? 'REPRESENTANTE') === 'CONYUGE') ? 'Conyuge' : 'Representante';
 				$representante = [
-					"nombre" => $fila['representante'],
-					"identificacion" => $fila['repre_identificacion'],
-					"direccion" => $fila['repre_direccion'],
-					"correo" => $fila['repre_correo'],
-					"celular" => $fila['repre_celular'],
+					"nombre" => $fila['cliente_factura_nombre'] ?? $fila['representante'],
+					"identificacion" => $fila['cliente_factura_identificacion'] ?? $fila['repre_identificacion'],
+					"direccion" => $fila['cliente_factura_direccion'] ?? $fila['repre_direccion'],
+					"correo" => $fila['cliente_factura_correo'] ?? $fila['repre_correo'],
+					"celular" => $fila['cliente_factura_celular'] ?? $fila['repre_celular'],
+					"factura_a_nombre" => $facturaANombre,
 					"pagos" => $fila['pagos'],
 					"facturas" => $facturasGeneradas
 				];

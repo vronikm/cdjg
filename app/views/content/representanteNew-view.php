@@ -188,6 +188,26 @@
 												<input type="text" class="form-control" id="repre_celular" name="repre_celular" data-inputmask='"mask": "0999999999"' data-mask placeholder="Celular" required>
 											</div> 
 										</div>
+										<div class="col-md-3">
+											<div class="form-group">
+												<label for="repre_requiere_factura">Requiere Factura</label>
+												<div class="form-check">
+													<input class="col-sm-1 form-check-input" type="radio" id="repre_requiere_facturaS" value="S" name="repre_requiere_factura" checked>
+													<label class="col-sm-5 form-check-label" for="repre_requiere_facturaS" style="font-size: 14px;">Si</label>
+													<input class="col-sm-1 form-check-input" type="radio" id="repre_requiere_facturaN" value="N" name="repre_requiere_factura">
+													<label class="col-sm-4 form-check-label" for="repre_requiere_facturaN" style="font-size: 14px;">No</label>
+												</div>
+											</div>
+										</div>
+										<div class="col-md-3">
+											<div class="form-group">
+												<label for="repre_factura_a_nombre">Factura</label>
+												<select class="form-control" id="repre_factura_a_nombre" name="repre_factura_a_nombre">
+													<option value="REPRESENTANTE" selected>Representante</option>
+													<option value="CONYUGE">C&oacute;nyuge</option>
+												</select>
+											</div>
+										</div>
 									</div>									
 								</div>
 

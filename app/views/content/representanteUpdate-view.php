@@ -10,6 +10,9 @@
 	$repre_hermanosNo	= "";
 	$conyuge_sexoM		= "";
 	$conyuge_sexoF		= "";
+	$repre_requiere_facturaS = "";
+	$repre_requiere_facturaN = "";
+	$repre_factura_a_nombre = "REPRESENTANTE";
 
 	$datosrepresentante=$insRepre->seleccionarDatos("Unico","alumno_representante","repre_id",$repreid);
 	if($datosrepresentante->rowCount()==1){
@@ -31,6 +34,10 @@
 		$repre_correo 			  	= $datosrepresentante['repre_correo'];
 		$repre_celular 			  	= $datosrepresentante['repre_celular'];
 		$repre_parentesco 		  	= $datosrepresentante['repre_parentesco'];
+		$repre_requiere_factura 	= $datosrepresentante['repre_requiere_factura'] ?? 'S';
+		$repre_factura_a_nombre 	= $datosrepresentante['repre_factura_a_nombre'] ?? 'REPRESENTANTE';
+		$repre_requiere_facturaS 	= ($repre_requiere_factura === 'N') ? "" : "checked";
+		$repre_requiere_facturaN 	= ($repre_requiere_factura === 'N') ? "checked" : "";
 		
 		$datosconyugerep=$insRepre->seleccionarDatos("Unico","alumno_representanteconyuge","conyuge_repid",$repreid);
 		if($datosconyugerep->rowCount()==1){
@@ -249,6 +256,26 @@
 												<label for="repre_celular">Celular</label>
 												<input type="text" class="form-control" id="repre_celular" name="repre_celular" value="<?php echo $repre_celular; ?>" >
 											</div> 
+										</div>
+										<div class="col-md-3">
+											<div class="form-group">
+												<label for="repre_requiere_factura">Requiere Factura</label>
+												<div class="form-check">
+													<input class="col-sm-1 form-check-input" type="radio" id="repre_requiere_facturaS" name="repre_requiere_factura" value="S" <?php echo $repre_requiere_facturaS; ?> >
+													<label class="col-sm-5 form-check-label" for="repre_requiere_facturaS" style="font-size: 14px;">Si</label>
+													<input class="col-sm-1 form-check-input" type="radio" id="repre_requiere_facturaN" name="repre_requiere_factura" value="N" <?php echo $repre_requiere_facturaN; ?> >
+													<label class="col-sm-4 form-check-label" for="repre_requiere_facturaN" style="font-size: 14px;">No</label>
+												</div>
+											</div>
+										</div>
+										<div class="col-md-3">
+											<div class="form-group">
+												<label for="repre_factura_a_nombre">Factura</label>
+												<select class="form-control" id="repre_factura_a_nombre" name="repre_factura_a_nombre">
+													<option value="REPRESENTANTE" <?php echo ($repre_factura_a_nombre === 'CONYUGE') ? '' : 'selected'; ?>>Representante</option>
+													<option value="CONYUGE" <?php echo ($repre_factura_a_nombre === 'CONYUGE') ? 'selected' : ''; ?>>C&oacute;nyuge</option>
+												</select>
+											</div>
 										</div>
 									</div>				
 								</div>
