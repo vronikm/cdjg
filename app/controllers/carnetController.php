@@ -30,6 +30,26 @@
             return $datos;
         }
 
+		private function condicionPagoCarnetActual($alias = 'ap') {
+			$alias = preg_replace('/[^a-zA-Z0-9_]/', '', $alias);
+			return "((".$alias.".pago_rubroid = 'RPE'
+						AND MONTH(".$alias.".pago_fecha) = MONTH(CURDATE())
+						AND YEAR(".$alias.".pago_fecha) = YEAR(CURDATE()))
+					OR (".$alias.".pago_rubroid = 'RVA'
+						AND MONTH(".$alias.".pago_fecharegistro) = MONTH(CURDATE())
+						AND YEAR(".$alias.".pago_fecharegistro) = YEAR(CURDATE())))";
+		}
+
+		private function condicionPagoCarnetMes($alias = 'ap') {
+			$alias = preg_replace('/[^a-zA-Z0-9_]/', '', $alias);
+			return "((".$alias.".pago_rubroid = 'RPE'
+						AND MONTH(".$alias.".pago_fecha) = :mes
+						AND YEAR(".$alias.".pago_fecha) = :anio)
+					OR (".$alias.".pago_rubroid = 'RVA'
+						AND MONTH(".$alias.".pago_fecharegistro) = :mes
+						AND YEAR(".$alias.".pago_fecharegistro) = :anio))";
+		}
+
 		/**
 		 * Listar alumnos con pagos de pensión del mes actual
 		 * @return string HTML de filas de tabla
@@ -91,11 +111,10 @@
 								(    
 									SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(pago_estado) Estado
 									FROM (
-										SELECT pago_fecha as FechaPension, pago_estado, pago_alumnoid                               
-											FROM alumno_pago 
-											WHERE pago_fecha >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-												and pago_estado NOT IN ('E', 'J')
-												and pago_rubroid = 'RPE'
+										SELECT ap.pago_fecha as FechaPension, ap.pago_estado, ap.pago_alumnoid
+											FROM alumno_pago ap
+											WHERE ap.pago_estado NOT IN ('E', 'J')
+												AND ".$this->condicionPagoCarnetActual('ap')."
 									) AS Pagos
 									GROUP BY pago_alumnoid
 								)
@@ -178,11 +197,10 @@
 							a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) AS alumno_nombre
 						FROM sujeto_alumno a
 						INNER JOIN (
-							SELECT pago_alumnoid
-							FROM alumno_pago
-							WHERE pago_fecha >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-								AND pago_estado NOT IN ('E', 'J')
-								AND pago_rubroid = 'RPE'
+							SELECT ap.pago_alumnoid
+							FROM alumno_pago ap
+							WHERE ap.pago_estado NOT IN ('E', 'J')
+								AND ".$this->condicionPagoCarnetActual('ap')."
 
 							UNION
 
@@ -643,7 +661,7 @@
 
 		/**
 		 * Obtener carnets del mes actual listos para imprimir
-		 * Incluye todos los alumnos con pagos de pensión (RPE) del mes
+		 * Incluye todos los alumnos con pagos de pensión (RPE) o vacacional (RVA) del mes
 		 * @return array Array con datos de carnets
 		 */
 		public function obtenerCarnetsMesActual() {
@@ -655,7 +673,7 @@
 			$colorMes = $this->BuscarColorPorMes($mes_actual);
 			$colorData = $colorMes->fetch();
 			
-			$consulta = "SELECT 
+			$consulta = "SELECT DISTINCT
 							a.alumno_id, alumno_carnet,
 							a.alumno_identificacion,
 							CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
@@ -682,14 +700,13 @@
 													AND ac.carnet_anio = :anio
 							WHERE a.alumno_estado = 'A'
 								AND ap.pago_estado NOT IN ('E', 'J')
-								AND MONTH(ap.pago_fecha) = :mes
-								AND YEAR(ap.pago_fecha) = :anio
-								AND ap.pago_rubroid = 'RPE'
+								AND ".$this->condicionPagoCarnetMes('ap')."
 								AND ac.carnet_alumnoid IS NULL
-						UNION ALL
+						UNION
 						
-						SELECT 
-							a.alumno_id, 
+						SELECT
+							a.alumno_id,
+							a.alumno_carnet,
 							a.alumno_identificacion,
 							CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
 								a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
@@ -698,6 +715,7 @@
 							h.horario_nombre,
 							ac.carnet_id,
 							ac.carnet_alumnoid,
+							ac.carnet_numero,
 							:mes as carnet_mes,
 							:anio as carnet_anio,
 							:fecha_actual as carnet_fecha_emision,
@@ -1014,6 +1032,7 @@
 							CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
 								a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
 							a.alumno_imagen,
+							a.alumno_sedeid,
 							h.horario_nombre,
 							ac.carnet_id,
 							ac.carnet_numero,
@@ -1056,14 +1075,12 @@
 
 			$consulta = "SELECT COUNT(*) AS total
 						FROM (
-							SELECT a.alumno_id
+							SELECT DISTINCT a.alumno_id
 							FROM sujeto_alumno a
 							INNER JOIN alumno_pago ap ON ap.pago_alumnoid = a.alumno_id
 							WHERE a.alumno_estado = 'A'
 								AND ap.pago_estado NOT IN ('E', 'J')
-								AND MONTH(ap.pago_fecha) = :mes
-								AND YEAR(ap.pago_fecha) = :anio
-								AND ap.pago_rubroid = 'RPE'
+								AND ".$this->condicionPagoCarnetMes('ap')."
 								AND EXISTS (SELECT 1 FROM asistencia_asignahorario ah WHERE ah.asignahorario_alumnoid = a.alumno_id)
 								AND NOT EXISTS (
 									SELECT 1 FROM alumno_carnet ac
@@ -1136,9 +1153,7 @@
 								INNER JOIN alumno_pago ap ON ap.pago_alumnoid = a.alumno_id
 								WHERE a.alumno_estado = 'A'
 									AND ap.pago_estado NOT IN ('E', 'J')
-									AND MONTH(ap.pago_fecha) = :mes
-									AND YEAR(ap.pago_fecha) = :anio
-									AND ap.pago_rubroid = 'RPE'
+									AND ".$this->condicionPagoCarnetMes('ap')."
 									AND EXISTS (SELECT 1 FROM asistencia_asignahorario ah WHERE ah.asignahorario_alumnoid = a.alumno_id)
 									AND NOT EXISTS (
 										SELECT 1 FROM alumno_carnet acp
@@ -1380,13 +1395,14 @@
 			// ========================================
 			// PARTE 1: CARNETS NUEVOS (Primera vez)
 			// ========================================
-			$consultaNuevos = "SELECT 
+			$consultaNuevos = "SELECT DISTINCT
 								a.alumno_id,
 								a.alumno_carnet,
 								a.alumno_identificacion,
 								CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
 									a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
 								a.alumno_imagen,
+								a.alumno_sedeid,
 								h.horario_nombre,
 								NULL as carnet_id,
 								NULL as carnet_numero,
@@ -1405,19 +1421,18 @@
 													AND ac.carnet_anio = :anio
 							WHERE a.alumno_estado = 'A'
 								AND ap.pago_estado NOT IN ('E', 'J')
-								AND MONTH(ap.pago_fecha) = :mes
-								AND YEAR(ap.pago_fecha) = :anio
-								AND ap.pago_rubroid = 'RPE'
+								AND ".$this->condicionPagoCarnetMes('ap')."
 								AND ac.carnet_alumnoid IS NULL
 							
-							UNION ALL
-							SELECT 
+							UNION
+							SELECT
 								a.alumno_id,
 								a.alumno_carnet,
 								a.alumno_identificacion,
 								CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
 									a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
 								a.alumno_imagen,
+								a.alumno_sedeid,
 								h.horario_nombre,
 								NULL as carnet_id,
 								NULL as carnet_numero,
@@ -1489,6 +1504,7 @@
 											CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre, ' ', 
 												a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) as alumno_nombre,
 											a.alumno_imagen,
+											a.alumno_sedeid,
 											h.horario_nombre,
 											ac.carnet_id,
 											ac.carnet_numero,

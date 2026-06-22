@@ -66,7 +66,7 @@
 					<div class="card-header">
 						<h3 class="card-title">
 							<i class="fas fa-id-card"></i> 
-							Alumnos con pago de pensión - <?php $formatter = new IntlDateFormatter('es_ES', IntlDateFormatter::NONE, IntlDateFormatter::NONE, 'America/Guayaquil', IntlDateFormatter::GREGORIAN, 'MMMM yyyy');
+							Alumnos con pago de pensión o vacacional - <?php $formatter = new IntlDateFormatter('es_ES', IntlDateFormatter::NONE, IntlDateFormatter::NONE, 'America/Guayaquil', IntlDateFormatter::GREGORIAN, 'MMMM yyyy');
         													echo ucfirst($formatter->format(new DateTime()));?>
 						</h3>
 						<div class="card-tools">							
@@ -111,7 +111,7 @@
 						<div class="alert alert-info">
 							<i class="fas fa-info-circle"></i>
 							<strong>Información:</strong> 
-							Los carnets se generan automáticamente para todos los alumnos con pago de pensión del mes actual.
+							Los carnets se generan automáticamente para todos los alumnos con pago de pensión o vacacional del mes actual.
 							Use los checkboxes para reimprimir carnets extraviados. <?php echo $cobrarReimpresion ? 'Se generara un cobro de $' . number_format($valorReimpresion, 2, '.', '') . ' por reimpresion.' : 'No se generara cobro por reimpresion.'; ?>
 						</div>
 						
@@ -123,7 +123,7 @@
 										<th>Nombres</th>
 										<th>Apellidos</th>	
 										<th>Carnet</th>
-										<th>Fecha Últ Pensión</th>
+										<th>Fecha Últ Pago</th>
 										<th>Condición</th>
 										<th>Ver Carnet</th>
 										<th style="text-align: center;">

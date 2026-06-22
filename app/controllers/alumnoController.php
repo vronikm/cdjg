@@ -1932,9 +1932,14 @@
 
 		public function listarhorariosProfile($horarioid = null, $sedeid = null){
 			$option="";
+			$horarioid = (int) ($horarioid ?? 0);
+			$sedeid = (int) ($sedeid ?? 0);
+			$filtro_sede = $sedeid > 0 ? " AND AH.horario_sedeid = ".$sedeid : "";
+			$mostrar_sede = $sedeid <= 0;
 
-			$consulta_datos="SELECT AH.horario_id, CONCAT(HORA.hora_inicio, ' - ', HORA.hora_fin, ' | ', AH.horario_detalle) AS HORARIO
+			$consulta_datos="SELECT AH.horario_id, S.sede_nombre, CONCAT(HORA.hora_inicio, ' - ', HORA.hora_fin, ' | ', AH.horario_detalle) AS HORARIO
 								FROM asistencia_horario AH
+									LEFT JOIN general_sede S ON S.sede_id = AH.horario_sedeid
 									INNER JOIN( 
 										SELECT detalle_horarioid, detalle_horaid, H.hora_inicio, H.hora_fin
 										FROM asistencia_horario_detalle D
@@ -1942,15 +1947,42 @@
 										GROUP BY detalle_horarioid, detalle_horaid, H.hora_inicio, H.hora_fin
 									)HORA ON HORA.detalle_horarioid = AH.horario_id
 
-								WHERE AH.horario_estado = 'A' AND AH.horario_sedeid = $sedeid";	
+								WHERE AH.horario_estado = 'A'".$filtro_sede."
+								ORDER BY S.sede_nombre, AH.horario_id";
 					
 			$datos = $this->ejecutarConsulta($consulta_datos);
 			$datos = $datos->fetchAll();
+
+			if(empty($datos) && $sedeid > 0){
+				$mostrar_sede = true;
+				$consulta_datos="SELECT AH.horario_id, S.sede_nombre, CONCAT(HORA.hora_inicio, ' - ', HORA.hora_fin, ' | ', AH.horario_detalle) AS HORARIO
+									FROM asistencia_horario AH
+										LEFT JOIN general_sede S ON S.sede_id = AH.horario_sedeid
+										INNER JOIN(
+											SELECT detalle_horarioid, detalle_horaid, H.hora_inicio, H.hora_fin
+											FROM asistencia_horario_detalle D
+											INNER JOIN asistencia_hora H on H.hora_id = D.detalle_horaid
+											GROUP BY detalle_horarioid, detalle_horaid, H.hora_inicio, H.hora_fin
+										)HORA ON HORA.detalle_horarioid = AH.horario_id
+
+									WHERE AH.horario_estado = 'A'
+									ORDER BY S.sede_nombre, AH.horario_id";
+				$datos = $this->ejecutarConsulta($consulta_datos);
+				$datos = $datos->fetchAll();
+			}
+
+			if(empty($datos)){
+				return '<option value="" disabled>No hay horarios activos registrados</option>';
+			}
+
 			foreach($datos as $rows){
+				$horario_label = ($mostrar_sede && $rows['sede_nombre'] != "") ? $rows['sede_nombre']." | ".$rows['HORARIO'] : $rows['HORARIO'];
+				$horario_label = htmlspecialchars($horario_label, ENT_QUOTES, 'UTF-8');
+
 				if($horarioid == $rows['horario_id']){	
-					$option.='<option value='.$rows['horario_id'].' selected="selected">'.$rows['HORARIO'].'</option>';
+					$option.='<option value='.$rows['horario_id'].' selected="selected">'.$horario_label.'</option>';
 				}else{
-					$option.='<option value='.$rows['horario_id'].'>'.$rows['HORARIO'].'</option>';
+					$option.='<option value='.$rows['horario_id'].'>'.$horario_label.'</option>';
 				}					
 			}
 			return $option;

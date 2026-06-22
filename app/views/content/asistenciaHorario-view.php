@@ -253,7 +253,7 @@
 				var column2 = "<select class='form-control' id='lugar' name='lugar[]'><?php echo addslashes($insHorario->listarOptionLugar($lugar_sedeid,0)); ?></select>";
 				
 				// Columna 3: Horarios con PHP
-				var column3 = "<select class='form-control' id='hora' name='hora[]'><?php echo addslashes($insHorario->listarOptionHora(0)); ?></select>";
+				var column3 = "<select class='form-control' id='hora' name='hora[]'><?php echo addslashes($insHorario->listarOptionHora(0, $lugar_sedeid)); ?></select>";
 				
 				// Columna 4: Profesores con PHP
 				var column4 = "<select class='form-control' id='profesor' name='profesor[]'><?php echo addslashes($insHorario->listarOptionProfesor($lugar_sedeid,0)); ?></select>";

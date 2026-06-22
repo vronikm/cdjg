@@ -827,7 +827,7 @@
 						}
 					});
 				} else {
-					$('#horarioid').html('<option value="">Seleccione un horario</option>');
+					$('#tabla_horario').html('');
 				}
 			});
 		});
