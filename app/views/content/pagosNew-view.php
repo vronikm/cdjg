@@ -279,6 +279,7 @@
 										<li class="nav-item"><a class="nav-link" href="#torneo" data-toggle="tab">Campeonatos</a></li>
 										<li class="nav-item"><a class="nav-link" href="#uniforme" data-toggle="tab">Nuevo Uniforme</a></li>										
 										<li class="nav-item"><a class="nav-link" href="#kit" data-toggle="tab">Adicionales entrenamiento</a></li>									
+										<li class="nav-item"><a class="nav-link" href="#vacacional" data-toggle="tab">Vacacional</a></li>
 										<li class="nav-item"><a class="nav-link" href="#otros" data-toggle="tab">Otros</a></li>									
 									</ul>
 								</div><!-- /.card-header -->
@@ -982,6 +983,133 @@
 										</div>
 
 										<!-- /.tab-pane -->										
+										<div class="tab-pane" id="vacacional">
+											<form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/pagosAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data" >
+											<input type="hidden" name="modulo_pagos" value="registrar">
+											<input type="hidden" name="pago_alumnoid" value="<?php echo $datos['alumno_id']; ?>">
+											<input type="hidden" name="pago_rubro" value="vacacional">
+																	<!-- Post -->
+												<div class="row">
+													<div class="col-md-4">
+														<div class="form-group">
+															<label for="pago_fecha">Fecha pago Vacacional</label>
+															<div class="input-group">
+																<div class="input-group-prepend">
+																	<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+																</div>
+																<input type="date" class="form-control" id="pago_fecha" name="pago_fecha" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" data-mask required>
+															</div>
+															<!-- /.input group -->
+														</div>
+													</div>
+													<div class="col-md-4">
+														<div class="form-group">
+															<label for="pago_fecharegistro">Fecha registro Vacacional</label>
+															<div class="input-group">
+																<div class="input-group-prepend">
+																	<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+																</div>
+																<input type="date" class="form-control" id="pago_fecharegistro" name="pago_fecharegistro" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" data-mask required>
+															</div>
+															<!-- /.input group -->
+														</div>
+													</div>
+													<div class="col-md-4">
+														<div class="form-group">
+															<label for="pago_periodo">Periodo Vacacional</label>
+															<input type="text" class="form-control" id="pago_periodo" name="pago_periodo" required>
+														</div>
+													</div>
+
+													<div class="col-md-4">
+														<div class="form-group">
+															<label for="pago_valor">Pago Vacacional</label>
+															<input type="text" class="pull-right form-control" style="text-align:right;" id="pago_valor" name="pago_valor" placeholder="0.00" <?php echo ' value="'.$rubro_valor.'" '.$disabled; ?> required>
+														</div>
+													</div>
+
+													<div class="col-md-4">
+														<div class="form-group">
+															<label for="pago_saldo">Saldo Vacacional</label>
+															<input type="text" class="form-control" style="text-align:right;" id="pago_saldo" name="pago_saldo" placeholder="0.00">
+														</div>
+													</div>
+
+													<div class="col-md-4">
+														<div class="form-group">
+														<label for="pago_formapagoid">Forma de pago Vacacional</label>
+														<select class="form-control select2" id="pago_formapagoid" name="pago_formapagoid" onchange="ocultarDiv()" >
+															<?php echo $insAlumno->listarOptionPago(); ?>
+														</select>
+														</div>
+													</div>
+
+													<div class="col-md-2" id="miDiv">
+														<div class="form-group">
+															<label for="pago_archivo">Imagen Pago</label>
+															<div class="input-group">
+																<div class="fileinput fileinput-new" data-provides="fileinput">
+																	<div class="fileinput-new thumbnail" style="width: 130px; height: 158px;" data-trigger="fileinput"><img src="" id="miImagen"></div>
+																	<div class="fileinput-preview fileinput-exists thumbnail" style="max-width: 130px; max-height: 158px"></div>
+																	<div>
+																		<span class="bton bton-white bton-file">
+																			<span class="fileinput-new">Subir Pago</span>
+																			<span class="fileinput-exists">Cambiar</span>
+																			<input type="file" name="pago_archivo" id="pago_archivo">
+																		</span>
+																		<a href="#" class="bton bton-orange fileinput-exists" data-dismiss="fileinput">X</a>
+																	</div>
+																</div>
+															</div>
+														</div>
+													<!-- /.form-group -->
+													</div>
+
+													<div class="col-md-10">
+														<div class="col-md-12">
+															<div class="form-group">
+															<label for="pago_concepto">Detalle Vacacional</label>
+															<textarea class="form-control" id="pago_concepto" name="pago_concepto" placeholder="Detalle del pago" rows="3" ></textarea>
+															</div>
+														</div>
+													</div>
+												</div>
+											<!-- /.post -->
+
+											<div class="card-footer">
+												<button type="submit" class="btn btn-success btn-sm">Guardar</button>
+												<button type="reset" class="btn btn-warning btn-sm">Limpiar</button>
+												<button class="btn btn-dark btn-sm" onclick="cerrarVentana()">Cerrar</button>
+											</div>
+											</form>
+
+											<div class="tab-custom-content">
+												<p class="lead mb-0">Pagos Vacacional realizados</p>
+											</div>
+											<div class="tab-content" id="custom-content-above-tabContent">
+												<table id="example1" class="table table-bordered table-striped table-sm">
+													<thead>
+														<tr>
+															<th>No</th>
+															<th>Fecha registro</th>
+															<th>Periodo</th>
+															<th>Pago</th>
+															<th>Saldo</th>
+															<th>Recibo</th>
+															<th>Estado</th>
+															<th style="width:300px;">Opciones</th>
+														</tr>
+													</thead>
+													<tbody>
+														<?php
+															echo $insAlumno->listarPagosRubro($alumno,'RVA');
+														?>
+													</tbody>
+												</table>
+											</div>
+										</div>
+
+										<!-- /.tab-pane -->
 										<div class="tab-pane" id="otros">
 											<form class="FormularioAjax" action="<?php echo APP_URL; ?>app/ajax/pagosAjax.php" method="POST" autocomplete="off" enctype="multipart/form-data" >
 											<input type="hidden" name="modulo_pagos" value="registrar">											

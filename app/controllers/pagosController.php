@@ -456,6 +456,8 @@
 				$rubroid="RNU";				
 			}elseif($pago_rubro == "kit"){
 				$rubroid="RKE";				
+			}elseif($pago_rubro == "vacacional"){
+				$rubroid="RVA";
 			}elseif($pago_rubro == "otros"){
 				$rubroid="ROT";				
 			}elseif($pago_rubro == "campeonato"){
