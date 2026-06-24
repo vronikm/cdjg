@@ -4,6 +4,8 @@
 	$cobrarReimpresion = $insCarnet->cobrarReimpresionCarnet();
 	$valorReimpresion = $insCarnet->valorReimpresionCarnet();
 	$carnetSedeid = isset($_GET['sede_id']) ? (int)$_GET['sede_id'] : 0;
+	$carnetsPendientesInicial = $insCarnet->carnetPendientesImpresion($carnetSedeid);
+	$totalCarnetsPendientesInicial = (int)($carnetsPendientesInicial[0]['total'] ?? 0);
 ?>
 
 <html lang="es">
@@ -85,7 +87,7 @@
 
 								<i class="fas fa-print"></i> Imprimir Todos
 								<span class="badge badge-light" id="contadorCarnets">
-									<i class="fas fa-spinner fa-spin"></i>
+									<?php echo $totalCarnetsPendientesInicial; ?>
 								</span>
 							</button>
 

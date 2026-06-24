@@ -104,7 +104,7 @@
 
 				$mensaje = htmlspecialchars(implode(", ", $detalle_alumnos), ENT_QUOTES, 'UTF-8');
 				return '<tr>
-							<td colspan="8" class="text-center">
+							<td>
 								<div class="alert alert-danger mb-0">
 									<i class="fas fa-exclamation-triangle"></i>
 									<strong>Horario pendiente:</strong>
@@ -220,18 +220,11 @@
 									<label for="alumno_' . $rows['alumno_id'] . '" 
 										class="custom-control-label"></label>
 								</div>
-							</td>						
-						</tr>';	
-				}
-			} else {
-				$tabla = '<tr>
-							<td colspan="8" class="text-center">
-								<div class="alert alert-info mb-0">
-									<i class="fas fa-info-circle"></i> 
-									No hay alumnos con pagos de pensión este mes
-								</div>
 							</td>
 						</tr>';
+				}
+			} else {
+				$tabla = '';
 			}
 			
 			return $tabla;			

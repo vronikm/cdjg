@@ -47,6 +47,7 @@ $(function () {
         $.ajax({
             url: APP_URL + 'app/ajax/carnetAjax.php',
             type: 'POST',
+            timeout: 20000,
             data: {
                 modulo_carnet: 'imprimir_carnetspendientes',
                 sede_id: getSedeCarnetId()
@@ -156,7 +157,14 @@ $(function () {
             padding: '1em'
 
             }).then((result) => {
+                if (!result.isConfirmed) {
+                    btn.prop('disabled', false);
+                    badge.html(totalPendientes);
+                    return;
+                }
+
                 if (result.isConfirmed) {
+                    btn.prop('disabled', true);
                     // Mostrar mensaje de generación
                     Swal.fire({
                         title: 'Generando PDF...',
@@ -187,6 +195,7 @@ $(function () {
                     $.ajax({
                         url: APP_URL + 'app/ajax/carnetAjax.php',
                         type: 'POST',
+                        timeout: 30000,
                         data: {
                             modulo_carnet: 'preparar_impresion_mensual',
                             sede_id: getSedeCarnetId()
@@ -243,6 +252,12 @@ $(function () {
                                 confirmButtonColor: '#3085d6'
                             }).then(() => {
                                 btn.prop('disabled', false);
+                            });
+                        },
+                        complete: function() {
+                            btn.prop('disabled', false);
+                            consultarCarnetsPendientes(function(totalActualizado) {
+                                badge.html(totalActualizado);
                             });
                         }
                     });

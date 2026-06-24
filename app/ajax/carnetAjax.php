@@ -9,6 +9,7 @@ if(isset($_POST['modulo_carnet'])) {
     
     $insCarnet = new carnetController();
     
+    try {
     switch($_POST['modulo_carnet']) {
         
         case 'actualizar_colores':
@@ -62,6 +63,15 @@ if(isset($_POST['modulo_carnet'])) {
             ];
             echo json_encode($alerta);
             break;
+    }
+    } catch(Throwable $e) {
+        http_response_code(500);
+        echo json_encode([
+            "tipo" => "error",
+            "titulo" => "Error",
+            "texto" => "No se pudo procesar la solicitud de carnets. " . $e->getMessage(),
+            "icono" => "error"
+        ]);
     }
     
 } else {
