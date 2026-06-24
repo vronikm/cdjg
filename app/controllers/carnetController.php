@@ -288,14 +288,15 @@
 										THEN 'Al dia' 
 										ELSE 'Pendiente' 
 										END Condicion
-								FROM(SELECT max(pago_fecha) FechaUltPension, max(pago_estado)Estado
-										from(
-												SELECT CASE WHEN pago_rubroid = 'RVA' THEN DATE(pago_fecharegistro) ELSE pago_fecha END as pago_fecha, pago_estado
-														FROM alumno_pago 
-														WHERE pago_alumnoid = $alumnoid
-															AND pago_estado NOT IN ('J','E')
-															$filtroPeriodo
-														GROUP BY pago_estado, pago_fecha) as subquery) AS Total
+								FROM(
+									SELECT
+										MAX(CASE WHEN pago_rubroid = 'RVA' THEN DATE(pago_fecharegistro) ELSE pago_fecha END) FechaUltPension,
+										MAX(pago_estado) Estado
+									FROM alumno_pago
+									WHERE pago_alumnoid = $alumnoid
+										AND pago_estado NOT IN ('J','E')
+										$filtroPeriodo
+								) AS Total
 								WHERE FechaUltPension IS NOT NULL
 							UNION
 							SELECT DATE_FORMAT(CURDATE(), '%Y-%m-01') FechaPago, 'C' as Estado, 'Al dìa' as Condicion
