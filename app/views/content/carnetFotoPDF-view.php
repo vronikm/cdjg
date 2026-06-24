@@ -38,6 +38,103 @@ if(!function_exists('carnetTipoImagenPDF')){
     }
 }
 
+if(!function_exists('carnetImagenCompatiblePDF')){
+    function carnetImagenCompatiblePDF($ruta, $tempDir){
+        $tipo = carnetTipoImagenPDF($ruta);
+        if($tipo === ''){
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        if($tipo === 'JPG'){
+            return ['ruta' => $ruta, 'tipo' => 'JPG', 'temporal' => false];
+        }
+
+        $creador = null;
+        if($tipo === 'PNG' && function_exists('imagecreatefrompng')){
+            $creador = 'imagecreatefrompng';
+        } elseif($tipo === 'GIF' && function_exists('imagecreatefromgif')){
+            $creador = 'imagecreatefromgif';
+        }
+
+        if($creador === null || !function_exists('imagecreatetruecolor') || !function_exists('imagejpeg')){
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        $origen = @$creador($ruta);
+        if(!$origen){
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        if(function_exists('imagepalettetotruecolor')){
+            @imagepalettetotruecolor($origen);
+        }
+
+        $ancho = imagesx($origen);
+        $alto = imagesy($origen);
+        if($ancho <= 0 || $alto <= 0){
+            imagedestroy($origen);
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        $destino = imagecreatetruecolor($ancho, $alto);
+        if(!$destino){
+            imagedestroy($origen);
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        imagealphablending($destino, true);
+        $blanco = imagecolorallocate($destino, 255, 255, 255);
+        imagefilledrectangle($destino, 0, 0, $ancho, $alto, $blanco);
+        imagecopy($destino, $origen, 0, 0, 0, 0, $ancho, $alto);
+
+        if(!is_dir($tempDir)){
+            @mkdir($tempDir, 0775, true);
+        }
+
+        $rutaTemporal = rtrim($tempDir, '/\\') . DIRECTORY_SEPARATOR . 'pdf_img_' . uniqid('', true) . '.jpg';
+        $convertida = @imagejpeg($destino, $rutaTemporal, 90);
+
+        imagedestroy($origen);
+        imagedestroy($destino);
+
+        if(!$convertida || !is_file($rutaTemporal)){
+            if(is_file($rutaTemporal)){
+                @unlink($rutaTemporal);
+            }
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        return ['ruta' => $rutaTemporal, 'tipo' => 'JPG', 'temporal' => true];
+    }
+}
+
+if(!function_exists('carnetLimpiarImagenTemporalPDF')){
+    function carnetLimpiarImagenTemporalPDF($imagen){
+        if(!empty($imagen['temporal']) && !empty($imagen['ruta']) && is_file($imagen['ruta'])){
+            @unlink($imagen['ruta']);
+        }
+    }
+}
+
+if(!function_exists('carnetImagePDF')){
+    function carnetImagePDF($pdf, $ruta, $tempDir, $x, $y, $w = 0, $h = 0){
+        $imagen = carnetImagenCompatiblePDF($ruta, $tempDir);
+        if($imagen['tipo'] === ''){
+            return false;
+        }
+
+        try {
+            $pdf->Image($imagen['ruta'], $x, $y, $w, $h, $imagen['tipo']);
+            return true;
+        } catch(Exception $e) {
+            error_log('[carnetPDF] Imagen omitida: ' . $ruta . ' - ' . $e->getMessage());
+            return false;
+        } finally {
+            carnetLimpiarImagenTemporalPDF($imagen);
+        }
+    }
+}
+
 if(!function_exists('carnetCellAjustadaPDF')){
     function carnetCellAjustadaPDF($pdf, $x, $y, $w, $h, $texto, $font = 'Arial', $style = 'B', $maxSize = 8, $minSize = 5){
         $texto = (string)$texto;
@@ -68,6 +165,12 @@ if(!function_exists('carnetCellAjustadaPDF')){
 // OBTENER DATOS DEL ALUMNO
 // ============================================
 $alumnoid = $insCarnet->limpiarCadena($url[1]);
+$mesSolicitado = isset($url[2]) ? (int)$insCarnet->limpiarCadena($url[2]) : 0;
+$anioSolicitado = isset($url[3]) ? (int)$insCarnet->limpiarCadena($url[3]) : 0;
+if($mesSolicitado < 1 || $mesSolicitado > 12 || $anioSolicitado < 2000){
+    $mesSolicitado = 0;
+    $anioSolicitado = 0;
+}
 
 $datosRaw = $insCarnet->infoAlumnoCarnet($alumnoid);
 
@@ -89,16 +192,18 @@ if($datosRaw->rowCount() != 1){
 $datos = $datosRaw->fetch();
 
 // Estado de pensión y mes
-$estadoAlumno = $insCarnet->EstadoAlumno($alumnoid);
+$estadoAlumno = $insCarnet->EstadoAlumno($alumnoid, $mesSolicitado, $anioSolicitado);
 if($estadoAlumno->rowCount() == 1){
     $estadoAlumno    = $estadoAlumno->fetch();
     $condicion       = $estadoAlumno['Condicion'];
     $fechaUltPension = $estadoAlumno['FechaUltPension'];
-    $mesActual       = (int)date('n', strtotime($fechaUltPension));
+    $mesActual       = $mesSolicitado > 0 ? $mesSolicitado : (int)date('n', strtotime($fechaUltPension));
 } else {
     $condicion       = 'Pendiente';
-    $fechaUltPension = date('Y-m-d');
-    $mesActual       = (int)date('n');
+    $fechaUltPension = ($mesSolicitado > 0 && $anioSolicitado > 0)
+        ? sprintf('%04d-%02d-01', $anioSolicitado, $mesSolicitado)
+        : date('Y-m-d');
+    $mesActual       = $mesSolicitado > 0 ? $mesSolicitado : (int)date('n');
 }
 
 // Color del mes
@@ -164,10 +269,7 @@ $pdf->Rect($x, $y, $carnetWidth, $carnetHeight);
 // IMAGEN DECORATIVA IZQUIERDA (vertical_fondo)
 // ============================================
 $imgFondo = "./app/views/imagenes/carnet/" . trim((string)$sede['escuela_verticalfondo']);
-$imgFondoTipo = carnetTipoImagenPDF($imgFondo);
-if($imgFondoTipo !== ''){
-    $pdf->Image($imgFondo, $x, $y, 20, $carnetHeight, $imgFondoTipo);
-}
+carnetImagePDF($pdf, $imgFondo, $tempDir, $x, $y, 20, $carnetHeight);
 
 // Overlay de color del mes sobre la imagen izquierda
 $pdf->SetAlpha(0.5);
@@ -177,10 +279,7 @@ $pdf->SetAlpha(1);
 
 // Línea decorativa vertical (vertical_principal)
 $imgDerecha = "./app/views/imagenes/carnet/" . trim((string)$sede['escuela_verticalprincipal']);
-$imgDerechaTipo = carnetTipoImagenPDF($imgDerecha);
-if($imgDerechaTipo !== ''){
-    $pdf->Image($imgDerecha, $x + $carnetWidth - 65, $y, 1, $carnetHeight, $imgDerechaTipo);
-}
+carnetImagePDF($pdf, $imgDerecha, $tempDir, $x + $carnetWidth - 65, $y, 1, $carnetHeight);
 
 // ============================================
 // HEADER: LOGO Y QR
@@ -190,10 +289,7 @@ $logoPath = $logoBasePath . trim((string)$sede['sede_foto']);
 if(!is_file($logoPath)){
     $logoPath = $logoBasePath . "default_sede.jpg";
 }
-$logoTipo = carnetTipoImagenPDF($logoPath);
-if($logoTipo !== ''){
-    $pdf->Image($logoPath, $x + 40, $y + 2, 17, 19, $logoTipo);
-}
+carnetImagePDF($pdf, $logoPath, $tempDir, $x + 40, $y + 2, 17, 19);
 
 // Código QR
 $qrData = "Estado pension: " . $condicion . "\n" .
@@ -207,11 +303,8 @@ $image  = $generator->render_image($symbology, $qrData, $optionsQR);
 imagejpeg($image, $qrFile);
 imagedestroy($image);
 
-$qrTipo = carnetTipoImagenPDF($qrFile);
-if($qrTipo !== ''){
-    $pdf->Image($qrFile, $x + $carnetWidth - 15, $y + 2, 12, 12, $qrTipo);
-    @unlink($qrFile);
-}
+carnetImagePDF($pdf, $qrFile, $tempDir, $x + $carnetWidth - 15, $y + 2, 12, 12);
+@unlink($qrFile);
 
 // ============================================
 // FOTO DEL ALUMNO
@@ -226,10 +319,7 @@ $fotoY      = $y + 20;
 $fotoWidth  = 20;
 $fotoHeight = 25;
 
-$fotoTipo = carnetTipoImagenPDF($fotoPath);
-if($fotoTipo !== ''){
-    $pdf->Image($fotoPath, $fotoX, $fotoY, $fotoWidth, $fotoHeight, $fotoTipo);
-}
+carnetImagePDF($pdf, $fotoPath, $tempDir, $fotoX, $fotoY, $fotoWidth, $fotoHeight);
 $pdf->SetLineWidth(0.3);
 $pdf->SetDrawColor(200, 200, 200);
 $pdf->Rect($fotoX, $fotoY, $fotoWidth, $fotoHeight);

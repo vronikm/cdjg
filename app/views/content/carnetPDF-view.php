@@ -39,6 +39,103 @@ if(!function_exists('carnetTipoImagenPDF')){
     }
 }
 
+if(!function_exists('carnetImagenCompatiblePDF')){
+    function carnetImagenCompatiblePDF($ruta, $tempDir){
+        $tipo = carnetTipoImagenPDF($ruta);
+        if($tipo === ''){
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        if($tipo === 'JPG'){
+            return ['ruta' => $ruta, 'tipo' => 'JPG', 'temporal' => false];
+        }
+
+        $creador = null;
+        if($tipo === 'PNG' && function_exists('imagecreatefrompng')){
+            $creador = 'imagecreatefrompng';
+        } elseif($tipo === 'GIF' && function_exists('imagecreatefromgif')){
+            $creador = 'imagecreatefromgif';
+        }
+
+        if($creador === null || !function_exists('imagecreatetruecolor') || !function_exists('imagejpeg')){
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        $origen = @$creador($ruta);
+        if(!$origen){
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        if(function_exists('imagepalettetotruecolor')){
+            @imagepalettetotruecolor($origen);
+        }
+
+        $ancho = imagesx($origen);
+        $alto = imagesy($origen);
+        if($ancho <= 0 || $alto <= 0){
+            imagedestroy($origen);
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        $destino = imagecreatetruecolor($ancho, $alto);
+        if(!$destino){
+            imagedestroy($origen);
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        imagealphablending($destino, true);
+        $blanco = imagecolorallocate($destino, 255, 255, 255);
+        imagefilledrectangle($destino, 0, 0, $ancho, $alto, $blanco);
+        imagecopy($destino, $origen, 0, 0, 0, 0, $ancho, $alto);
+
+        if(!is_dir($tempDir)){
+            @mkdir($tempDir, 0775, true);
+        }
+
+        $rutaTemporal = rtrim($tempDir, '/\\') . DIRECTORY_SEPARATOR . 'pdf_img_' . uniqid('', true) . '.jpg';
+        $convertida = @imagejpeg($destino, $rutaTemporal, 90);
+
+        imagedestroy($origen);
+        imagedestroy($destino);
+
+        if(!$convertida || !is_file($rutaTemporal)){
+            if(is_file($rutaTemporal)){
+                @unlink($rutaTemporal);
+            }
+            return ['ruta' => '', 'tipo' => '', 'temporal' => false];
+        }
+
+        return ['ruta' => $rutaTemporal, 'tipo' => 'JPG', 'temporal' => true];
+    }
+}
+
+if(!function_exists('carnetLimpiarImagenTemporalPDF')){
+    function carnetLimpiarImagenTemporalPDF($imagen){
+        if(!empty($imagen['temporal']) && !empty($imagen['ruta']) && is_file($imagen['ruta'])){
+            @unlink($imagen['ruta']);
+        }
+    }
+}
+
+if(!function_exists('carnetImagePDF')){
+    function carnetImagePDF($pdf, $ruta, $tempDir, $x, $y, $w = 0, $h = 0){
+        $imagen = carnetImagenCompatiblePDF($ruta, $tempDir);
+        if($imagen['tipo'] === ''){
+            return false;
+        }
+
+        try {
+            $pdf->Image($imagen['ruta'], $x, $y, $w, $h, $imagen['tipo']);
+            return true;
+        } catch(Exception $e) {
+            error_log('[carnetPDF] Imagen omitida: ' . $ruta . ' - ' . $e->getMessage());
+            return false;
+        } finally {
+            carnetLimpiarImagenTemporalPDF($imagen);
+        }
+    }
+}
+
 if(!function_exists('carnetCellAjustadaPDF')){
     function carnetCellAjustadaPDF($pdf, $x, $y, $w, $h, $texto, $font = 'Arial', $style = 'B', $maxSize = 8, $minSize = 5){
         $texto = (string)$texto;
@@ -246,6 +343,18 @@ $nombresMeses = [
     9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
 ];
 
+$periodosCarnet = [];
+foreach($carnetsData as $carnetPeriodo) {
+    $mesPeriodo = (int)($carnetPeriodo['carnet_mes'] ?? date('n'));
+    $anioPeriodo = (int)($carnetPeriodo['carnet_anio'] ?? date('Y'));
+    $periodosCarnet[$anioPeriodo . '-' . str_pad($mesPeriodo, 2, '0', STR_PAD_LEFT)] =
+        strtoupper($nombresMeses[$mesPeriodo] ?? 'N/A') . ' ' . $anioPeriodo;
+}
+ksort($periodosCarnet);
+$periodoTituloCarnets = !empty($periodosCarnet)
+    ? implode(' / ', array_values($periodosCarnet))
+    : strtoupper($nombresMeses[date('n')]) . ' ' . date('Y');
+
 // ============================================
 // GENERAR CARNETS
 // ============================================
@@ -261,7 +370,7 @@ foreach($carnetsData as $carnet) {
             $pdf->SetFont('Arial', 'B', 10);
             $pdf->SetTextColor(0, 0, 0);
             $pdf->SetXY(10, 5);
-            $pdf->Cell(0, 5, 'IMPRESION DE CARNETS - ' . strtoupper($nombresMeses[date('n')]) . ' ' . date('Y'), 0, 0, 'L');
+            $pdf->Cell(0, 5, 'IMPRESION DE CARNETS - ' . $periodoTituloCarnets, 0, 0, 'L');
             
             $pdf->SetFont('Arial', '', 8);
             $pdf->SetXY(10, 10);
@@ -320,10 +429,7 @@ foreach($carnetsData as $carnet) {
     // IMÁGENES DECORATIVAS
     // ====================
     $imgFondo = "./app/views/imagenes/carnet/" . trim((string)$sede['escuela_verticalfondo']);
-    $imgFondoTipo = carnetTipoImagenPDF($imgFondo);
-    if($imgFondoTipo !== '') {
-        $pdf->Image($imgFondo, $x, $y, 20, $carnetHeight, $imgFondoTipo);
-    }
+    carnetImagePDF($pdf, $imgFondo, $tempDir, $x, $y, 20, $carnetHeight);
     
     $pdf->SetAlpha(0.5);
     $pdf->SetFillColor($r, $g, $b);
@@ -331,10 +437,7 @@ foreach($carnetsData as $carnet) {
     $pdf->SetAlpha(1);
 
     $imgDerecha = "./app/views/imagenes/carnet/" . trim((string)$sede['escuela_verticalprincipal']);
-    $imgDerechaTipo = carnetTipoImagenPDF($imgDerecha);
-    if($imgDerechaTipo !== '') {
-        $pdf->Image($imgDerecha, $x + $carnetWidth - 65, $y, 1, $carnetHeight, $imgDerechaTipo);
-    }
+    carnetImagePDF($pdf, $imgDerecha, $tempDir, $x + $carnetWidth - 65, $y, 1, $carnetHeight);
     
     // ====================
     // HEADER: LOGO Y QR
@@ -344,13 +447,10 @@ foreach($carnetsData as $carnet) {
     if(!is_file($logoPath)) {
         $logoPath = $logoBasePath . "default_sede.jpg";
     }
-    $logoTipo = carnetTipoImagenPDF($logoPath);
-    if($logoTipo !== '') {
-        $pdf->Image($logoPath, $x + 40, $y + 2, 12, 17, $logoTipo);
-    }
+    carnetImagePDF($pdf, $logoPath, $tempDir, $x + 40, $y + 2, 12, 17);
     
     // Código QR
-    $estadoAlumno = $insCarnet->EstadoAlumno($carnet['alumno_id']);
+    $estadoAlumno = $insCarnet->EstadoAlumno($carnet['alumno_id'], $carnet['carnet_mes'], $carnet['carnet_anio']);
     if($estadoAlumno->rowCount() == 1) {
         $estadoAlumno = $estadoAlumno->fetch();
         $condicion = $estadoAlumno['Condicion'];
@@ -371,11 +471,8 @@ foreach($carnetsData as $carnet) {
     imagejpeg($image, $qrFile);
     imagedestroy($image);
 
-    $qrTipo = carnetTipoImagenPDF($qrFile);
-    if($qrTipo !== '') {
-        $pdf->Image($qrFile, $x + $carnetWidth - 15, $y + 2, 12, 12, $qrTipo);
-        @unlink($qrFile);
-    }
+    carnetImagePDF($pdf, $qrFile, $tempDir, $x + $carnetWidth - 15, $y + 2, 12, 12);
+    @unlink($qrFile);
     
     $pdf->SetFont('Arial', 'B', 8.5);
     $pdf->SetTextColor(0, 0, 0);
@@ -395,10 +492,7 @@ foreach($carnetsData as $carnet) {
     $fotoWidth = 20;
     $fotoHeight = 25;
     
-    $fotoTipo = carnetTipoImagenPDF($fotoPath);
-    if($fotoTipo !== '') {
-        $pdf->Image($fotoPath, $fotoX, $fotoY, $fotoWidth, $fotoHeight, $fotoTipo);
-    }
+    carnetImagePDF($pdf, $fotoPath, $tempDir, $fotoX, $fotoY, $fotoWidth, $fotoHeight);
 
     $pdf->SetLineWidth(0.3);
     $pdf->SetDrawColor(200, 200, 200);
