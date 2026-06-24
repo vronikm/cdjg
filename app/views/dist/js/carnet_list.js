@@ -27,6 +27,20 @@ $(function () {
     });
 
     $('#example1 thead th').eq(5).text('Impresion');
+
+    function getSedeCarnetId() {
+        var sedeId = $('#filtroSedeCarnet').val();
+        return sedeId ? parseInt(sedeId, 10) || 0 : 0;
+    }
+
+    $('#filtroSedeCarnet').on('change', function() {
+        var sedeId = getSedeCarnetId();
+        var url = APP_URL + 'carnetList/';
+        if(sedeId > 0) {
+            url += '?sede_id=' + encodeURIComponent(sedeId);
+        }
+        window.location.href = url;
+    });
     
     // ✅ FUNCIÓN PARA CONSULTAR CARNETS PENDIENTES VÍA AJAX
     function consultarCarnetsPendientes(callback) {
@@ -34,7 +48,8 @@ $(function () {
             url: APP_URL + 'app/ajax/carnetAjax.php',
             type: 'POST',
             data: {
-                modulo_carnet: 'imprimir_carnetspendientes'
+                modulo_carnet: 'imprimir_carnetspendientes',
+                sede_id: getSedeCarnetId()
             },
             dataType: 'json',
             success: function(response) {
@@ -173,7 +188,8 @@ $(function () {
                         url: APP_URL + 'app/ajax/carnetAjax.php',
                         type: 'POST',
                         data: {
-                            modulo_carnet: 'preparar_impresion_mensual'
+                            modulo_carnet: 'preparar_impresion_mensual',
+                            sede_id: getSedeCarnetId()
                         },
                         dataType: 'json',
                         success: function(response) {

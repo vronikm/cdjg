@@ -25,8 +25,9 @@ if(isset($_POST['modulo_carnet'])) {
             break;
             
         case 'imprimir_carnetspendientes':
+            $sede_id = isset($_POST['sede_id']) ? (int)$_POST['sede_id'] : 0;
             // Obtener carnets pendientes
-            $resultado = $insCarnet->carnetPendientesImpresion();
+            $resultado = $insCarnet->carnetPendientesImpresion($sede_id);
             
             // Retornar JSON con el total
             if(isset($resultado[0]['total'])) {
@@ -44,7 +45,8 @@ if(isset($_POST['modulo_carnet'])) {
             break;
 
         case 'preparar_impresion_mensual':
-            echo $insCarnet->prepararImpresionMensual();
+            $sede_id = isset($_POST['sede_id']) ? (int)$_POST['sede_id'] : 0;
+            echo $insCarnet->prepararImpresionMensual($sede_id);
             break;
 
         case 'procesar_reimpresion':

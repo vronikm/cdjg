@@ -3,6 +3,7 @@
 	$insCarnet = new carnetController();
 	$cobrarReimpresion = $insCarnet->cobrarReimpresionCarnet();
 	$valorReimpresion = $insCarnet->valorReimpresionCarnet();
+	$carnetSedeid = isset($_GET['sede_id']) ? (int)$_GET['sede_id'] : 0;
 ?>
 
 <html lang="es">
@@ -71,6 +72,12 @@
 						</h3>
 						<div class="card-tools">							
 							<!-- Botón imprimir todos con confirmación -->
+							<select id="filtroSedeCarnet"
+									class="form-control form-control-sm d-inline-block"
+									style="width: 220px; margin-right: 10px;">
+								<?php echo $insCarnet->listarOptionSedeCarnet($carnetSedeid); ?>
+							</select>
+
 							<button type="button" 
 									id="btnImprimirTodos" 
 									class="btn btn-success btn-sm" 
@@ -139,7 +146,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									<?php echo $insCarnet->listarAlumnos(); ?>								
+									<?php echo $insCarnet->listarAlumnos($carnetSedeid); ?>
 								</tbody>
 							</table>
 						</form>
@@ -173,6 +180,7 @@
 	<script src="<?php echo APP_URL; ?>app/views/dist/js/main.js"></script>
 	<script>
 		var APP_URL = '<?php echo APP_URL; ?>';
+		var SEDE_CARNET_ID = <?php echo (int)$carnetSedeid; ?>;
 		var COBRAR_REIMPRESION = <?php echo $cobrarReimpresion ? 'true' : 'false'; ?>;
 		var MES_ACTUAL = '<?php 
         $formatter = new IntlDateFormatter(

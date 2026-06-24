@@ -30,6 +30,33 @@
             return $datos;
         }
 
+		private function filtroSedeCarnetSQL($sedeid, $alias = 'a') {
+			$sedeid = (int)$sedeid;
+			if($sedeid <= 0) {
+				return "";
+			}
+
+			$alias = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$alias);
+			$campo = $alias !== '' ? $alias . ".alumno_sedeid" : "alumno_sedeid";
+			return " AND " . $campo . " = " . $sedeid;
+		}
+
+		public function listarOptionSedeCarnet($sedeid = 0) {
+			$sedeid = (int)$sedeid;
+			$option = '<option value="0">Todas las sedes</option>';
+			$consulta_datos = "SELECT sede_id, sede_nombre FROM general_sede ORDER BY sede_nombre";
+			$datos = $this->ejecutarConsulta($consulta_datos);
+
+			foreach($datos->fetchAll() as $rows) {
+				$selected = ((int)$rows['sede_id'] === $sedeid) ? ' selected="selected"' : '';
+				$option .= '<option value="' . (int)$rows['sede_id'] . '"' . $selected . '>' .
+					htmlspecialchars($rows['sede_nombre'], ENT_QUOTES, 'UTF-8') .
+				'</option>';
+			}
+
+			return $option;
+		}
+
 		private function condicionPagoCarnetActual($alias = 'ap') {
 			$alias = preg_replace('/[^a-zA-Z0-9_]/', '', $alias);
 			return "((".$alias.".pago_rubroid = 'RPE'
@@ -64,10 +91,11 @@
 		 * Listar alumnos con pagos de pensión del mes actual
 		 * @return string HTML de filas de tabla
 		 */
-		public function listarAlumnos() {
+		public function listarAlumnos($sedeid = 0) {
 			$tabla = "";
+			$sedeid = (int)$sedeid;
 
-			$alumnos_sin_horario = $this->verificarAlumnosSinHorarioAsignado();
+			$alumnos_sin_horario = $this->verificarAlumnosSinHorarioAsignado($sedeid);
 			if(!empty($alumnos_sin_horario)) {
 				$detalle_alumnos = [];
 				foreach($alumnos_sin_horario as $alumno) {
@@ -138,6 +166,7 @@
 																and descuento_estado = 'S'     
 												) EstadoPagos ON pago_alumnoid = alumno_id
 												WHERE alumno_estado = 'A'
+												".$this->filtroSedeCarnetSQL($sedeid, '')."
 												ORDER BY carnet_anio_objetivo ASC, carnet_mes_objetivo ASC, carnet_impreso ASC, alumno_apellidopaterno, alumno_apellidomaterno";
 			
 			$datos = $this->ejecutarConsulta($consulta_datos);
@@ -208,7 +237,8 @@
 			return $tabla;			
 		}
 
-		public function verificarAlumnosSinHorarioAsignado() {
+		public function verificarAlumnosSinHorarioAsignado($sedeid = 0) {
+			$sedeid = (int)$sedeid;
 			$consulta = "SELECT
 						a.alumno_id,
 						a.alumno_identificacion,
@@ -230,6 +260,7 @@
 								AND descuento_estado = 'S'
 						) candidatos ON candidatos.pago_alumnoid = a.alumno_id
 						WHERE a.alumno_estado = 'A'
+							".$this->filtroSedeCarnetSQL($sedeid, 'a')."
 							AND NOT EXISTS (
 								SELECT 1
 								FROM asistencia_asignahorario ah
@@ -1107,7 +1138,8 @@
 			return $datos->fetchAll();
 		}
 
-		public function carnetPendientesImpresion() {
+		public function carnetPendientesImpresion($sedeid = 0) {
+			$sedeid = (int)$sedeid;
 			$consulta = "SELECT COUNT(*) AS total
 						FROM (
 							SELECT a.alumno_id
@@ -1131,6 +1163,7 @@
 							) elegibles
 							INNER JOIN sujeto_alumno a ON a.alumno_id = elegibles.pago_alumnoid
 							WHERE a.alumno_estado = 'A'
+								".$this->filtroSedeCarnetSQL($sedeid, 'a')."
 								AND EXISTS (SELECT 1 FROM asistencia_asignahorario ah WHERE ah.asignahorario_alumnoid = a.alumno_id)
 								AND NOT EXISTS (
 									SELECT 1 FROM alumno_carnet ac
@@ -1145,7 +1178,8 @@
 			return $datos->fetchAll();
 		}
 
-		public function obtenerCarnetsPendientesMesActual() {
+		public function obtenerCarnetsPendientesMesActual($sedeid = 0) {
+			$sedeid = (int)$sedeid;
 			$fecha_actual = date('Y-m-d');
 
 			$consulta = "SELECT
@@ -1202,6 +1236,7 @@
 							LEFT JOIN carnet_catcolor cc ON cc.catcolor_id = cmc.mcolor_catcolorid
 								AND cc.catcolor_activo = 1
 							WHERE a.alumno_estado = 'A'
+								".$this->filtroSedeCarnetSQL($sedeid, 'a')."
 								AND EXISTS (SELECT 1 FROM asistencia_asignahorario ah WHERE ah.asignahorario_alumnoid = a.alumno_id)
 								AND NOT EXISTS (
 									SELECT 1 FROM alumno_carnet acp
@@ -1240,13 +1275,14 @@
 			}
 
 			if(empty($carnetsFinales)) {
-				$carnetsFinales = $this->obtenerCarnetsNoImpresosMesActual();
+				$carnetsFinales = $this->obtenerCarnetsNoImpresosMesActual($sedeid);
 			}
 
 			return $carnetsFinales;
 		}
 
-		public function obtenerCarnetsNoImpresosMesActual() {
+		public function obtenerCarnetsNoImpresosMesActual($sedeid = 0) {
+			$sedeid = (int)$sedeid;
 			$consulta = "SELECT
 								a.alumno_id,
 								a.alumno_carnet,
@@ -1281,6 +1317,7 @@
 								)
 								AND ac.carnet_fecha_impresion IS NULL
 								AND a.alumno_estado = 'A'
+								".$this->filtroSedeCarnetSQL($sedeid, 'a')."
 								AND EXISTS (SELECT 1 FROM asistencia_asignahorario ah WHERE ah.asignahorario_alumnoid = a.alumno_id)
 							ORDER BY ac.carnet_anio, ac.carnet_mes, a.alumno_apellidopaterno, a.alumno_apellidomaterno";
 
@@ -1349,11 +1386,12 @@
 			return $carnets;
 		}
 
-		public function prepararImpresionMensual() {
-			$carnets = $this->obtenerCarnetsPendientesMesActual();
+		public function prepararImpresionMensual($sedeid = 0) {
+			$sedeid = (int)$sedeid;
+			$carnets = $this->obtenerCarnetsPendientesMesActual($sedeid);
 
 			if(empty($carnets)) {
-				$carnets = $this->obtenerCarnetsNoImpresosMesActual();
+				$carnets = $this->obtenerCarnetsNoImpresosMesActual($sedeid);
 			}
 
 			if(empty($carnets)) {
