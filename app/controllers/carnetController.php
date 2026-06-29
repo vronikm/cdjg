@@ -41,6 +41,80 @@
 			return " AND " . $campo . " = " . $sedeid;
 		}
 
+		private function sanitizarAliasSQL($alias) {
+			return preg_replace('/[^a-zA-Z0-9_]/', '', (string)$alias);
+		}
+
+		private function campoSQL($alias, $campo) {
+			$alias = $this->sanitizarAliasSQL($alias);
+			return ($alias !== '' ? $alias . "." : "") . $campo;
+		}
+
+		private function sqlFechaPagoCarnet($alias = 'ap') {
+			$pagoRubroid = $this->campoSQL($alias, 'pago_rubroid');
+			$pagoFecha = $this->campoSQL($alias, 'pago_fecha');
+			$pagoFechaRegistro = $this->campoSQL($alias, 'pago_fecharegistro');
+
+			return "CASE WHEN ".$pagoRubroid." = 'RVA' THEN DATE(".$pagoFechaRegistro.") ELSE ".$pagoFecha." END";
+		}
+
+		private function sqlMesPagoPeriodo($alias = 'ap') {
+			$pagoPeriodo = $this->campoSQL($alias, 'pago_periodo');
+			$mesPeriodo = "LOWER(TRIM(SUBSTRING_INDEX(".$pagoPeriodo.", '/', 1)))";
+
+			return "CASE ".$mesPeriodo."
+						WHEN 'enero' THEN 1
+						WHEN 'febrero' THEN 2
+						WHEN 'marzo' THEN 3
+						WHEN 'abril' THEN 4
+						WHEN 'mayo' THEN 5
+						WHEN 'junio' THEN 6
+						WHEN 'julio' THEN 7
+						WHEN 'agosto' THEN 8
+						WHEN 'septiembre' THEN 9
+						WHEN 'setiembre' THEN 9
+						WHEN 'octubre' THEN 10
+						WHEN 'noviembre' THEN 11
+						WHEN 'diciembre' THEN 12
+						WHEN '1' THEN 1
+						WHEN '01' THEN 1
+						WHEN '2' THEN 2
+						WHEN '02' THEN 2
+						WHEN '3' THEN 3
+						WHEN '03' THEN 3
+						WHEN '4' THEN 4
+						WHEN '04' THEN 4
+						WHEN '5' THEN 5
+						WHEN '05' THEN 5
+						WHEN '6' THEN 6
+						WHEN '06' THEN 6
+						WHEN '7' THEN 7
+						WHEN '07' THEN 7
+						WHEN '8' THEN 8
+						WHEN '08' THEN 8
+						WHEN '9' THEN 9
+						WHEN '09' THEN 9
+						WHEN '10' THEN 10
+						WHEN '11' THEN 11
+						WHEN '12' THEN 12
+						ELSE MONTH(".$this->sqlFechaPagoCarnet($alias).")
+					END";
+		}
+
+		private function sqlAnioPagoPeriodo($alias = 'ap') {
+			$pagoPeriodo = $this->campoSQL($alias, 'pago_periodo');
+			$anioPeriodo = "CAST(TRIM(SUBSTRING_INDEX(".$pagoPeriodo.", '/', -1)) AS UNSIGNED)";
+
+			return "CASE
+						WHEN ".$anioPeriodo." BETWEEN 2000 AND 2100 THEN ".$anioPeriodo."
+						ELSE YEAR(".$this->sqlFechaPagoCarnet($alias).")
+					END";
+		}
+
+		private function sqlFechaPeriodoPago($alias = 'ap') {
+			return "STR_TO_DATE(CONCAT(".$this->sqlAnioPagoPeriodo($alias).", '-', LPAD(".$this->sqlMesPagoPeriodo($alias).", 2, '0'), '-05'), '%Y-%m-%d')";
+		}
+
 		public function listarOptionSedeCarnet($sedeid = 0) {
 			$sedeid = (int)$sedeid;
 			$option = '<option value="0">Todas las sedes</option>';
@@ -58,33 +132,38 @@
 		}
 
 		private function condicionPagoCarnetActual($alias = 'ap') {
-			$alias = preg_replace('/[^a-zA-Z0-9_]/', '', $alias);
-			return "((".$alias.".pago_rubroid = 'RPE'
-						AND MONTH(".$alias.".pago_fecha) = MONTH(CURDATE())
-						AND YEAR(".$alias.".pago_fecha) = YEAR(CURDATE()))
-					OR (".$alias.".pago_rubroid = 'RVA'
-						AND MONTH(".$alias.".pago_fecharegistro) = MONTH(CURDATE())
-						AND YEAR(".$alias.".pago_fecharegistro) = YEAR(CURDATE())))";
+			$pagoRubroid = $this->campoSQL($alias, 'pago_rubroid');
+			$fechaPago = $this->sqlFechaPagoCarnet($alias);
+			$fechaPeriodo = $this->sqlFechaPeriodoPago($alias);
+
+			return "(".$pagoRubroid." IN ('RPE', 'RVA')
+					AND (
+						(".$fechaPago." >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+							AND ".$fechaPago." <= LAST_DAY(CURDATE()))
+						OR (".$fechaPeriodo." >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+							AND ".$fechaPeriodo." <= LAST_DAY(CURDATE()))
+					))";
 		}
 
 		private function condicionPagoCarnetActualSiguiente($alias = 'ap') {
-			$alias = preg_replace('/[^a-zA-Z0-9_]/', '', $alias);
-			return "((".$alias.".pago_rubroid = 'RPE'
-						AND ".$alias.".pago_fecha >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-						AND ".$alias.".pago_fecha <= LAST_DAY(DATE_ADD(CURDATE(), INTERVAL 1 MONTH)))
-					OR (".$alias.".pago_rubroid = 'RVA'
-						AND ".$alias.".pago_fecharegistro >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-						AND ".$alias.".pago_fecharegistro <= LAST_DAY(DATE_ADD(CURDATE(), INTERVAL 1 MONTH))))";
+			$pagoRubroid = $this->campoSQL($alias, 'pago_rubroid');
+			$fechaPago = $this->sqlFechaPagoCarnet($alias);
+			$fechaPeriodo = $this->sqlFechaPeriodoPago($alias);
+
+			return "(".$pagoRubroid." IN ('RPE', 'RVA')
+					AND (
+						(".$fechaPago." >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+							AND ".$fechaPago." <= LAST_DAY(DATE_ADD(CURDATE(), INTERVAL 1 MONTH)))
+						OR (".$fechaPeriodo." >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+							AND ".$fechaPeriodo." <= LAST_DAY(DATE_ADD(CURDATE(), INTERVAL 1 MONTH)))
+					))";
 		}
 
 		private function condicionPagoCarnetMes($alias = 'ap') {
-			$alias = preg_replace('/[^a-zA-Z0-9_]/', '', $alias);
-			return "((".$alias.".pago_rubroid = 'RPE'
-						AND MONTH(".$alias.".pago_fecha) = :mes
-						AND YEAR(".$alias.".pago_fecha) = :anio)
-					OR (".$alias.".pago_rubroid = 'RVA'
-						AND MONTH(".$alias.".pago_fecharegistro) = :mes
-						AND YEAR(".$alias.".pago_fecharegistro) = :anio))";
+			$pagoRubroid = $this->campoSQL($alias, 'pago_rubroid');
+			return "(".$pagoRubroid." IN ('RPE', 'RVA')
+					AND ".$this->sqlMesPagoPeriodo($alias)." = :mes
+					AND ".$this->sqlAnioPagoPeriodo($alias)." = :anio)";
 		}
 
 		/**
@@ -121,10 +200,11 @@
 									CONCAT(alumno_apellidopaterno, ' ', alumno_apellidomaterno) APELLIDOS, 
 									alumno_carnet, 
 									FechaUltPension,
-									MONTH(FechaUltPension) AS carnet_mes_objetivo,
-									YEAR(FechaUltPension) AS carnet_anio_objetivo,
+									FechaPeriodoCarnet,
+									MONTH(FechaPeriodoCarnet) AS carnet_mes_objetivo,
+									YEAR(FechaPeriodoCarnet) AS carnet_anio_objetivo,
 									CASE 
-										WHEN FechaUltPension >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
+										WHEN FechaPeriodoCarnet >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
 										THEN 'Al día' 
 										ELSE 'Pendiente' 
 									END Condicion,
@@ -133,8 +213,8 @@
 											SELECT 1
 											FROM alumno_carnet ac
 											WHERE ac.carnet_alumnoid = alumno_id
-											AND ac.carnet_mes = MONTH(FechaUltPension)
-											AND ac.carnet_anio = YEAR(FechaUltPension)
+											AND ac.carnet_mes = MONTH(FechaPeriodoCarnet)
+											AND ac.carnet_anio = YEAR(FechaPeriodoCarnet)
 											AND ac.carnet_fecha_impresion IS NOT NULL
 										) THEN 1
 										ELSE 0
@@ -143,15 +223,18 @@
 										SELECT MAX(ac2.carnet_fecha_impresion)
 										FROM alumno_carnet ac2
 										WHERE ac2.carnet_alumnoid = alumno_id
-										AND ac2.carnet_mes = MONTH(FechaUltPension)
-										AND ac2.carnet_anio = YEAR(FechaUltPension)
+										AND ac2.carnet_mes = MONTH(FechaPeriodoCarnet)
+										AND ac2.carnet_anio = YEAR(FechaPeriodoCarnet)
 									) AS fecha_impresion
 								FROM sujeto_alumno
 								INNER JOIN (    
 								(    
-									SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(pago_estado) Estado
+									SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(pago_estado) Estado, MAX(FechaPeriodoCarnet) FechaPeriodoCarnet
 									FROM (
-										SELECT CASE WHEN ap.pago_rubroid = 'RVA' THEN DATE(ap.pago_fecharegistro) ELSE ap.pago_fecha END as FechaPension, ap.pago_estado, ap.pago_alumnoid
+										SELECT ".$this->sqlFechaPagoCarnet('ap')." as FechaPension,
+												".$this->sqlFechaPeriodoPago('ap')." as FechaPeriodoCarnet,
+												ap.pago_estado,
+												ap.pago_alumnoid
 											FROM alumno_pago ap
 											WHERE ap.pago_estado NOT IN ('E', 'J')
 												AND ".$this->condicionPagoCarnetActualSiguiente('ap')."
@@ -160,6 +243,7 @@
 								)
 								UNION                
 								SELECT descuento_alumnoid, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPago, 'Al dìa' as Estado
+												, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPeriodoCarnet
 												from alumno_pago_descuento
 												where descuento_rubroid = 'DBC'
 																and descuento_valor = 0
@@ -294,12 +378,12 @@
 			$anio = (int)$anio;
 			$filtroPeriodo = "";
 			$descuentoPeriodo = "";
+			$fechaPagoCarnet = $this->sqlFechaPagoCarnet('ap');
+			$fechaPeriodoCarnet = $this->sqlFechaPeriodoPago('ap');
 
 			if($mes >= 1 && $mes <= 12 && $anio > 2000) {
-				$filtroPeriodo = " AND (
-										(pago_rubroid = 'RPE' AND MONTH(pago_fecha) = $mes AND YEAR(pago_fecha) = $anio)
-										OR (pago_rubroid = 'RVA' AND MONTH(pago_fecharegistro) = $mes AND YEAR(pago_fecharegistro) = $anio)
-									)";
+				$filtroPeriodo = " AND ".$this->sqlMesPagoPeriodo('ap')." = $mes
+									AND ".$this->sqlAnioPagoPeriodo('ap')." = $anio";
 
 				if($mes !== (int)date('n') || $anio !== (int)date('Y')) {
 					$descuentoPeriodo = " AND 1 = 0";
@@ -308,17 +392,18 @@
 
 			$consulta_datos="SELECT FechaUltPension, Estado, 
 								CASE 
-										WHEN FechaUltPension >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
+										WHEN FechaPeriodoCarnet >= DATE_FORMAT(CURDATE(), '%Y-%m-01')                               
 										THEN 'Al dia' 
 										ELSE 'Pendiente' 
 										END Condicion
 								FROM(
 									SELECT
-										MAX(CASE WHEN pago_rubroid = 'RVA' THEN DATE(pago_fecharegistro) ELSE pago_fecha END) FechaUltPension,
-										MAX(pago_estado) Estado
-									FROM alumno_pago
-									WHERE pago_alumnoid = $alumnoid
-										AND pago_estado NOT IN ('J','E')
+										MAX(".$fechaPagoCarnet.") FechaUltPension,
+										MAX(".$fechaPeriodoCarnet.") FechaPeriodoCarnet,
+										MAX(ap.pago_estado) Estado
+									FROM alumno_pago ap
+									WHERE ap.pago_alumnoid = $alumnoid
+										AND ap.pago_estado NOT IN ('J','E')
 										$filtroPeriodo
 								) AS Total
 								WHERE FechaUltPension IS NOT NULL
@@ -1137,16 +1222,18 @@
 						FROM (
 							SELECT a.alumno_id
 							FROM (
-								SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension
+								SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(FechaPeriodoCarnet) FechaPeriodoCarnet
 								FROM (
-									SELECT ap.pago_alumnoid, CASE WHEN ap.pago_rubroid = 'RVA' THEN DATE(ap.pago_fecharegistro) ELSE ap.pago_fecha END AS FechaPension
+									SELECT ap.pago_alumnoid,
+											".$this->sqlFechaPagoCarnet('ap')." AS FechaPension,
+											".$this->sqlFechaPeriodoPago('ap')." AS FechaPeriodoCarnet
 									FROM alumno_pago ap
 									WHERE ap.pago_estado NOT IN ('E', 'J')
 										AND ".$this->condicionPagoCarnetActualSiguiente('ap')."
 
 									UNION ALL
 
-									SELECT apd.descuento_alumnoid, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPension
+									SELECT apd.descuento_alumnoid, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPension, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPeriodoCarnet
 									FROM alumno_pago_descuento apd
 									WHERE apd.descuento_rubroid = 'DBC'
 										AND apd.descuento_valor = 0
@@ -1161,8 +1248,8 @@
 								AND NOT EXISTS (
 									SELECT 1 FROM alumno_carnet ac
 									WHERE ac.carnet_alumnoid = a.alumno_id
-										AND ac.carnet_mes = MONTH(elegibles.FechaUltPension)
-										AND ac.carnet_anio = YEAR(elegibles.FechaUltPension)
+										AND ac.carnet_mes = MONTH(elegibles.FechaPeriodoCarnet)
+										AND ac.carnet_anio = YEAR(elegibles.FechaPeriodoCarnet)
 										AND ac.carnet_fecha_impresion IS NOT NULL
 								)
 						) AS subconsulta";
@@ -1190,23 +1277,25 @@
 									LIMIT 1) as horario_nombre,
 								ac.carnet_id,
 								ac.carnet_numero,
-								COALESCE(ac.carnet_mes, MONTH(elegibles.FechaUltPension)) as carnet_mes,
-								COALESCE(ac.carnet_anio, YEAR(elegibles.FechaUltPension)) as carnet_anio,
+								COALESCE(ac.carnet_mes, MONTH(elegibles.FechaPeriodoCarnet)) as carnet_mes,
+								COALESCE(ac.carnet_anio, YEAR(elegibles.FechaPeriodoCarnet)) as carnet_anio,
 								COALESCE(ac.carnet_fecha_emision, :fecha_actual) as carnet_fecha_emision,
 								0 as es_reimpresion,
 								COALESCE(cc.catcolor_hex, '#CCCCCC') as color_hex,
 								'' as mes_nombre
 							FROM (
-								SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension
+								SELECT pago_alumnoid, MAX(FechaPension) FechaUltPension, MAX(FechaPeriodoCarnet) FechaPeriodoCarnet
 								FROM (
-									SELECT ap.pago_alumnoid, CASE WHEN ap.pago_rubroid = 'RVA' THEN DATE(ap.pago_fecharegistro) ELSE ap.pago_fecha END AS FechaPension
+									SELECT ap.pago_alumnoid,
+											".$this->sqlFechaPagoCarnet('ap')." AS FechaPension,
+											".$this->sqlFechaPeriodoPago('ap')." AS FechaPeriodoCarnet
 									FROM alumno_pago ap
 									WHERE ap.pago_estado NOT IN ('E', 'J')
 										AND ".$this->condicionPagoCarnetActualSiguiente('ap')."
 
 									UNION ALL
 
-									SELECT apd.descuento_alumnoid, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPension
+									SELECT apd.descuento_alumnoid, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPension, DATE_FORMAT(CURDATE(), '%Y-%m-05') FechaPeriodoCarnet
 									FROM alumno_pago_descuento apd
 									WHERE apd.descuento_rubroid = 'DBC'
 										AND apd.descuento_valor = 0
@@ -1219,12 +1308,12 @@
 								SELECT ac2.carnet_id
 								FROM alumno_carnet ac2
 								WHERE ac2.carnet_alumnoid = a.alumno_id
-									AND ac2.carnet_mes = MONTH(elegibles.FechaUltPension)
-									AND ac2.carnet_anio = YEAR(elegibles.FechaUltPension)
+									AND ac2.carnet_mes = MONTH(elegibles.FechaPeriodoCarnet)
+									AND ac2.carnet_anio = YEAR(elegibles.FechaPeriodoCarnet)
 								ORDER BY ac2.carnet_id DESC
 								LIMIT 1
 							)
-							LEFT JOIN carnet_mes_color cmc ON cmc.mcolor_mes = MONTH(elegibles.FechaUltPension)
+							LEFT JOIN carnet_mes_color cmc ON cmc.mcolor_mes = MONTH(elegibles.FechaPeriodoCarnet)
 								AND cmc.mcolor_activo = 1
 							LEFT JOIN carnet_catcolor cc ON cc.catcolor_id = cmc.mcolor_catcolorid
 								AND cc.catcolor_activo = 1
@@ -1234,8 +1323,8 @@
 								AND NOT EXISTS (
 									SELECT 1 FROM alumno_carnet acp
 									WHERE acp.carnet_alumnoid = a.alumno_id
-										AND acp.carnet_mes = MONTH(elegibles.FechaUltPension)
-										AND acp.carnet_anio = YEAR(elegibles.FechaUltPension)
+										AND acp.carnet_mes = MONTH(elegibles.FechaPeriodoCarnet)
+										AND acp.carnet_anio = YEAR(elegibles.FechaPeriodoCarnet)
 										AND acp.carnet_fecha_impresion IS NOT NULL
 								)
 							ORDER BY a.alumno_apellidopaterno, a.alumno_apellidomaterno";
