@@ -6,6 +6,7 @@
 	use app\services\SRI\FirmaElectronicaService;
 	use app\services\SRI\WebServiceSRIService;
 
+	/* Controlador para facturacion electronica, emision SRI y configuracion relacionada. */
 	class facturasController extends mainModel{
 
 
