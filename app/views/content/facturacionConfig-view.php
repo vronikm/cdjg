@@ -1,14 +1,114 @@
 <?php
 	use app\controllers\facturasController;
 
-	$insFactura = new facturasController();
-	$sriConfig = $insFactura->obtenerConfiguracionSri();
-	$certificado = $insFactura->obtenerInfoCertificadoSri();
+	$h = static function($valor){ return htmlspecialchars((string)$valor, ENT_QUOTES, 'UTF-8'); };
+	$renderDiagnosticoFacturacion = static function(array $estado) use ($h): void {
+		http_response_code(500);
+		$appName = defined('APP_NAME') ? APP_NAME : 'Sistema';
+		$appUrl = defined('APP_URL') ? APP_URL : '';
+?>
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><?php echo $h($appName); ?> | Diagnostico facturacion</title>
+	<?php if($appUrl !== ''){ ?>
+	<link rel="stylesheet" href="<?php echo $h($appUrl); ?>app/views/dist/plugins/fontawesome-free/css/all.min.css">
+	<link rel="stylesheet" href="<?php echo $h($appUrl); ?>app/views/dist/css/adminlte.css">
+	<?php } ?>
+  </head>
+  <body class="hold-transition sidebar-mini layout-fixed">
+	<div class="container py-4">
+		<div class="alert alert-danger">
+			<h4 class="mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>No se pudo cargar la configuracion de facturacion</h4>
+			<p class="mb-0">La vista no encontro la clase <strong><?php echo $h($estado['clase'] ?? ''); ?></strong>. Revise el detalle para corregir el despliegue en produccion.</p>
+		</div>
+
+		<div class="card card-outline card-danger">
+			<div class="card-header">
+				<h3 class="card-title">Diagnostico tecnico</h3>
+			</div>
+			<div class="card-body table-responsive p-0">
+				<table class="table table-sm table-striped mb-0">
+					<tbody>
+						<tr><th style="width: 220px;">Clase esperada</th><td><?php echo $h($estado['clase'] ?? ''); ?></td></tr>
+						<tr><th>Archivo esperado</th><td><?php echo $h($estado['archivo_controlador'] ?? ''); ?></td></tr>
+						<tr><th>Archivo existe</th><td><?php echo $h($estado['archivo_existe'] ?? 'NO'); ?></td></tr>
+						<tr><th>Archivo legible</th><td><?php echo $h($estado['archivo_legible'] ?? 'NO'); ?></td></tr>
+						<tr><th>Archivo incluido</th><td><?php echo $h($estado['archivo_incluido'] ?? 'NO'); ?></td></tr>
+						<tr><th>Clase disponible</th><td><?php echo $h($estado['clase_disponible'] ?? 'NO'); ?></td></tr>
+						<tr><th>Autoload</th><td><?php echo $h($estado['autoload'] ?? ''); ?></td></tr>
+						<?php if(!empty($estado['error'])){ ?>
+						<tr><th>Error detectado</th><td><?php echo $h($estado['error']); ?></td></tr>
+						<?php } ?>
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="callout callout-info">
+			<h5>Como corregirlo</h5>
+			<p>En Linux el nombre del archivo distingue mayusculas y minusculas. Debe existir exactamente:</p>
+			<pre class="mb-2">app/controllers/facturasController.php</pre>
+			<p class="mb-2">Si el archivo falta, ejecute en produccion:</p>
+			<pre class="mb-2">cd /home/digitech/clubjorgeguzman
+git pull --ff-only origin main</pre>
+			<p class="mb-2">Si existe con otro nombre, renombrelo manteniendo exactamente las mismas mayusculas/minusculas:</p>
+			<pre class="mb-0">mv app/controllers/FacturasController.php app/controllers/facturasController.php</pre>
+		</div>
+	</div>
+  </body>
+</html>
+<?php
+	};
+
+	$controllerClass = facturasController::class;
+	$controllerFile = dirname(__DIR__, 2)."/controllers/facturasController.php";
+	$autoloadFile = dirname(__DIR__, 3)."/autoload.php";
+	$diagnosticoFacturacion = [
+		"clase" => $controllerClass,
+		"archivo_controlador" => $controllerFile,
+		"archivo_existe" => is_file($controllerFile) ? "SI" : "NO",
+		"archivo_legible" => is_readable($controllerFile) ? "SI" : "NO",
+		"archivo_incluido" => "NO",
+		"clase_disponible" => class_exists($controllerClass, false) ? "SI" : "NO",
+		"autoload" => $autoloadFile.(is_file($autoloadFile) ? " (existe)" : " (no existe)"),
+		"error" => "",
+	];
+
+	if(!class_exists($controllerClass, false) && is_file($controllerFile) && is_readable($controllerFile)){
+		try{
+			require_once $controllerFile;
+			$diagnosticoFacturacion["archivo_incluido"] = "SI";
+		}catch(Throwable $error){
+			$diagnosticoFacturacion["error"] = $error->getMessage();
+			$renderDiagnosticoFacturacion($diagnosticoFacturacion);
+			return;
+		}
+	}
+
+	$diagnosticoFacturacion["clase_disponible"] = class_exists($controllerClass, false) ? "SI" : "NO";
+	if(!class_exists($controllerClass, false)){
+		$renderDiagnosticoFacturacion($diagnosticoFacturacion);
+		return;
+	}
+
+	try{
+		$insFactura = new facturasController();
+		$sriConfig = $insFactura->obtenerConfiguracionSri();
+		$certificado = $insFactura->obtenerInfoCertificadoSri();
+	}catch(Throwable $error){
+		$diagnosticoFacturacion["error"] = "La clase se cargo, pero fallo al iniciar la configuracion: ".$error->getMessage();
+		$renderDiagnosticoFacturacion($diagnosticoFacturacion);
+		return;
+	}
+
 	$emisor = $sriConfig['emisor'] ?? [];
 	$correo = $sriConfig['correo'] ?? [];
 	$smtp = $correo['smtp'] ?? [];
 	$formasPago = $sriConfig['formas_pago'] ?? [];
-	$h = static function($valor){ return htmlspecialchars((string)$valor, ENT_QUOTES, 'UTF-8'); };
 	$selected = static function($actual, $valor){ return ((string)$actual === (string)$valor) ? 'selected' : ''; };
 	$certEstado = $certificado['estado'] ?? 'NO_CONFIGURADO';
 	$certClase = ($certEstado === 'VALIDO') ? 'success' : (($certEstado === 'CADUCADO' || $certEstado === 'CLAVE_INVALIDA') ? 'danger' : 'warning');
