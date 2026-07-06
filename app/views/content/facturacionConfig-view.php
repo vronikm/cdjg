@@ -37,8 +37,15 @@
 						<tr><th>Archivo esperado</th><td><?php echo $h($estado['archivo_controlador'] ?? ''); ?></td></tr>
 						<tr><th>Archivo existe</th><td><?php echo $h($estado['archivo_existe'] ?? 'NO'); ?></td></tr>
 						<tr><th>Archivo legible</th><td><?php echo $h($estado['archivo_legible'] ?? 'NO'); ?></td></tr>
+						<tr><th>Tamano archivo</th><td><?php echo $h($estado['archivo_tamano'] ?? ''); ?></td></tr>
+						<tr><th>Modificado</th><td><?php echo $h($estado['archivo_modificado'] ?? ''); ?></td></tr>
+						<tr><th>SHA1 archivo</th><td><?php echo $h($estado['archivo_sha1'] ?? ''); ?></td></tr>
+						<tr><th>Namespace detectado</th><td><?php echo $h($estado['namespace_detectado'] ?? ''); ?></td></tr>
+						<tr><th>Clase detectada</th><td><?php echo $h($estado['clase_detectada'] ?? ''); ?></td></tr>
 						<tr><th>Archivo incluido</th><td><?php echo $h($estado['archivo_incluido'] ?? 'NO'); ?></td></tr>
 						<tr><th>Clase disponible</th><td><?php echo $h($estado['clase_disponible'] ?? 'NO'); ?></td></tr>
+						<tr><th>Clases declaradas al incluir</th><td><?php echo $h($estado['clases_declaradas'] ?? ''); ?></td></tr>
+						<tr><th>Alias aplicado</th><td><?php echo $h($estado['alias_aplicado'] ?? 'NO'); ?></td></tr>
 						<tr><th>Autoload</th><td><?php echo $h($estado['autoload'] ?? ''); ?></td></tr>
 						<?php if(!empty($estado['error'])){ ?>
 						<tr><th>Error detectado</th><td><?php echo $h($estado['error']); ?></td></tr>
@@ -56,7 +63,9 @@
 			<pre class="mb-2">cd /home/digitech/clubjorgeguzman
 git pull --ff-only origin main</pre>
 			<p class="mb-2">Si existe con otro nombre, renombrelo manteniendo exactamente las mismas mayusculas/minusculas:</p>
-			<pre class="mb-0">mv app/controllers/FacturasController.php app/controllers/facturasController.php</pre>
+			<pre class="mb-2">mv app/controllers/FacturasController.php app/controllers/facturasController.php</pre>
+			<p class="mb-2">Si el archivo existe e incluye, pero la clase sigue en NO, revise el contenido real del archivo:</p>
+			<pre class="mb-0">grep -n "namespace\|class .*facturas" app/controllers/facturasController.php</pre>
 		</div>
 	</div>
   </body>
@@ -67,17 +76,36 @@ git pull --ff-only origin main</pre>
 	$controllerClass = facturasController::class;
 	$controllerFile = dirname(__DIR__, 2)."/controllers/facturasController.php";
 	$autoloadFile = dirname(__DIR__, 3)."/autoload.php";
+	$controllerContenido = (is_file($controllerFile) && is_readable($controllerFile)) ? file_get_contents($controllerFile) : false;
+	$namespaceDetectado = "";
+	$claseDetectada = "";
+	if(is_string($controllerContenido)){
+		if(preg_match('/namespace\s+([^;]+);/m', $controllerContenido, $coincidenciaNamespace)){
+			$namespaceDetectado = trim($coincidenciaNamespace[1]);
+		}
+		if(preg_match('/class\s+([A-Za-z_][A-Za-z0-9_]*)\b/m', $controllerContenido, $coincidenciaClase)){
+			$claseDetectada = trim($coincidenciaClase[1]);
+		}
+	}
 	$diagnosticoFacturacion = [
 		"clase" => $controllerClass,
 		"archivo_controlador" => $controllerFile,
 		"archivo_existe" => is_file($controllerFile) ? "SI" : "NO",
 		"archivo_legible" => is_readable($controllerFile) ? "SI" : "NO",
+		"archivo_tamano" => is_file($controllerFile) ? filesize($controllerFile)." bytes" : "",
+		"archivo_modificado" => is_file($controllerFile) ? date("Y-m-d H:i:s", filemtime($controllerFile)) : "",
+		"archivo_sha1" => is_file($controllerFile) ? sha1_file($controllerFile) : "",
+		"namespace_detectado" => $namespaceDetectado !== "" ? $namespaceDetectado : "(no detectado)",
+		"clase_detectada" => $claseDetectada !== "" ? $claseDetectada : "(no detectada)",
 		"archivo_incluido" => "NO",
 		"clase_disponible" => class_exists($controllerClass, false) ? "SI" : "NO",
+		"clases_declaradas" => "",
+		"alias_aplicado" => "NO",
 		"autoload" => $autoloadFile.(is_file($autoloadFile) ? " (existe)" : " (no existe)"),
 		"error" => "",
 	];
 
+	$clasesAntes = get_declared_classes();
 	if(!class_exists($controllerClass, false) && is_file($controllerFile) && is_readable($controllerFile)){
 		try{
 			require_once $controllerFile;
@@ -86,6 +114,19 @@ git pull --ff-only origin main</pre>
 			$diagnosticoFacturacion["error"] = $error->getMessage();
 			$renderDiagnosticoFacturacion($diagnosticoFacturacion);
 			return;
+		}
+	}
+	$clasesNuevas = array_values(array_diff(get_declared_classes(), $clasesAntes));
+	$diagnosticoFacturacion["clases_declaradas"] = empty($clasesNuevas) ? "(ninguna)" : implode(", ", array_slice($clasesNuevas, 0, 12));
+
+	if(!class_exists($controllerClass, false)){
+		foreach($clasesNuevas as $claseNueva){
+			$partesClase = explode("\\", $claseNueva);
+			$nombreClase = end($partesClase);
+			if(strcasecmp($nombreClase, "facturasController") === 0 && class_alias($claseNueva, $controllerClass)){
+				$diagnosticoFacturacion["alias_aplicado"] = $claseNueva." => ".$controllerClass;
+				break;
+			}
 		}
 	}
 
