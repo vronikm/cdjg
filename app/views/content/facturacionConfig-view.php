@@ -240,6 +240,12 @@ git pull --ff-only origin main</pre>
 												<input type="text" class="form-control form-control-sm" id="nombre_comercial" name="nombre_comercial" value="<?php echo $h($emisor['nombre_comercial'] ?? ''); ?>">
 											</div>
 										</div>
+										<div class="col-md-4">
+											<div class="form-group">
+												<label for="telefono">Telefono factura</label>
+												<input type="text" class="form-control form-control-sm" id="telefono" name="telefono" maxlength="50" value="<?php echo $h($emisor['telefono'] ?? ''); ?>">
+											</div>
+										</div>
 										<div class="col-md-6">
 											<div class="form-group">
 												<label for="direccion_matriz">Direccion matriz</label>

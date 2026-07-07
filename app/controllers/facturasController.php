@@ -522,7 +522,7 @@
 				'secuencial_inicio' => 1,
 				'emisor' => [
 					'ruc' => '', 'razon_social' => '', 'nombre_comercial' => '',
-					'direccion_matriz' => '', 'direccion_establecimiento' => '',
+					'direccion_matriz' => '', 'direccion_establecimiento' => '', 'telefono' => '',
 					'codigo_establecimiento' => '001', 'punto_emision' => '001',
 					'obligado_contabilidad' => 'NO', 'contribuyente_especial' => '',
 					'agente_retencion' => '', 'contribuyente_rimpe' => '',
@@ -632,6 +632,7 @@
 		 */
 		private function configEmisorDesdeBd(){
 			try{
+				$this->asegurarCampoTelefonoEmisorSri();
 				$stmt = $this->ejecutarConsulta("SELECT * FROM facturas_electronicas_config WHERE config_lock = 'X' LIMIT 1");
 				$row = $stmt->fetch();
 			}catch(\Throwable $e){
@@ -656,6 +657,7 @@
 					'nombre_comercial' => (string)$row['nombre_comercial'],
 					'direccion_matriz' => (string)$row['direccion_matriz'],
 					'direccion_establecimiento' => (string)$row['direccion_establecimiento'],
+					'telefono' => (string)($row['telefono'] ?? ''),
 					'codigo_establecimiento' => (string)$row['codigo_establecimiento'],
 					'punto_emision' => (string)$row['punto_emision'],
 					'obligado_contabilidad' => (string)$row['obligado_contabilidad'],
@@ -714,6 +716,25 @@
 			$valor = trim(strip_tags((string)$valor));
 			$valor = preg_replace('/\s+/', ' ', $valor);
 			return function_exists('mb_substr') ? mb_substr($valor, 0, $limite, 'UTF-8') : substr($valor, 0, $limite);
+		}
+
+		private function asegurarCampoTelefonoEmisorSri(){
+			try{
+				$conexion = $this->conectar();
+				$stmt = $conexion->prepare(
+					"SELECT COUNT(*)
+					   FROM information_schema.COLUMNS
+					  WHERE TABLE_SCHEMA = DATABASE()
+					    AND TABLE_NAME = 'facturas_electronicas_config'
+					    AND COLUMN_NAME = 'telefono'"
+				);
+				$stmt->execute();
+				if((int)$stmt->fetchColumn() === 0){
+					$conexion->exec("ALTER TABLE facturas_electronicas_config ADD COLUMN telefono VARCHAR(50) NOT NULL DEFAULT '' AFTER direccion_establecimiento");
+				}
+			}catch(\Throwable $e){
+				// Si el hosting no permite ALTER, la migracion SQL deja una ruta manual.
+			}
 		}
 
         private function valorNoAplicaSri($valor){
@@ -1119,6 +1140,7 @@
 					'nombre_comercial' => $this->textoConfigSri($_POST['nombre_comercial'] ?? '', 300),
 					'direccion_matriz' => $this->textoConfigSri($_POST['direccion_matriz'] ?? '', 300),
 					'direccion_establecimiento' => $this->textoConfigSri($_POST['direccion_establecimiento'] ?? '', 300),
+					'telefono' => $this->textoConfigSri($_POST['telefono'] ?? '', 50),
 					'codigo_establecimiento' => $establecimiento,
 					'punto_emision' => $puntoEmision,
 					'obligado_contabilidad' => $obligado,
@@ -1147,6 +1169,7 @@
 				'nombre_comercial' => $em['nombre_comercial'],
 				'direccion_matriz' => $em['direccion_matriz'],
 				'direccion_establecimiento' => $em['direccion_establecimiento'],
+				'telefono' => $em['telefono'],
 				'codigo_establecimiento' => $em['codigo_establecimiento'],
 				'punto_emision' => $em['punto_emision'],
 				'obligado_contabilidad' => $em['obligado_contabilidad'],
@@ -1174,16 +1197,17 @@
 		private function guardarConfigEmisorEnBd(array $d){
 			try{
 				$conexion = $this->conectar();
+				$this->asegurarCampoTelefonoEmisorSri();
 				$stmt = $conexion->prepare(
 					"INSERT INTO facturas_electronicas_config
 						(config_lock, ambiente, tipo_emision, iva_tarifa_default, forma_pago_default,
-						 valores_incluyen_iva, secuencial_inicio, ruc, razon_social, nombre_comercial, direccion_matriz,
-						 direccion_establecimiento, codigo_establecimiento, punto_emision,
+					 valores_incluyen_iva, secuencial_inicio, ruc, razon_social, nombre_comercial, direccion_matriz,
+						 direccion_establecimiento, telefono, codigo_establecimiento, punto_emision,
 						 obligado_contabilidad, contribuyente_especial, agente_retencion,
 						 contribuyente_rimpe, correo_from, correo_from_nombre, smtp_activo, smtp_host, smtp_port,
 						 smtp_usuario, smtp_clave_cifrada, smtp_seguridad, updated_by)
 					 VALUES ('X', :ambiente, :tipo_emision, :iva, :fp, :vii, :sini, :ruc, :rs, :nc, :dm, :de,
-						 :ce, :pe, :oc, :cesp, :ar, :rimpe, :correo_from, :correo_from_nombre, :smtp_activo,
+						 :telefono, :ce, :pe, :oc, :cesp, :ar, :rimpe, :correo_from, :correo_from_nombre, :smtp_activo,
 						 :smtp_host, :smtp_port, :smtp_usuario, :smtp_clave_cifrada, :smtp_seguridad, :uby)
 					 ON DUPLICATE KEY UPDATE
 						 ambiente=VALUES(ambiente), tipo_emision=VALUES(tipo_emision),
@@ -1191,6 +1215,7 @@
 						 valores_incluyen_iva=VALUES(valores_incluyen_iva), secuencial_inicio=VALUES(secuencial_inicio), ruc=VALUES(ruc),
 						 razon_social=VALUES(razon_social), nombre_comercial=VALUES(nombre_comercial),
 						 direccion_matriz=VALUES(direccion_matriz), direccion_establecimiento=VALUES(direccion_establecimiento),
+						 telefono=VALUES(telefono),
 						 codigo_establecimiento=VALUES(codigo_establecimiento), punto_emision=VALUES(punto_emision),
 						 obligado_contabilidad=VALUES(obligado_contabilidad),
 						 contribuyente_especial=VALUES(contribuyente_especial),
@@ -1206,7 +1231,7 @@
 					':ambiente'=>$d['ambiente'], ':tipo_emision'=>$d['tipo_emision'], ':iva'=>$d['iva_tarifa_default'],
 					':fp'=>$d['forma_pago_default'], ':vii'=>$d['valores_incluyen_iva'], ':sini'=>$d['secuencial_inicio'], ':ruc'=>$d['ruc'],
 					':rs'=>$d['razon_social'], ':nc'=>$d['nombre_comercial'], ':dm'=>$d['direccion_matriz'],
-					':de'=>$d['direccion_establecimiento'], ':ce'=>$d['codigo_establecimiento'], ':pe'=>$d['punto_emision'],
+					':de'=>$d['direccion_establecimiento'], ':telefono'=>$d['telefono'], ':ce'=>$d['codigo_establecimiento'], ':pe'=>$d['punto_emision'],
 					':oc'=>$d['obligado_contabilidad'], ':cesp'=>$d['contribuyente_especial'], ':ar'=>$d['agente_retencion'],
 					':rimpe'=>$d['contribuyente_rimpe'], ':correo_from'=>$d['correo_from'], ':correo_from_nombre'=>$d['correo_from_nombre'],
 					':smtp_activo'=>$d['smtp_activo'], ':smtp_host'=>$d['smtp_host'], ':smtp_port'=>$d['smtp_port'],
@@ -1787,7 +1812,7 @@
 				}
 			}
 
-			$html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>RIDE '.$h($factura['numero']).'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222}.wrap{max-width:920px;margin:24px auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #555;padding:10px}h1,h2,h3{margin:0 0 8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #999;padding:6px}th{background:#eee}.right{text-align:right}.warn{background:#fff3cd;border:1px solid #ffeeba;padding:8px;margin:10px 0}.ok{background:#d4edda;border:1px solid #c3e6cb;padding:8px;margin:10px 0}</style></head><body><div class="wrap"><div class="'.$bannerClase.'">'.$bannerTexto.'</div><div class="grid"><div class="box">'.$logoHtml.'<h2>'.$h($emisor['razon_social'] ?? '').'</h2><p><strong>RUC:</strong> '.$h($emisor['ruc'] ?? '').'</p><p><strong>Nombre comercial:</strong> '.$h($emisor['nombre_comercial'] ?? '').'</p><p><strong>Direccion matriz:</strong> '.$h($emisor['direccion_matriz'] ?? '').'</p><p><strong>Direccion establecimiento:</strong> '.$h($emisor['direccion_establecimiento'] ?? '').'</p><p><strong>Obligado contabilidad:</strong> '.$h($emisor['obligado_contabilidad'] ?? 'NO').'</p></div><div class="box"><h1>Factura</h1><p><strong>No.:</strong> '.$h($factura['numero']).'</p><p><strong>Clave de acceso:</strong> '.$h($factura['clave_acceso']).'</p><p><strong>Numero autorizacion:</strong> '.$h($numeroAutorizacion !== '' ? $numeroAutorizacion : 'Pendiente').'</p><p><strong>Fecha autorizacion:</strong> '.$h($fechaAutorizacion !== '' ? $fechaAutorizacion : 'Pendiente').'</p><p><strong>Estado:</strong> '.$h($estadoSri).'</p><p><strong>Ambiente:</strong> '.$h($ambiente).'</p><p><strong>Emision:</strong> NORMAL</p></div></div><div class="box" style="margin-top:16px"><h3>Datos del cliente</h3><p><strong>Cliente:</strong> '.$h($factura['cliente_razon_social']).'</p><p><strong>Identificacion:</strong> '.$h($factura['cliente_identificacion']).'</p><p><strong>Direccion:</strong> '.$h($factura['cliente_direccion']).'</p><p><strong>Email:</strong> '.$h($factura['cliente_email']).'</p></div><table><thead><tr><th>Codigo</th><th>Cantidad</th><th>Detalle</th><th>Precio unitario</th><th>Descuento</th><th>Total sin impuesto</th></tr></thead><tbody>'.$filas.'</tbody></table><table><tr><td class="right"><strong>Subtotal IVA</strong></td><td class="right">'.number_format((float)$factura['subtotal_iva'], 2, '.', '').'</td></tr><tr><td class="right"><strong>Subtotal 0%</strong></td><td class="right">'.number_format((float)$factura['subtotal_0'], 2, '.', '').'</td></tr><tr><td class="right"><strong>IVA</strong></td><td class="right">'.number_format((float)$factura['iva'], 2, '.', '').'</td></tr><tr><td class="right"><strong>Valor total</strong></td><td class="right"><strong>'.number_format((float)$factura['total'], 2, '.', '').'</strong></td></tr></table></div></body></html>';
+			$html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>RIDE '.$h($factura['numero']).'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#222}.wrap{max-width:920px;margin:24px auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{border:1px solid #555;padding:10px}h1,h2,h3{margin:0 0 8px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #999;padding:6px}th{background:#eee}.right{text-align:right}.warn{background:#fff3cd;border:1px solid #ffeeba;padding:8px;margin:10px 0}.ok{background:#d4edda;border:1px solid #c3e6cb;padding:8px;margin:10px 0}</style></head><body><div class="wrap"><div class="'.$bannerClase.'">'.$bannerTexto.'</div><div class="grid"><div class="box">'.$logoHtml.'<h2>'.$h($emisor['razon_social'] ?? '').'</h2><p><strong>RUC:</strong> '.$h($emisor['ruc'] ?? '').'</p><p><strong>Nombre comercial:</strong> '.$h($emisor['nombre_comercial'] ?? '').'</p><p><strong>Direccion matriz:</strong> '.$h($emisor['direccion_matriz'] ?? '').'</p><p><strong>Direccion establecimiento:</strong> '.$h($emisor['direccion_establecimiento'] ?? '').'</p><p><strong>Telefonos:</strong> '.$h($emisor['telefono'] ?? '').'</p><p><strong>Obligado contabilidad:</strong> '.$h($emisor['obligado_contabilidad'] ?? 'NO').'</p></div><div class="box"><h1>Factura</h1><p><strong>No.:</strong> '.$h($factura['numero']).'</p><p><strong>Clave de acceso:</strong> '.$h($factura['clave_acceso']).'</p><p><strong>Numero autorizacion:</strong> '.$h($numeroAutorizacion !== '' ? $numeroAutorizacion : 'Pendiente').'</p><p><strong>Fecha autorizacion:</strong> '.$h($fechaAutorizacion !== '' ? $fechaAutorizacion : 'Pendiente').'</p><p><strong>Estado:</strong> '.$h($estadoSri).'</p><p><strong>Ambiente:</strong> '.$h($ambiente).'</p><p><strong>Emision:</strong> NORMAL</p></div></div><div class="box" style="margin-top:16px"><h3>Datos del cliente</h3><p><strong>Cliente:</strong> '.$h($factura['cliente_razon_social']).'</p><p><strong>Identificacion:</strong> '.$h($factura['cliente_identificacion']).'</p><p><strong>Direccion:</strong> '.$h($factura['cliente_direccion']).'</p><p><strong>Email:</strong> '.$h($factura['cliente_email']).'</p></div><table><thead><tr><th>Codigo</th><th>Cantidad</th><th>Detalle</th><th>Precio unitario</th><th>Descuento</th><th>Total sin impuesto</th></tr></thead><tbody>'.$filas.'</tbody></table><table><tr><td class="right"><strong>Subtotal IVA</strong></td><td class="right">'.number_format((float)$factura['subtotal_iva'], 2, '.', '').'</td></tr><tr><td class="right"><strong>Subtotal 0%</strong></td><td class="right">'.number_format((float)$factura['subtotal_0'], 2, '.', '').'</td></tr><tr><td class="right"><strong>IVA</strong></td><td class="right">'.number_format((float)$factura['iva'], 2, '.', '').'</td></tr><tr><td class="right"><strong>Valor total</strong></td><td class="right"><strong>'.number_format((float)$factura['total'], 2, '.', '').'</strong></td></tr></table></div></body></html>';
 			$directorioRide = dirname($archivo);
 			if(!is_dir($directorioRide)){
 				$warningDirectorio = '';
@@ -1876,6 +1901,7 @@
 				'Nombre comercial: '.($emisor['nombre_comercial'] ?? ''),
 				'Dir. matriz: '.($emisor['direccion_matriz'] ?? ''),
 				'Dir. establecimiento: '.($emisor['direccion_establecimiento'] ?? ''),
+				'Telefonos: '.($emisor['telefono'] ?? ''),
 				'Obligado a contabilidad: '.($emisor['obligado_contabilidad'] ?? 'NO'),
 			] as $l){ $pdf->SetX($xTexto); $pdf->MultiCell($anchoTexto, 5, $t($l), 0, 'L'); }
 			$yLogoBottom = ($logoPath !== '') ? $yIni + 26 : $pdf->GetY();

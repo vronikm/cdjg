@@ -459,7 +459,7 @@
 					<p class="mb-1"><strong>R.U.C.:</strong> <?php echo $h($sriEmisor['ruc'] ?? ''); ?></p>
 					<p class="mb-1"><strong>Direccion Matriz:</strong> <?php echo $h($sriEmisor['direccion_matriz'] ?? ''); ?></p>
 					<p class="mb-1"><strong>Direccion Sucursal:</strong> <?php echo $h($sriEmisor['direccion_establecimiento'] ?? ''); ?></p>
-					<p class="mb-1"><strong>Teléfonos:</strong> 0995762732</p>
+					<p class="mb-1"><strong>Telefonos:</strong> <?php echo $h($sriEmisor['telefono'] ?? ''); ?></p>
 					<p class="mb-0"><strong>Obligado a llevar contabilidad:</strong> <?php echo $h($sriEmisor['obligado_contabilidad'] ?? 'NO'); ?></p>
 				</div>
 				</div>
