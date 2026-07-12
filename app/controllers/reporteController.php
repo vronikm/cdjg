@@ -90,10 +90,12 @@
 			return $tabla;			
 		}
 
-		public function listarPagosConsolidado($fecha_inicio, $fecha_fin){
+		public function listarPagosConsolidado($fecha_inicio, $fecha_fin, $sede_id = 0){
 			$tabla="";
 			$VALOR_PAGADO = 0;
 			$VALOR_PENDIENTE = 0;
+			$sede_id = (int)$sede_id;
+			$filtroSede = $sede_id > 0 ? " AND alumno_sedeid = $sede_id " : "";
 			$consulta_datos="SELECT sede_nombre SEDE, A.alumno_identificacion IDENTIFICACION,
 								concat(A.alumno_primernombre, ' ', A.alumno_segundonombre, ' ', A.alumno_apellidopaterno, ' ', A.alumno_apellidomaterno) ALUMNO,
 								pago_fecha FECHA_PAGO, 
@@ -115,7 +117,7 @@
 								WHERE PT.transaccion_estado = 'C'
 								GROUP BY PT.transaccion_pagoid)T ON T.transaccion_pagoid = P.pago_id
 								LEFT JOIN alumno_pago_transaccion PT ON PT.transaccion_id  = T.IDT
-							where pago_estado <> 'E'
+							where pago_estado <> 'E'".$filtroSede."
 								and pago_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 							
 							union all 
@@ -137,7 +139,7 @@
 								inner join alumno_pago_transaccion T on T.transaccion_pagoid = P.pago_id								
 								inner join general_tabla_catalogo F ON F.catalogo_valor = T.transaccion_formapagoid 
 								inner join general_sede S on S.sede_id = alumno_sedeid
-							where transaccion_estado <> 'E'
+							where transaccion_estado <> 'E'".$filtroSede."
 								and transaccion_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 								ORDER BY FECHA_PAGO DESC";
 
@@ -189,7 +191,8 @@
 			return $tabla;			
 		}
 
-		public function fechaPagosReceptados($sede_id){		
+		public function fechaPagosReceptados($sede_id){
+	$sede_id = (int)$sede_id;		
 			$consulta_fecham="SELECT max(pago_fecharegistro) AS FECHA_MAXIMA
 								FROM alumno_pago, sujeto_alumno
 								WHERE pago_alumnoid = alumno_id
@@ -199,7 +202,8 @@
 			return $fecha_maxima;
 		}
 
-		public function valoresPendientes($sedeid){		
+		public function valoresPendientes($sedeid){
+	$sedeid = (int)$sedeid;		
 			$tabla="";
 			$NUM_SALDO = 0;
 			$SALDO = 0;
@@ -1107,10 +1111,12 @@
 			return $tabla;			
 		}
 
-		public function listarPagosRubros($fecha_inicio, $fecha_fin, $pago_rubro){
+		public function listarPagosRubros($fecha_inicio, $fecha_fin, $pago_rubro, $sede_id = 0){
 			$tabla="";
 			$VALOR_PAGADO = 0;
 			$VALOR_PENDIENTE = 0;
+			$sede_id = (int)$sede_id;
+			$filtroSede = $sede_id > 0 ? " AND alumno_sedeid = $sede_id " : "";
 			$consulta_datos="SELECT sede_nombre SEDE, A.alumno_identificacion IDENTIFICACION,
 								concat(A.alumno_primernombre, ' ', A.alumno_segundonombre, ' ', A.alumno_apellidopaterno, ' ', A.alumno_apellidomaterno) ALUMNO,
 								pago_fecha FECHA_PAGO, 
@@ -1132,7 +1138,7 @@
 								WHERE PT.transaccion_estado = 'C'
 								GROUP BY PT.transaccion_pagoid)T ON T.transaccion_pagoid = P.pago_id
 								LEFT JOIN alumno_pago_transaccion PT ON PT.transaccion_id  = T.IDT
-							where pago_estado <> 'E'
+							where pago_estado <> 'E'".$filtroSede."
 								and pago_rubroid = '".$pago_rubro."'
 								and pago_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 							
@@ -1155,7 +1161,7 @@
 								inner join alumno_pago_transaccion T on T.transaccion_pagoid = P.pago_id 
 								inner join general_tabla_catalogo F ON F.catalogo_valor = T.transaccion_formapagoid 								
 								inner join general_sede S on S.sede_id = alumno_sedeid
-							where transaccion_estado <> 'E'
+							where transaccion_estado <> 'E'".$filtroSede."
 								and pago_rubroid = '".$pago_rubro."'
 								and transaccion_fecharegistro between ' ".$fecha_inicio." ' and ' ".$fecha_fin."'
 								ORDER BY FECHA_PAGO DESC";

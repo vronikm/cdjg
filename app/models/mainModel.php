@@ -207,4 +207,36 @@ class mainModel
         return $digitoVerificador == intval($cedula[9]);
     }
 
+    /**
+     * Determina si un usuario puede ver los datos de una sede.
+     * Admin (rol 1/2) accede a cualquier sede; el resto solo a las
+     * sedes asignadas en seguridad_usuario_sede. Base reutilizable para
+     * blindar reportes por sede contra accesos cruzados (IDOR) y fugas
+     * de datos entre sedes (LOPDP).
+     */
+    public function usuarioAccedeSede($rol, $usuario, $sedeId)
+    {
+        $rol    = (int)$rol;
+        $sedeId = (int)$sedeId;
+
+        if ($sedeId <= 0) {
+            return false;
+        }
+        if ($rol === 1 || $rol === 2) {
+            return true;
+        }
+        try {
+            $sql = $this->ejecutarConsulta(
+                "SELECT COUNT(*) FROM seguridad_usuario_sede US
+                   INNER JOIN seguridad_usuario U ON U.usuario_id = US.usuariosede_usuarioid
+                  WHERE U.usuario_usuario = :usuario
+                    AND US.usuariosede_sedeid = :sede",
+                [":usuario" => (string)$usuario, ":sede" => $sedeId]
+            );
+            return (int)$sql->fetchColumn() > 0;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
 }

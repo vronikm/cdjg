@@ -1,23 +1,36 @@
 <?php
 	use app\controllers\reporteController;
 	$insRecibidos = new reporteController();
-	$sede_id 	  = ($url[1] != "") ? $url[1] : 0;
+	$sede_id 	  = (int)($url[1] ?? 0);
 	$sede_nombre  = "";
-	
+
+	// Control de acceso por sede: con sede => el usuario debe tener acceso;
+	// sin sede (consolidado de todas las sedes) => solo admin (rol 1/2).
+	$rolSesion     = (int)($_SESSION['rol'] ?? 0);
+	$usuarioSesion = $_SESSION['usuario'] ?? '';
+	$esAdmin       = ($rolSesion === 1 || $rolSesion === 2);
+	if($sede_id > 0){
+		if(!$insRecibidos->usuarioAccedeSede($rolSesion, $usuarioSesion, $sede_id)){
+			header("Location: ".APP_URL."dashboard/"); exit;
+		}
+	}elseif(!$esAdmin){
+		header("Location: ".APP_URL."dashboard/"); exit;
+	}
+
 	if(isset($_POST['pago_rubro'])){
 		$pago_rubro = $insRecibidos->limpiarCadena($_POST['pago_rubro']);
 	} ELSE{
 		$pago_rubro = "";
 	}
-	if(isset($_POST['pago_fecha_inicio'])){
-		$fecha_inicio = $insRecibidos->limpiarCadena($_POST['pago_fecha_inicio']);
+	if(isset($_POST['pago_fecha_inicio']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string)$_POST['pago_fecha_inicio']))){
+		$fecha_inicio = trim((string)$_POST['pago_fecha_inicio']);
 	} ELSE{
 		$fecha_inicio = $insRecibidos->fechaPagosReceptados($sede_id);
 		$fecha_inicio = $fecha_inicio->fetch(); 
 		$fecha_inicio = $fecha_inicio['FECHA_MAXIMA'];
 	}
-	if(isset($_POST['pago_fecha_fin'])){
-		$fecha_fin = $insRecibidos->limpiarCadena($_POST['pago_fecha_fin']);
+	if(isset($_POST['pago_fecha_fin']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string)$_POST['pago_fecha_fin']))){
+		$fecha_fin = trim((string)$_POST['pago_fecha_fin']);
 	} ELSE{
 		$fecha_fin = $insRecibidos->fechaPagosReceptados($sede_id);
 		$fecha_fin = $fecha_fin->fetch(); 
@@ -167,9 +180,9 @@
 							<tbody>
 								<?php 
 									if($pago_rubro == 0)
-										echo $insRecibidos->listarPagosConsolidado($fecha_inicio, $fecha_fin); 
+										echo $insRecibidos->listarPagosConsolidado($fecha_inicio, $fecha_fin, $sede_id);
 									else
-										echo $insRecibidos->listarPagosRubros($fecha_inicio, $fecha_fin, $pago_rubro); 	
+										echo $insRecibidos->listarPagosRubros($fecha_inicio, $fecha_fin, $pago_rubro, $sede_id);
 								?>								
 							</tbody>
 						</table>	

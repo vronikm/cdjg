@@ -2,7 +2,9 @@
 	use app\controllers\dashboardController;
 
 	$insDashboard = new dashboardController();
-	$sedesDashboard = $insDashboard->resumenSedesDeportivasDashboard();
+	$rolSesion = (int)($_SESSION['rol'] ?? 0);
+	$usuarioSesion = $_SESSION['usuario'] ?? '';
+	$sedesDashboard = $insDashboard->resumenSedesDeportivasDashboard($rolSesion, $usuarioSesion);
 	$h = static function($valor){ return htmlspecialchars((string)$valor, ENT_QUOTES, 'UTF-8'); };
 
 	$totalAlumnosActivos = 0;
@@ -19,7 +21,7 @@
 		$totalPendientes += (int)$sede['pagos_pendientes'];
 	}
 
-	$representantes = $insDashboard->obtenerRepresentantesDeportivos();
+	$representantes = $insDashboard->obtenerRepresentantesDeportivos($rolSesion, $usuarioSesion);
 	$representantes = $representantes->rowCount() > 0 ? $representantes->fetch() : [];
 	$totalRepresentantes = (int)($representantes['totalRepresentantes'] ?? 0);
 
@@ -118,6 +120,7 @@
 					</div>
 				<?php } ?>
 
+				<?php if(count($sedesDashboard) > 1){ ?>
 				<div class="card card-default">
 					<div class="card-header">
 						<h3 class="card-title">CONSOLIDADO SEDES DEPORTIVAS</h3>
@@ -139,6 +142,7 @@
 						</div>
 					</div>
 				</div>
+				<?php } ?>
 			</div>
 		</section>
       </div>

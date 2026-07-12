@@ -18,7 +18,20 @@
 			return "UPPER(".$prefijo."sede_nombre) NOT LIKE '%MATRIZ%'";
 		}
 
-		public function obtenerSedesDeportivas(){
+		public function obtenerSedesDeportivas($rolid = null, $usuario = null){
+			// Rol 1/2 (admin/matriz) ve todas las sedes deportivas; cualquier otro
+			// rol ve unicamente las sedes que tiene asignadas en seguridad_usuario_sede.
+			if($rolid != 1 && $rolid != 2){
+				$consulta = "SELECT S.sede_id, S.sede_nombre, S.sede_direccion, S.sede_email, S.sede_telefono
+							 FROM general_sede S
+							 INNER JOIN seguridad_usuario_sede US ON US.usuariosede_sedeid = S.sede_id
+							 INNER JOIN seguridad_usuario U ON U.usuario_id = US.usuariosede_usuarioid
+							 WHERE U.usuario_usuario = :usuario
+							   AND ".$this->condicionSedeDeportiva('S')."
+							 ORDER BY S.sede_nombre";
+				return $this->ejecutarConsulta($consulta, [':usuario' => $usuario]);
+			}
+
 			$consulta = "SELECT sede_id, sede_nombre, sede_direccion, sede_email, sede_telefono
 						 FROM general_sede
 						 WHERE ".$this->condicionSedeDeportiva()."
@@ -82,8 +95,8 @@
 			];
 		}
 
-		public function resumenSedesDeportivasDashboard(){
-			$sedes = $this->obtenerSedesDeportivas()->fetchAll();
+		public function resumenSedesDeportivasDashboard($rolid = null, $usuario = null){
+			$sedes = $this->obtenerSedesDeportivas($rolid, $usuario)->fetchAll();
 			$resumen = [];
 			foreach($sedes as $sede){
 				$sedeResumen = $this->resumenSedeDashboard($sede['sede_id']);
@@ -92,7 +105,23 @@
 			return $resumen;
 		}
 
-		public function obtenerRepresentantesDeportivos(){
+		public function obtenerRepresentantesDeportivos($rolid = null, $usuario = null){
+			// Mismo criterio de sede que el resto del tablero: admin (rol 1/2) cuenta
+			// representantes de todas las sedes deportivas; los demas solo los de sus sedes.
+			if($rolid != 1 && $rolid != 2){
+				$consulta = "SELECT COUNT(DISTINCT R.repre_id) totalRepresentantes
+							 FROM alumno_representante R
+							 INNER JOIN sujeto_alumno A ON A.alumno_repreid = R.repre_id
+							 INNER JOIN general_sede S ON S.sede_id = A.alumno_sedeid
+							 INNER JOIN seguridad_usuario_sede US ON US.usuariosede_sedeid = S.sede_id
+							 INNER JOIN seguridad_usuario U ON U.usuario_id = US.usuariosede_usuarioid
+							 WHERE R.repre_estado = 'A'
+							   AND A.alumno_estado <> 'E'
+							   AND U.usuario_usuario = :usuario
+							   AND ".$this->condicionSedeDeportiva('S');
+				return $this->ejecutarConsulta($consulta, [':usuario' => $usuario]);
+			}
+
 			$consulta = "SELECT COUNT(DISTINCT R.repre_id) totalRepresentantes
 						 FROM alumno_representante R
 						 INNER JOIN sujeto_alumno A ON A.alumno_repreid = R.repre_id

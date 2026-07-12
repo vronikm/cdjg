@@ -2,7 +2,15 @@
 	use app\controllers\reporteController;
 	$insPendientes = new reporteController();	
 	
-	$sede_id 	= ($url[1] != "") ? $url[1] : 0;
+	$sede_id 	= (int)($url[1] ?? 0);
+
+	// Control de acceso: este reporte es siempre por sede; el usuario debe
+	// tener acceso a esa sede (admin ve cualquiera). Evita IDOR entre sedes.
+	$rolSesion     = (int)($_SESSION['rol'] ?? 0);
+	$usuarioSesion = $_SESSION['usuario'] ?? '';
+	if(!$insPendientes->usuarioAccedeSede($rolSesion, $usuarioSesion, $sede_id)){
+		header("Location: ".APP_URL."dashboard/"); exit;
+	}
 
     $datos=$insPendientes->seleccionarDatos("Unico","general_sede","sede_id",$sede_id);
     if($datos->rowCount()==1){
