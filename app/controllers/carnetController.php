@@ -350,14 +350,27 @@
 		}
 
 		public function infoAlumnoCarnet($alumnoid){		
-            $consulta_datos="SELECT alumno_identificacion, 
-									CONCAT(alumno_primernombre, ' ', alumno_segundonombre) Nombres, 
-									CONCAT(alumno_apellidopaterno, ' ',  alumno_apellidomaterno) Apellidos, 
-									alumno_fechanacimiento, horario_nombre, alumno_carnet, alumno_imagen, alumno_sedeid
-								FROM sujeto_alumno
-								INNER JOIN asistencia_asignahorario on asignahorario_alumnoid = alumno_id
-								INNER JOIN asistencia_horario on asignahorario_horarioid = horario_id
-								WHERE alumno_id = $alumnoid";
+			$alumnoid = (int)$alumnoid;
+            $consulta_datos="SELECT a.alumno_identificacion,
+									CONCAT(a.alumno_primernombre, ' ', a.alumno_segundonombre) Nombres,
+									CONCAT(a.alumno_apellidopaterno, ' ', a.alumno_apellidomaterno) Apellidos,
+									a.alumno_fechanacimiento,
+									COALESCE(
+										(SELECT CASE
+											WHEN COUNT(DISTINCT CONCAT(TIME_FORMAT(hora.hora_inicio, '%H:%i'), '-', TIME_FORMAT(hora.hora_fin, '%H:%i'))) = 1
+											THEN MIN(CONCAT(TIME_FORMAT(hora.hora_inicio, '%H:%i'), '-', TIME_FORMAT(hora.hora_fin, '%H:%i')))
+											ELSE NULL
+										END
+										FROM asistencia_horario_detalle detalle
+										INNER JOIN asistencia_hora hora ON hora.hora_id = detalle.detalle_horaid
+										WHERE detalle.detalle_horarioid = h.horario_id),
+										h.horario_nombre
+									) AS horario_nombre,
+									a.alumno_carnet, a.alumno_imagen, a.alumno_sedeid
+								FROM sujeto_alumno a
+								INNER JOIN asistencia_asignahorario ah ON ah.asignahorario_alumnoid = a.alumno_id
+								INNER JOIN asistencia_horario h ON ah.asignahorario_horarioid = h.horario_id
+								WHERE a.alumno_id = $alumnoid";
             $datos = $this->ejecutarConsulta($consulta_datos);
             if($datos && $datos->rowCount() <=0) {
 				$alerta=[
@@ -800,6 +813,57 @@
 			];
 			return $meses[$mes] ?? 'Mes desconocido';
 		}
+
+		/**
+		 * Reemplaza el nombre almacenado del horario por su franja real cuando
+		 * todos los detalles asignados al alumno comparten la misma hora.
+		 */
+		private function aplicarHorarioRealCarnet(array $carnets) {
+			$alumnoIds = [];
+			foreach($carnets as $carnet) {
+				$alumnoId = (int)($carnet['alumno_id'] ?? 0);
+				if($alumnoId > 0) {
+					$alumnoIds[$alumnoId] = $alumnoId;
+				}
+			}
+
+			if(empty($alumnoIds)) {
+				return $carnets;
+			}
+
+			$idsSql = implode(',', $alumnoIds);
+			$consulta = "SELECT ah.asignahorario_alumnoid AS alumno_id,
+							COUNT(DISTINCT CONCAT(TIME_FORMAT(hora.hora_inicio, '%H:%i'), '-', TIME_FORMAT(hora.hora_fin, '%H:%i'))) AS total_franjas,
+							MIN(CONCAT(TIME_FORMAT(hora.hora_inicio, '%H:%i'), '-', TIME_FORMAT(hora.hora_fin, '%H:%i'))) AS horario_real
+						FROM asistencia_asignahorario ah
+						INNER JOIN asistencia_horario_detalle detalle ON detalle.detalle_horarioid = ah.asignahorario_horarioid
+						INNER JOIN asistencia_hora hora ON hora.hora_id = detalle.detalle_horaid
+						WHERE ah.asignahorario_alumnoid IN (".$idsSql.")
+						GROUP BY ah.asignahorario_alumnoid";
+
+			try {
+				$horarios = [];
+				foreach($this->ejecutarConsulta($consulta)->fetchAll() as $horario) {
+					$franjas = (int)($horario['total_franjas'] ?? 0);
+					$horarioReal = trim((string)($horario['horario_real'] ?? ''));
+					if($franjas === 1 && $horarioReal !== '') {
+						$horarios[(int)$horario['alumno_id']] = $horarioReal;
+					}
+				}
+
+				foreach($carnets as &$carnet) {
+					$alumnoId = (int)($carnet['alumno_id'] ?? 0);
+					if(isset($horarios[$alumnoId])) {
+						$carnet['horario_nombre'] = $horarios[$alumnoId];
+					}
+				}
+				unset($carnet);
+			}catch(\Throwable $e) {
+				// Un horario incompleto no debe impedir la impresion de los carnets.
+			}
+
+			return $carnets;
+		}
 		
 				
 		/**
@@ -894,7 +958,7 @@
 			];
 			
 			$datos = $this->ejecutarConsulta($consulta, $parametros);
-			$carnets = $datos->fetchAll();
+			$carnets = $this->aplicarHorarioRealCarnet($datos->fetchAll());
 			
 			// Generar carnets si no existen
 			$carnetsFinales = [];
@@ -1213,7 +1277,7 @@
 			];
 			
 			$datos = $this->ejecutarConsulta($consulta, $parametros);
-			return $datos->fetchAll();
+			return $this->aplicarHorarioRealCarnet($datos->fetchAll());
 		}
 
 		public function carnetPendientesImpresion($sedeid = 0) {
@@ -1333,7 +1397,7 @@
 				':fecha_actual' => $fecha_actual
 			]);
 
-			$carnets = $datos->fetchAll();
+			$carnets = $this->aplicarHorarioRealCarnet($datos->fetchAll());
 			$carnetsFinales = [];
 
 			foreach($carnets as $carnet) {
@@ -1404,7 +1468,7 @@
 							ORDER BY ac.carnet_anio, ac.carnet_mes, a.alumno_apellidopaterno, a.alumno_apellidomaterno";
 
 			$datos = $this->ejecutarConsulta($consulta);
-			$carnets = $datos->fetchAll();
+			$carnets = $this->aplicarHorarioRealCarnet($datos->fetchAll());
 
 			foreach($carnets as &$carnet) {
 				$carnet['mes_nombre'] = $this->nombreMes((int)$carnet['carnet_mes']);
@@ -1458,7 +1522,7 @@
 							ORDER BY ac.carnet_anio, ac.carnet_mes, a.alumno_apellidopaterno, a.alumno_apellidomaterno";
 
 			$datos = $this->ejecutarConsulta($consulta);
-			$carnets = $datos->fetchAll();
+			$carnets = $this->aplicarHorarioRealCarnet($datos->fetchAll());
 
 			foreach($carnets as &$carnet) {
 				$carnet['mes_nombre'] = $this->nombreMes((int)$carnet['carnet_mes']);
@@ -1676,7 +1740,7 @@
 				}
 			}
 			
-			return $carnetsFinales;
+			return $this->aplicarHorarioRealCarnet($carnetsFinales);
 		}
 
 		/**
